@@ -164,33 +164,64 @@ architecture behaviour of as4c32m8sa_sim is
 		b : std_logic)
 		return boolean is
 	begin
-		if a = 'U' or a = 'X' or b = 'U' or b = 'X' then
-			return false;
-		elsif a = '1' or a = '0' or b = '1' or b = '0' then
+		if (a = '1' or a = '0' or a = '-') and (b = '1' or b = '0' or b = '-') then
 			return a = '-' or b = '-' or a = b;
 		else
 			return false;
 		end if;
 	end is_same_logic;
 
-	-- Compare entity inputs with given DRAM_CMD_ENCODING_TYPE
-	function compare_entity(encoding : DRAM_CMD_ENCODING_TYPE)
+	-- Compare 2 std_logic_vectors using the is_same_logic function
+	function is_same_logic_vector(
+		a : std_logic_vector;
+		b : std_logic_vector)
 		return boolean is
 	begin
-		
-		return false;
-		
+		if a'length /= b'length then
+			return false;
+		else
+			for i in a'range loop
+				if not(is_same_logic(a(i), b(i))) then
+					return false;
+				end if;
+			end loop;
+				
+			return true;
+		end if;
+	end is_same_logic_vector;
+
+	-- Compare entity inputs with given DRAM_CMD_ENCODING_TYPE
+	impure function compare_entity(encoding : DRAM_CMD_ENCODING_TYPE)
+		return boolean is
+	begin
+		if not(is_same_logic(CKE'last_value, encoding.previous_cke))
+			or not(is_same_logic(CKE, encoding.current_cke))
+			or not(is_same_logic(DQM, encoding.dqm))
+			or not(is_same_logic_vector(BA, encoding.ba))
+			or not(is_same_logic_vector(A, encoding.a))
+			or not(is_same_logic(CSN, encoding.csn))
+			or not(is_same_logic(RASN, encoding.rasn))
+			or not(is_same_logic(CASN, encoding.casn))
+			or not(is_same_logic(WEN, encoding.wen))
+		then
+			return false;
+		else
+			-- TODO: check for selected bank state
+			return true;
+		end if;
 	end compare_entity;
 
 	-- Command decoder
-	function decode_command
+	impure function decode_command
 		return DRAM_CMD is
 	begin
 		for i in DRAM_CMD_ENCODINGS'range loop
-			
+			if compare_entity(DRAM_CMD_ENCODINGS(i)) then
+				return DRAM_CMD_ENCODINGS(i).dram_cmd;
+			end if;
 		end loop;
 
-
+		dump_entity("Error while decoding command: could not find record matching current entity inputs");
 		return CMD_NOP;
 	end decode_command;
 
@@ -219,7 +250,7 @@ begin
 	begin
 		loop
 			if passed_stable_initialisation then
-				dump_entity("Error while decoding command: could not find record matching current entity inputs");
+				
 				wait;
 			end if;
 		
