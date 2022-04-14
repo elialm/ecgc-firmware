@@ -43,7 +43,8 @@ end as4c32m8sa_sim;
 
 architecture behaviour of as4c32m8sa_sim is
 
-	type BACK_STATUS_TYPE is (BS_AWAIT_STABLE, BS_AWAIT_PRECHARGE_ALL, BS_AWAIT_MODE_SET, BS_IDLE, BS_ACTIVE, BS_SELF_REFRESH);
+	type DRAM_STATUS_TYPE is (DS_AWAIT_STABLE, DS_AWAIT_PRECHARGE_ALL, DS_AWAIT_MODE_SET, DS_OPERATIONAL);
+	type BACK_STATUS_TYPE is (BS_IDLE, BS_ACTIVE, BS_SELF_REFRESH);
 	type BANK_STATUS_ARRAY is array (3 downto 0) of BACK_STATUS_TYPE;
 	type REFRESH_COUNTERS_ARRAY is array (3 downto 0) of natural;
 	type DRAM_CMD is
@@ -53,7 +54,7 @@ architecture behaviour of as4c32m8sa_sim is
 		CMD_AUTO_REFRESH, CMD_SELF_REFRESH_ENTRY, CMD_SELF_REFRESH_EXIT,
 		CMD_CLOCK_SUSPEND_MODE_ENTRY, CMD_POWER_DOWN_MODE_ENTRY,
 		CMD_CLOCK_SUSPEND_MODE_EXIT, CMD_POWER_DOWN_MODE_EXIT, CMD_OUTPUT_ENABLE,
-		CMD_OUTPUT_DISABLE);
+		CMD_OUTPUT_DISABLE, CMD_UNKNOWN);
 		
 	type BANK_STATUS_GROUP_TYPE is (BSG_IDLE, BSG_ACTIVE, BSG_ANY);
 	type DRAM_CMD_ENCODING_TYPE is record
@@ -81,13 +82,13 @@ architecture behaviour of as4c32m8sa_sim is
 	constant DRAM_CMD_ENCODINGS : DRAM_CMD_ENCODING_ARRAY_TYPE := (
 	--  CKE-1 	CKE  	DQM 	BA(1:0)    	  A(12:0)    CS# 	RAS#	CAS#	WE#		State		Command
 		('1',	'-',	'-',	"--",	"-------------", '0',	'0', 	'1', 	'1', 	BSG_IDLE, 	CMD_BANK_ACTIVATE),
-		('1',	'-',	'-',	"--",	"----------0--", '0',	'0',	'1',	'0',	BSG_ANY,	CMD_BANK_PRECHARGE),
-		('1',	'-',	'-',	"--",	"----------1--", '0',	'0',	'1',	'0',	BSG_ANY,	CMD_PRECHARGE_ALL),
-		('1',	'-',	'-',	"--",	"----------0--", '0',	'1',	'0',	'0',	BSG_ACTIVE,	CMD_WRITE),
-		('1',	'-',	'-',	"--",	"----------1--", '0',	'1',	'0',	'0',	BSG_ACTIVE,	CMD_WRITE_AUTO_PRECHARGE),
-		('1',	'-',	'-',	"--",	"----------0--", '0',	'1',	'0',	'1',	BSG_ACTIVE,	CMD_READ),
-		('1',	'-',	'-',	"--",	"----------1--", '0',	'1',	'0',	'1',	BSG_ACTIVE,	CMD_READ_AUTO_PRECHARGE),
-		('1',	'-',	'-',	"00",	"000-0001-----", '0',	'0',	'0',	'0',	BSG_IDLE,	CMD_MODE_REGISTER_SET),
+		('1',	'-',	'-',	"--",	"--0----------", '0',	'0',	'1',	'0',	BSG_ANY,	CMD_BANK_PRECHARGE),
+		('1',	'-',	'-',	"--",	"--1----------", '0',	'0',	'1',	'0',	BSG_ANY,	CMD_PRECHARGE_ALL),
+		('1',	'-',	'-',	"--",	"--0----------", '0',	'1',	'0',	'0',	BSG_ACTIVE,	CMD_WRITE),
+		('1',	'-',	'-',	"--",	"--1----------", '0',	'1',	'0',	'0',	BSG_ACTIVE,	CMD_WRITE_AUTO_PRECHARGE),
+		('1',	'-',	'-',	"--",	"--0----------", '0',	'1',	'0',	'1',	BSG_ACTIVE,	CMD_READ),
+		('1',	'-',	'-',	"--",	"--1----------", '0',	'1',	'0',	'1',	BSG_ACTIVE,	CMD_READ_AUTO_PRECHARGE),
+		('1',	'-',	'-',	"00",	"-----1000-000", '0',	'0',	'0',	'0',	BSG_IDLE,	CMD_MODE_REGISTER_SET),
 		('1',	'-',	'-',	"--",	"-------------", '0',	'1',	'1',	'1',	BSG_ANY,	CMD_NOP),
 		('1',	'-',	'-',	"--",	"-------------", '0',	'1',	'1',	'0',	BSG_ACTIVE,	CMD_BURST_STOP),
 		('1',	'-',	'-',	"--",	"-------------", '1',	'-',	'-',	'-',	BSG_ANY,	CMD_DEVICE_DESELECT),
@@ -109,9 +110,12 @@ architecture behaviour of as4c32m8sa_sim is
 	signal stable_counter : natural := 0;
 	signal passed_stable_initialisation : boolean := false;
 	signal dram_is_intialised : boolean := false;
-	signal bank_status : BANK_STATUS_ARRAY := (BS_AWAIT_STABLE, BS_AWAIT_STABLE, BS_AWAIT_STABLE, BS_AWAIT_STABLE);
+	signal dram_status : DRAM_STATUS_TYPE := DS_AWAIT_STABLE;
+	signal bank_status : BANK_STATUS_ARRAY := (BS_IDLE, BS_IDLE, BS_IDLE, BS_IDLE);
+	signal dram_previous_cke : std_logic := '0';
 	signal outgoing_data : std_logic_vector(7 downto 0);
-	signal bank_is_refreshed : std_logic_vector(3 downto 0);
+	signal bank_is_refreshed : std_logic_vector(3 downto 0) := "0000";
+	signal decoded_dram_command : DRAM_CMD := CMD_UNKNOWN;
 	shared variable refresh_counters : REFRESH_COUNTERS_ARRAY := (0, 0, 0, 0);
 	
 	-- Dumps all DRAM entity signals to console
@@ -121,7 +125,7 @@ architecture behaviour of as4c32m8sa_sim is
 	begin
 		report msg severity error;
 		write(decode_error_report(0), string'("       CKE-1   => "));
-		write(decode_error_report(0), std_logic'image(CLK'last_value));
+		write(decode_error_report(0), std_logic'image(dram_previous_cke));
 		write(decode_error_report(1), string'("       CKE     => "));
 		write(decode_error_report(1), std_logic'image(CLK));
 		write(decode_error_report(2), string'("       DQM     => "));
@@ -156,58 +160,24 @@ architecture behaviour of as4c32m8sa_sim is
 		end loop;
 	end procedure;
 
-	-- Compare 2 std_logic signals
-	-- 		Will return true if both are the same, either one (or both)
-	--		are '-'. If either one or both are 'U' or 'X', it returns false.
-	function is_same_logic(
-		a : std_logic;
-		b : std_logic)
-		return boolean is
-	begin
-		if (a = '1' or a = '0' or a = '-') and (b = '1' or b = '0' or b = '-') then
-			return a = '-' or b = '-' or a = b;
-		else
-			return false;
-		end if;
-	end is_same_logic;
-
-	-- Compare 2 std_logic_vectors using the is_same_logic function
-	function is_same_logic_vector(
-		a : std_logic_vector;
-		b : std_logic_vector)
-		return boolean is
-	begin
-		if a'length /= b'length then
-			return false;
-		else
-			for i in a'range loop
-				if not(is_same_logic(a(i), b(i))) then
-					return false;
-				end if;
-			end loop;
-				
-			return true;
-		end if;
-	end is_same_logic_vector;
-
 	-- Compare entity inputs with given DRAM_CMD_ENCODING_TYPE
 	impure function compare_entity(encoding : DRAM_CMD_ENCODING_TYPE)
 		return boolean is
 	begin
-		if not(is_same_logic(CKE'last_value, encoding.previous_cke))
-			or not(is_same_logic(CKE, encoding.current_cke))
-			or not(is_same_logic(DQM, encoding.dqm))
-			or not(is_same_logic_vector(BA, encoding.ba))
-			or not(is_same_logic_vector(A, encoding.a))
-			or not(is_same_logic(CSN, encoding.csn))
-			or not(is_same_logic(RASN, encoding.rasn))
-			or not(is_same_logic(CASN, encoding.casn))
-			or not(is_same_logic(WEN, encoding.wen))
+		if std_match(dram_previous_cke, encoding.previous_cke)
+			and std_match(CKE, encoding.current_cke)
+			and std_match(DQM, encoding.dqm)
+			and std_match(BA, encoding.ba)
+			and std_match(A, encoding.a)
+			and std_match(CSN, encoding.csn)
+			and std_match(RASN, encoding.rasn)
+			and std_match(CASN, encoding.casn)
+			and std_match(WEN, encoding.wen)
 		then
-			return false;
-		else
 			-- TODO: check for selected bank state
 			return true;
+		else
+			return false;
 		end if;
 	end compare_entity;
 
@@ -217,12 +187,16 @@ architecture behaviour of as4c32m8sa_sim is
 	begin
 		for i in DRAM_CMD_ENCODINGS'range loop
 			if compare_entity(DRAM_CMD_ENCODINGS(i)) then
+				-- if DRAM_CMD_ENCODINGS(i).dram_cmd = CMD_BANK_PRECHARGE then
+				-- 	dump_entity("Decoded CMD_BANK_PRECHARGE");
+				-- end if;
+				
 				return DRAM_CMD_ENCODINGS(i).dram_cmd;
 			end if;
 		end loop;
 
-		dump_entity("Error while decoding command: could not find record matching current entity inputs");
-		return CMD_NOP;
+		-- dump_entity("Error while decoding command: could not find record matching current entity inputs");
+		return CMD_UNKNOWN;
 	end decode_command;
 
 begin
@@ -249,8 +223,9 @@ begin
 		variable previous_a : std_logic_vector(12 downto 0);
 	begin
 		loop
-			if passed_stable_initialisation then
-				
+			if stable_counter >= (stable_counter_final_value - 1) then
+				passed_stable_initialisation <= true;
+				dram_status <= DS_AWAIT_PRECHARGE_ALL;
 				wait;
 			end if;
 		
@@ -265,23 +240,22 @@ begin
 			end if;
 		end loop;
 	end process;
+
+	-- Keep track of previous CKE
+	process (CLK)
+	begin
+		if rising_edge(CLK) then
+			dram_previous_cke <= CKE;
+		end if;
+	end process;
 	
-	passed_stable_initialisation <= stable_counter >= stable_counter_final_value;
-	
-	-- Internal state machine
+	-- Bank state machines
 	BANK_STATE_MACHINE : for i in bank_status'range generate
 		process (CLK)
 		begin
 			if rising_edge(CLK) then
+				if dram_status = DS_OPERATIONAL then
 					case bank_status(i) is
-						when BS_AWAIT_STABLE =>
-							if passed_stable_initialisation then
-								bank_status(i) <= BS_AWAIT_PRECHARGE_ALL;
-							end if;
-						when BS_AWAIT_PRECHARGE_ALL =>
-							null;
-						when BS_AWAIT_MODE_SET =>
-							null;
 						when BS_IDLE =>
 							null;
 						when BS_ACTIVE =>
@@ -289,8 +263,26 @@ begin
 						when BS_SELF_REFRESH =>
 							null;
 					end case;
+				end if;
 			end if;
 		end process;
 	end generate;
+
+	-- DRAM state machine
+	process (CLK)
+	begin
+		if rising_edge(CLK) then
+			case dram_status is
+				when DS_AWAIT_STABLE =>
+					null;
+				when DS_AWAIT_PRECHARGE_ALL =>
+					decoded_dram_command <= decode_command;
+				when DS_AWAIT_MODE_SET =>
+					null;
+				when DS_OPERATIONAL =>
+					null;
+			end case;
+		end if;
+	end process;
 
 end behaviour;

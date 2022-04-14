@@ -28,6 +28,9 @@ end as4c32m8sa_tb;
 
 architecture behaviour of as4c32m8sa_tb is
 
+	-- Clock cycles to wait before issuing commands
+	constant INITIALISATION_COUNTER_TOP : natural := 5000;
+
 	component as4c32m8sa_sim is
 		port (
 			CLK		: in std_logic;
@@ -53,6 +56,11 @@ architecture behaviour of as4c32m8sa_tb is
 	signal dram_dqm		: std_logic := '1';
 	signal dram_dq		: std_logic_vector(7 downto 0) := "ZZZZZZZZ";
 
+	signal initialisation_counter : natural := 0;
+	signal initialisation_counter_expired : boolean := false;
+
+	signal transaction_id : natural := 0;
+
 begin
 
     DRAM_INST : component as4c32m8sa_sim
@@ -75,6 +83,38 @@ begin
 			wait for 20 ns;
 			dram_clk <= not(dram_clk);
 		end loop;
+	end process;
+
+	-- Wait for appr. 200us beforehand
+	process (dram_clk)
+	begin
+		if rising_edge(dram_clk) then
+			if initialisation_counter /= INITIALISATION_COUNTER_TOP  then
+				initialisation_counter <= initialisation_counter + 1;
+			else
+				initialisation_counter_expired <= true;
+			end if;
+		end if;
+	end process;
+
+	-- Bus transactions
+	process (dram_clk)
+	begin
+		if falling_edge(dram_clk) and initialisation_counter_expired then
+			transaction_id <= transaction_id + 1;
+
+			case transaction_id is
+				when 0 =>
+					dram_cke <= '1';
+				when 1 =>
+					dram_csn <= '0';
+					dram_rasn <= '0';
+					dram_wen <= '0';
+					dram_a(10) <= '1';
+				when others =>
+					transaction_id <= transaction_id;
+			end case;
+		end if;
 	end process;
 	    
 end behaviour;
