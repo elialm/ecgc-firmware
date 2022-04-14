@@ -13,4 +13,5 @@ impl*/
 *.srp
 *.dmp
 ._Real_._Math_.vhd
-
+transcript
+work/*
