@@ -29,7 +29,7 @@ end as4c32m8sa_tb;
 architecture behaviour of as4c32m8sa_tb is
 
 	-- Clock cycles to wait before issuing commands
-	constant INITIALISATION_COUNTER_TOP : natural := 5000;
+	constant INITIALISATION_COUNTER_TOP : natural := 5002;
 
 	component as4c32m8sa_sim is
 		port (
@@ -102,15 +102,22 @@ begin
 	begin
 		if falling_edge(dram_clk) and initialisation_counter_expired then
 			transaction_id <= transaction_id + 1;
+			dram_csn <= '1';
 
 			case transaction_id is
 				when 0 =>
+					dram_csn <= '0';
 					dram_cke <= '1';
 				when 1 =>
 					dram_csn <= '0';
 					dram_rasn <= '0';
 					dram_wen <= '0';
 					dram_a(10) <= '1';
+				when 2 =>
+					dram_csn <= '0';
+					dram_a(10) <= '0';
+					dram_a(5) <= '1';
+					dram_casn <= '0';
 				when others =>
 					transaction_id <= transaction_id;
 			end case;

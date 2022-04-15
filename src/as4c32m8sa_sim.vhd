@@ -88,7 +88,7 @@ architecture behaviour of as4c32m8sa_sim is
 		('1',	'-',	'-',	"--",	"--1----------", '0',	'1',	'0',	'0',	BSG_ACTIVE,	CMD_WRITE_AUTO_PRECHARGE),
 		('1',	'-',	'-',	"--",	"--0----------", '0',	'1',	'0',	'1',	BSG_ACTIVE,	CMD_READ),
 		('1',	'-',	'-',	"--",	"--1----------", '0',	'1',	'0',	'1',	BSG_ACTIVE,	CMD_READ_AUTO_PRECHARGE),
-		('1',	'-',	'-',	"00",	"-----1000-000", '0',	'0',	'0',	'0',	BSG_IDLE,	CMD_MODE_REGISTER_SET),
+		('1',	'-',	'-',	"00",	"000-0001-----", '0',	'0',	'0',	'0',	BSG_IDLE,	CMD_MODE_REGISTER_SET),
 		('1',	'-',	'-',	"--",	"-------------", '0',	'1',	'1',	'1',	BSG_ANY,	CMD_NOP),
 		('1',	'-',	'-',	"--",	"-------------", '0',	'1',	'1',	'0',	BSG_ACTIVE,	CMD_BURST_STOP),
 		('1',	'-',	'-',	"--",	"-------------", '1',	'-',	'-',	'-',	BSG_ANY,	CMD_DEVICE_DESELECT),
@@ -225,7 +225,6 @@ begin
 		loop
 			if stable_counter >= (stable_counter_final_value - 1) then
 				passed_stable_initialisation <= true;
-				dram_status <= DS_AWAIT_PRECHARGE_ALL;
 				wait;
 			end if;
 		
@@ -246,6 +245,14 @@ begin
 	begin
 		if rising_edge(CLK) then
 			dram_previous_cke <= CKE;
+		end if;
+	end process;
+
+	-- Update signal displaying current command on the bus
+	process (CLK)
+	begin
+		if rising_edge(CLK) and passed_stable_initialisation then
+			decoded_dram_command <= decode_command;
 		end if;
 	end process;
 	
@@ -274,11 +281,21 @@ begin
 		if rising_edge(CLK) then
 			case dram_status is
 				when DS_AWAIT_STABLE =>
-					null;
+					if passed_stable_initialisation then
+						dram_status <= DS_AWAIT_PRECHARGE_ALL;
+					end if;
+
 				when DS_AWAIT_PRECHARGE_ALL =>
-					decoded_dram_command <= decode_command;
+					if decode_command = CMD_PRECHARGE_ALL then
+						dram_status <= DS_AWAIT_MODE_SET;
+					end if;
+
 				when DS_AWAIT_MODE_SET =>
-					null;
+					if decode_command = CMD_MODE_REGISTER_SET then
+						-- TODO: read arguments
+						dram_status <= DS_OPERATIONAL;
+					end if;
+
 				when DS_OPERATIONAL =>
 					null;
 			end case;
