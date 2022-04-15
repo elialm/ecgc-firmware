@@ -28,7 +28,7 @@ work = work
 ; Value of 1 or 1993 for VHDL-1993.
 ; Default or value of 2 or 2002 for VHDL-2002.
 ; Value of 3 or 2008 for VHDL-2008
-VHDL93 = 2002
+VHDL93 = 2008
 
 ; Show source line containing error. Default is off.
 ; Show_source = 1
