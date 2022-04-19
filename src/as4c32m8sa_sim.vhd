@@ -129,9 +129,9 @@ architecture behaviour of as4c32m8sa_sim is
 	signal bank_is_refreshed : std_logic_vector(3 downto 0) := "0000";
 
 	-- Mode register
-	signal mode_burst_length : natural(1 to 1024) := 1;
+	signal mode_burst_length : natural := 1;		-- (1 to 1024)
 	signal mode_burst_type : MODE_BURST_TYPE_TYPE := MODE_BT_SEQ;
-	signal mode_cas_latency : natural(2 to 3) := 2;
+	signal mode_cas_latency : natural := 2;			-- (2 to 3)
 	signal mode_write_burst_length : MODE_WRITE_BURST_TYPE := MODE_WBT_SINGLE;
 
 	-- Debug signals
