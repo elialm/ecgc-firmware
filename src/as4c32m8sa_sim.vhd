@@ -18,6 +18,13 @@
 -- 
 ----------------------------------------------------------------------------------
 
+-- TODO:
+--		- add waiting mechanism for commands with certain timings
+--			- eg. there is waiting period of at least 18-21 ns between a precharge and refresh
+--			- mechanism should be aware which commands are and aren't allowed
+--			- when a timing violation has been made, report
+--		- add mechanism for setting mode register
+--		- add actual memory
 
 library IEEE;
 use IEEE.std_logic_1164.all;
@@ -71,6 +78,9 @@ architecture behaviour of as4c32m8sa_sim is
 		dram_cmd			: DRAM_CMD;
 	end record DRAM_CMD_ENCODING_TYPE;
 	type DRAM_CMD_ENCODING_ARRAY_TYPE is array (0 to 23) of DRAM_CMD_ENCODING_TYPE;
+
+	type MODE_BURST_TYPE_TYPE is (MODE_BT_SEQ, MODE_BT_INTER);
+	type MODE_WRITE_BURST_TYPE is (MODE_WBT_BURST, MODE_WBT_SINGLE);
 	
 	-- Nano seconds to wait before putting bank into idle
 	constant INITIAL_REFRESH_COUNTER_VALUE : natural := 7813;
@@ -107,15 +117,28 @@ architecture behaviour of as4c32m8sa_sim is
 		('1',	'-',	'1',	"--",	"-------------", '-',	'-',	'-',	'-',	BSG_ACTIVE,	CMD_OUTPUT_DISABLE)
 	);
 
+	-- Initialisation
 	signal stable_counter : natural := 0;
 	signal passed_stable_initialisation : boolean := false;
 	signal dram_is_intialised : boolean := false;
+
+	-- DRAM and bank status
 	signal dram_status : DRAM_STATUS_TYPE := DS_AWAIT_STABLE;
-	signal bank_status : BANK_STATUS_ARRAY := (BS_IDLE, BS_IDLE, BS_IDLE, BS_IDLE);
 	signal dram_previous_cke : std_logic := '0';
-	signal outgoing_data : std_logic_vector(7 downto 0);
+	signal bank_status : BANK_STATUS_ARRAY := (BS_IDLE, BS_IDLE, BS_IDLE, BS_IDLE);
 	signal bank_is_refreshed : std_logic_vector(3 downto 0) := "0000";
+
+	-- Mode register
+	signal mode_burst_length : natural(1 to 1024) := 1;
+	signal mode_burst_type : MODE_BURST_TYPE_TYPE := MODE_BT_SEQ;
+	signal mode_cas_latency : natural(2 to 3) := 2;
+	signal mode_write_burst_length : MODE_WRITE_BURST_TYPE := MODE_WBT_SINGLE;
+
+	-- Debug signals
 	signal decoded_dram_command : DRAM_CMD := CMD_UNKNOWN;
+
+	signal outgoing_data : std_logic_vector(7 downto 0);
+
 	shared variable refresh_counters : REFRESH_COUNTERS_ARRAY := (0, 0, 0, 0);
 	
 	-- Dumps all DRAM entity signals to console
