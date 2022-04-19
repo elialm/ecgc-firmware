@@ -35,7 +35,6 @@ architecture behaviour of gameboy_tb is
 	signal gb_wrn      : std_logic := '1';
 	signal gb_csn      : std_logic := '1';
 	signal gb_rdn      : std_logic := '1';
-	signal wb_clk_i    : std_logic := '0';
 	signal user_rst    : std_logic := '0';
 
 begin
@@ -48,7 +47,6 @@ begin
         GB_WRN => gb_wrn,
 		GB_RDN => gb_rdn,
 		GB_CSN => gb_csn,
-		WB_CLK_I => wb_clk_i,
 		USER_RST => user_rst);
     
 	-- GameBoy simulation	
@@ -166,15 +164,6 @@ begin
 		end loop;
 		
 		wait;
-	end process;
-	
-	-- WishBone clock = 50 MHz
-	process
-	begin
-		loop
-			wait for 20 ns;
-			wb_clk_i <= not(wb_clk_i);
-		end loop;
 	end process;
 	    
 end behaviour;
