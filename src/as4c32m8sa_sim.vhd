@@ -79,6 +79,15 @@ architecture behaviour of as4c32m8sa_sim is
 	end record DRAM_CMD_ENCODING_TYPE;
 	type DRAM_CMD_ENCODING_ARRAY_TYPE is array (0 to 23) of DRAM_CMD_ENCODING_TYPE;
 
+	type DRAM_AC_CHARACTERISTICS_TYPE is record
+		t_rc	: time;
+		-- missing...
+		t_rp	: time;
+		-- missing...
+		t_mrd	: time;
+		-- missing...
+	end record DRAM_AC_CHARACTERISTICS_TYPE;
+
 	type MODE_BURST_TYPE_TYPE is (MODE_BT_SEQ, MODE_BT_INTER);
 	type MODE_WRITE_BURST_TYPE is (MODE_WBT_BURST, MODE_WBT_SINGLE);
 	
@@ -117,6 +126,12 @@ architecture behaviour of as4c32m8sa_sim is
 		('1',	'-',	'1',	"--",	"-------------", '-',	'-',	'-',	'-',	BSG_ACTIVE,	CMD_OUTPUT_DISABLE)
 	);
 
+	constant DRAM_AC_CHARACTERISTICS_7TCN : DRAM_AC_CHARACTERISTICS_TYPE := (
+		t_rc => 63 ns,
+		t_rp => 21 ns,
+		t_mrd => 14 ns
+	);
+
 	-- Initialisation
 	signal stable_counter : natural := 0;
 	signal passed_stable_initialisation : boolean := false;
@@ -125,6 +140,7 @@ architecture behaviour of as4c32m8sa_sim is
 	-- DRAM and bank status
 	signal dram_status : DRAM_STATUS_TYPE := DS_AWAIT_STABLE;
 	signal dram_previous_cke : std_logic := '0';
+	signal dram_internal_error : std_logic := '0';
 	signal bank_status : BANK_STATUS_ARRAY := (BS_IDLE, BS_IDLE, BS_IDLE, BS_IDLE);
 	signal bank_is_refreshed : std_logic_vector(3 downto 0) := "0000";
 
@@ -139,6 +155,11 @@ architecture behaviour of as4c32m8sa_sim is
 
 	signal outgoing_data : std_logic_vector(7 downto 0);
 
+	-- Wait timings
+	constant dram_ac_characteristics : DRAM_AC_CHARACTERISTICS_TYPE := DRAM_AC_CHARACTERISTICS_7TCN;
+	signal dram_request_busy : std_logic := '0';
+	shared variable dram_busy : std_logic := '0';
+	shared variable dram_busy_for : time;
 	shared variable refresh_counters : REFRESH_COUNTERS_ARRAY := (0, 0, 0, 0);
 	
 	-- Dumps all DRAM entity signals to console
@@ -222,6 +243,20 @@ architecture behaviour of as4c32m8sa_sim is
 		return CMD_UNKNOWN;
 	end decode_command;
 
+	-- Get busy time for commands requiring wait period after command
+	function get_busy_time_for_cmd(cmd : DRAM_CMD)
+		return time is
+	begin
+		case cmd is
+			when CMD_PRECHARGE_ALL =>
+				return dram_ac_characteristics.t_rp;
+			when CMD_MODE_REGISTER_SET =>
+				return dram_ac_characteristics.t_mrd;
+			when others =>
+				return 0 ns;
+		end case;
+	end get_busy_time_for_cmd;
+
 begin
 
 	-- Refresh counter update
@@ -301,7 +336,7 @@ begin
 	-- DRAM state machine
 	process (CLK)
 	begin
-		if rising_edge(CLK) then
+		if rising_edge(CLK) and dram_busy = '0' then
 			case dram_status is
 				when DS_AWAIT_STABLE =>
 					if passed_stable_initialisation then
@@ -310,19 +345,34 @@ begin
 
 				when DS_AWAIT_PRECHARGE_ALL =>
 					if decode_command = CMD_PRECHARGE_ALL then
+						dram_busy_for := get_busy_time_for_cmd(CMD_PRECHARGE_ALL);
+						dram_request_busy <= '1';
 						dram_status <= DS_AWAIT_MODE_SET;
 					end if;
 
 				when DS_AWAIT_MODE_SET =>
 					if decode_command = CMD_MODE_REGISTER_SET then
 						-- TODO: read arguments
+						dram_busy_for := get_busy_time_for_cmd(CMD_MODE_REGISTER_SET);
+						dram_request_busy <= '1';
 						dram_status <= DS_OPERATIONAL;
 					end if;
 
 				when DS_OPERATIONAL =>
 					null;
 			end case;
+		elsif falling_edge(CLK) then
+			dram_request_busy <= '0';
 		end if;
+	end process;
+
+	-- Busy waiter
+	process
+	begin
+		wait until dram_request_busy = '1';
+		dram_busy := '1';
+		wait for dram_busy_for;
+		dram_busy := '0';
 	end process;
 
 end behaviour;
