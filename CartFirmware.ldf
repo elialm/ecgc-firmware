@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<BaliProject version="3.2" title="CartFirmware" device="LCMXO3D-4300ZC-2SG72I" default_implementation="impl1">
+<BaliProject version="3.2" title="CartFirmware" device="LCMXO3D-9400HC-6BG256C" default_implementation="impl1">
     <Options/>
     <Implementation title="impl1" dir="impl1" description="impl1" synthesis="lse" default_strategy="Strategy1">
         <Options def_top="cart_tl"/>
@@ -28,6 +28,9 @@
             <Options/>
         </Source>
         <Source name="CartFirmware.lpf" type="Logic Preference" type_short="LPF">
+            <Options/>
+        </Source>
+        <Source name="impl1/impl1.xcf" type="Programming Project File" type_short="Programming">
             <Options/>
         </Source>
         <Source name="sim1/sim1.spf" type="Simulation Project File" type_short="SPF">
