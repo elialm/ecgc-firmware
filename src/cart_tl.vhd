@@ -32,7 +32,6 @@ entity cart_tl is
         GB_CLK      : in std_logic;
         GB_ADDR     : in std_logic_vector(15 downto 0);
         GB_DATA     : inout std_logic_vector(7 downto 0);
-		GB_WRN      : in std_logic;
         GB_RDN      : in std_logic;
 		GB_CSN      : in std_logic;
 		
@@ -42,7 +41,7 @@ entity cart_tl is
 		BTD_DIR		: out std_logic;
 
 		-- Temporary for testing
-		USER_RST	: in std_logic;
+		USER_RST	: in std_logic;		-- TODO: make synchronous
 		LED_RST		: out std_logic;
 		LED_GB_CLK	: out std_logic;
 		LED_WB_CLK	: out std_logic;
@@ -53,7 +52,6 @@ architecture behaviour of cart_tl is
 
     component gb_decoder is
 	port (
-		USER_RST    : in std_logic;
 		GB_CLK      : in std_logic;
 		GB_ADDR     : in std_logic_vector(15 downto 0);
 		GB_DATA_IN  : in std_logic_vector(7 downto 0);
@@ -62,6 +60,7 @@ architecture behaviour of cart_tl is
 		GB_CSN      : in std_logic;
 		
 		CLK_I : in std_logic;
+        RST_I : in std_logic;
 		STB_O : out std_logic;
 		CYC_O : out std_logic;
 		ADR_O : out std_logic_vector(15 downto 0);
@@ -116,7 +115,6 @@ begin
 
     GB_SIGNAL_DECODER : component gb_decoder
     port map (
-        USER_RST => USER_RST,
         GB_CLK => GB_CLK,
         GB_ADDR => GB_ADDR,
         GB_DATA_IN => gb_data_incoming,
@@ -124,6 +122,7 @@ begin
 		GB_RDN => GB_RDN,
 		GB_CSN => GB_CSN,
 		CLK_I => wb_clk_i,
+		RST_I => USER_RST,
 		STB_O => rom_stb,
 		CYC_O => rom_cyc,
         ADR_O => wb_adr_o,

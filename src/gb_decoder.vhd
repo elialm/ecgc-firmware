@@ -24,7 +24,6 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 entity gb_decoder is
     port (
-        USER_RST    : in std_logic;
         GB_CLK      : in std_logic;
         GB_ADDR     : in std_logic_vector(15 downto 0);
         GB_DATA_IN  : in std_logic_vector(7 downto 0);
@@ -33,6 +32,7 @@ entity gb_decoder is
 		GB_CSN      : in std_logic;
         
         CLK_I : in std_logic;
+        RST_I : in std_logic;
 		STB_O : out std_logic;
 		CYC_O : out std_logic;
 		WE_O  : out std_logic;
@@ -65,7 +65,7 @@ architecture behaviour of gb_decoder is
 	signal gb_clk_sync : std_logic;
 	signal gb_csn_sync : std_logic;
 	signal gb_rdn_sync : std_logic;
-	signal gb_addr_sync : std_logic_vector(15 downto 0);
+	signal gb_addr_sync : std_logic_vector(2 downto 0);
 	signal gb_data_sync : std_logic_vector(7 downto 0);
 	
 	-- Access signals (comnbinatorial)
@@ -74,69 +74,59 @@ architecture behaviour of gb_decoder is
 	
 	-- WishBone signals
 	signal wb_state : WB_STATE_TYPE;
+    signal wb_cyc   : std_logic;
 
 begin
 
     ADDRESS_SYNCHRONISER : component synchroniser
     generic map (
-        DATA_WIDTH => 16)
+        DATA_WIDTH => 3)
     port map (
         CLK => CLK_I,
-        RST => USER_RST,
-        DAT_IN => GB_ADDR,
+        RST => RST_I,
+        DAT_IN => GB_ADDR(15 downto 13),
         DAT_OUT => gb_addr_sync);
-        
-    DATA_SYNCHRONISER : component synchroniser
-    generic map (
-        DATA_WIDTH => 8)
-    port map (
-        CLK => CLK_I,
-        RST => USER_RST,
-        DAT_IN => GB_DATA_IN,
-        DAT_OUT => gb_data_sync);
 		
 	CLK_SYNCHRONISER : component synchroniser
-	--generic map (
-        --FF_COUNT => 3)
 	port map (
 		CLK => CLK_I,
-		RST => USER_RST,
+		RST => RST_I,
 		DAT_IN(0) => GB_CLK,
 		DAT_OUT(0) => gb_clk_sync);
 		
 	CSN_SYNCHRONISER : component synchroniser
 	port map (
 		CLK => CLK_I,
-		RST => USER_RST,
+		RST => RST_I,
 		DAT_IN(0) => GB_CSN,
 		DAT_OUT(0) => gb_csn_sync);
 		
 	RDN_SYNCHRONISER : component synchroniser
 	port map (
 		CLK => CLK_I,
-		RST => USER_RST,
+		RST => RST_I,
 		DAT_IN(0) => GB_RDN,
 		DAT_OUT(0) => gb_rdn_sync);
         
     GB_DATA_OUT <= data_read_register;
 	
 	-- Signals for determining type of access
-	gb_access_rom <= not(gb_addr_sync(15));
-	gb_access_ram <= not(gb_csn_sync) and not(gb_addr_sync(14)) and gb_addr_sync(13);	
+	gb_access_rom <= not(gb_addr_sync(2));												-- A15
+	gb_access_ram <= not(gb_csn_sync) and not(gb_addr_sync(1)) and gb_addr_sync(0);		-- ... not(A14) and A13; 
 	
 	-- Control Wishbone cycles
 	process (CLK_I)
 	begin
 		if rising_edge(CLK_I) then
-			if USER_RST = '1' then
+			if RST_I = '1' then
 				data_read_register <= "00000000";
 				wb_state <= WBS_AWAIT_RISING_CLK;
 				STB_O <= '0';
-				CYC_O <= '0';
+				wb_cyc <= '0';
 				WE_O <= '0';
 			else
 				-- TODO: implement write state
-				-- NOTE: WBS_AWAIT_RISING_CLK and WBS_IDLE could be implemented into 1 state
+				-- NOTE: WBS_AWAIT_RISING_CLK and WBS_IDLE could be implemented into 1 state... probably...
 				case wb_state is
 					when WBS_AWAIT_RISING_CLK =>
 						if gb_clk_sync = '1' then
@@ -145,7 +135,7 @@ begin
 					when WBS_IDLE =>
 						if (gb_access_rom or gb_access_ram) = '1' then
 							STB_O <= '1';
-							CYC_O <= '1';
+							wb_cyc <= '1';
 							--WE_O <= gb_rdn_sync;
 							WE_O <= '0';
 							wb_state <= WBS_AWAIT_SLAVE;
@@ -153,7 +143,7 @@ begin
 					when WBS_AWAIT_SLAVE =>
 						if ACK_I = '1' then
 							STB_O <= '0';
-							CYC_O <= '0';
+							wb_cyc <= '0';
 							WE_O <= '0';
 							data_read_register <= DAT_I;
 							wb_state <= WBS_AWAIT_FALLING_CLK;
@@ -166,7 +156,13 @@ begin
 			end if;
 		end if;
 	end process;
+
+    CYC_O <= wb_cyc;
 	
-	ADR_O <= gb_addr_sync;
+	-- TODO: test whether it is really necessary to only output when
+	--			in a cycle. The slave should ignore it otherwise
+	--			anyways. GB_ADDR being asychronous to CLK_I could 
+	--			introduce wierd glitches, who knows...
+	ADR_O <= GB_ADDR when wb_cyc = '1' else "0000000000000000";
     
 end behaviour;

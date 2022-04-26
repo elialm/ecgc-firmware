@@ -44,7 +44,6 @@ begin
         GB_CLK => gb_clk,
         GB_ADDR => gb_addr,
         GB_DATA => gb_data,
-        GB_WRN => gb_wrn,
 		GB_RDN => gb_rdn,
 		GB_CSN => gb_csn,
 		USER_RST => user_rst);
@@ -110,7 +109,7 @@ begin
 					case state is
 						when BS_CLK_UP_UP =>
 							gb_clk <= '1';
-							gb_data <= "XXXXXXXX";
+							gb_data <= "UUUUUUUU";
 							gb_addr(14 downto 0) <= "UUUUUUUUUUUUUUU";
 							gb_rdn <= '0';
 							gb_addr(15) <= '1';
@@ -147,7 +146,7 @@ begin
 					gb_addr(14 downto 0) <= "UUUUUUUUUUUUUUU";
 					gb_addr(15) <= '1';
 					gb_csn <= '1';
-					gb_data <= "XXXXXXXX";
+					gb_data <= "UUUUUUUU";
 					gb_rdn <= '0';
 					gb_wrn <= '1';
 					
