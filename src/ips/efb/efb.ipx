@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DiamondModule name="efb" module="EFB" VendorName="Lattice Semiconductor Corporation" generator="IPexpress" date="2022 06 21 00:00:24.722" version="1.2" type="Module" synthesis="lse" source_format="VHDL">
+  <Package>
+		<File name="efb.lpc" type="lpc" modified="2022 06 20 23:59:45.072"/>
+		<File name="efb.vhd" type="top_level_vhdl" modified="2022 06 20 23:59:45.195"/>
+		<File name="efb_tmpl.vhd" type="template_vhdl" modified="2022 06 20 23:59:45.196"/>
+  </Package>
+</DiamondModule>
