@@ -34,7 +34,15 @@ entity cmc is
 		ADR_I	: in std_logic_vector(15 downto 0);
 		DAT_I	: in std_logic_vector(7 downto 0);
 		DAT_O	: out std_logic_vector(7 downto 0);
-		
+
+		EFB_CYC_O	: out std_logic;
+		EFB_STB_O	: out std_logic;
+		EFB_WE_O	: out std_logic;
+		EFB_ADR_O	: out std_logic_vector(15 downto 0);
+		EFB_DAT_O	: out std_logic_vector(7 downto 0);
+		EFB_DAT_I	: in std_logic_vector(7 downto 0);
+		EFB_ACK_I	: in std_logic;
+
 		ACCESS_ROM	: in std_logic;
 		ACCESS_RAM	: in std_logic);
 end cmc;
