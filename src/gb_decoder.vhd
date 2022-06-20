@@ -31,15 +31,18 @@ entity gb_decoder is
         GB_RDN      : in std_logic;
 		GB_CSN      : in std_logic;
         
-        CLK_I : in std_logic;
-        RST_I : in std_logic;
-		STB_O : out std_logic;
-		CYC_O : out std_logic;
-		WE_O  : out std_logic;
-        ADR_O : out std_logic_vector(15 downto 0);
-        DAT_I : in std_logic_vector(7 downto 0);
-        DAT_O : out std_logic_vector(7 downto 0);
-        ACK_I : in std_logic);
+        CLK_I 		: in std_logic;
+        RST_I 		: in std_logic;
+		STB_O 		: out std_logic;
+		CYC_O 		: out std_logic;
+		WE_O  		: out std_logic;
+        ADR_O 		: out std_logic_vector(15 downto 0);
+        DAT_I 		: in std_logic_vector(7 downto 0);
+        DAT_O 		: out std_logic_vector(7 downto 0);
+        ACK_I 		: in std_logic;
+		
+		ACCESS_ROM	: out std_logic;
+		ACCESS_RAM	: out std_logic);
 end gb_decoder;
 
 architecture behaviour of gb_decoder is
@@ -112,7 +115,10 @@ begin
 	
 	-- Signals for determining type of access
 	gb_access_rom <= not(gb_addr_sync(2));												-- A15
-	gb_access_ram <= not(gb_csn_sync) and not(gb_addr_sync(1)) and gb_addr_sync(0);		-- ... not(A14) and A13; 
+	gb_access_ram <= not(gb_csn_sync) and not(gb_addr_sync(1)) and gb_addr_sync(0);		-- ... not(A14) and A13;
+
+	ACCESS_ROM <= gb_access_rom;
+	ACCESS_RAM <= gb_access_ram;
 	
 	-- Control Wishbone cycles
 	process (CLK_I)
@@ -136,8 +142,7 @@ begin
 						if (gb_access_rom or gb_access_ram) = '1' then
 							STB_O <= '1';
 							wb_cyc <= '1';
-							--WE_O <= gb_rdn_sync;
-							WE_O <= '0';
+							WE_O <= gb_rdn_sync;
 							wb_state <= WBS_AWAIT_SLAVE;
 						end if;
 					when WBS_AWAIT_SLAVE =>
@@ -163,6 +168,6 @@ begin
 	--			in a cycle. The slave should ignore it otherwise
 	--			anyways. GB_ADDR being asychronous to CLK_I could 
 	--			introduce wierd glitches, who knows...
-	ADR_O <= GB_ADDR when wb_cyc = '1' else "0000000000000000";
+	ADR_O <= GB_ADDR when wb_cyc = '1' else x"0000";
     
 end behaviour;

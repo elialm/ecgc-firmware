@@ -50,37 +50,6 @@ end cart_tl;
 
 architecture behaviour of cart_tl is
 
-    component gb_decoder is
-	port (
-		GB_CLK      : in std_logic;
-		GB_ADDR     : in std_logic_vector(15 downto 0);
-		GB_DATA_IN  : in std_logic_vector(7 downto 0);
-		GB_DATA_OUT : out std_logic_vector(7 downto 0);
-		GB_RDN      : in std_logic;
-		GB_CSN      : in std_logic;
-		
-		CLK_I : in std_logic;
-        RST_I : in std_logic;
-		STB_O : out std_logic;
-		CYC_O : out std_logic;
-		ADR_O : out std_logic_vector(15 downto 0);
-		DAT_I : in std_logic_vector(7 downto 0);
-		DAT_O : out std_logic_vector(7 downto 0);
-		ACK_I : in std_logic);
-    end component;
-	
-	component cmc is
-	port (
-		CLK_I 	: in std_logic;
-		RST_I	: in std_logic;
-		STB_I	: in std_logic;
-		CYC_I	: in std_logic;
-		ACK_O	: out std_logic;
-		ADR_I	: in std_logic_vector(15 downto 0);
-		DAT_I	: in std_logic_vector(7 downto 0);
-		DAT_O	: out std_logic_vector(7 downto 0));
-	end component;
-
 	component OSCJ
 	-- synthesis translate_off
 	generic (
@@ -103,6 +72,7 @@ architecture behaviour of cart_tl is
 	signal wb_adr_o : std_logic_vector(15 downto 0);
 	signal wb_dat_o : std_logic_vector(7 downto 0);
 	signal wb_dat_i : std_logic_vector(7 downto 0);
+	signal wb_we_o 	: std_logic;
 	
 	signal rom_stb : std_logic;
 	signal rom_cyc : std_logic;
@@ -111,9 +81,13 @@ architecture behaviour of cart_tl is
 	signal led_gb_clk_divider : std_logic_vector(18 downto 0);
 	signal led_wb_clk_divider : std_logic_vector(24 downto 0);
 
+	-- Access signals
+	signal gb_access_rom : std_logic;
+	signal gb_access_ram : std_logic;
+
 begin
 
-    GB_SIGNAL_DECODER : component gb_decoder
+    GB_SIGNAL_DECODER : entity work.gb_decoder
     port map (
         GB_CLK => GB_CLK,
         GB_ADDR => GB_ADDR,
@@ -125,10 +99,13 @@ begin
 		RST_I => USER_RST,
 		STB_O => rom_stb,
 		CYC_O => rom_cyc,
+		WE_O => wb_we_o,
         ADR_O => wb_adr_o,
         DAT_I => wb_dat_i,
         DAT_O => wb_dat_o,
-        ACK_I => rom_ack);
+        ACK_I => rom_ack,
+		ACCESS_ROM => gb_access_rom,
+		ACCESS_RAM => gb_access_ram);
 		
     GB_DATA <= gb_data_outgoing when (GB_CLK nor GB_RDN) = '1' else "ZZZZZZZZ";
     gb_data_incoming <= GB_DATA;
@@ -144,16 +121,19 @@ begin
 	BTD_OEN <= GB_CLK or USER_RST;
 	BTD_DIR <= '0';
 	
-	CARTRIDGE_MEMORY_CONTROLLER : component cmc
+	CARTRIDGE_MEMORY_CONTROLLER : entity work.cmc
 	port map (
 		CLK_I => wb_clk_i,
 		RST_I => USER_RST,
 		STB_I => rom_stb,
 		CYC_I => rom_cyc,
+		WE_O => wb_we_o,
 		ACK_O => rom_ack,
 		ADR_I => wb_adr_o,
 		DAT_I => wb_dat_o,
-		DAT_O => wb_dat_i);
+		DAT_O => wb_dat_i,
+		ACCESS_ROM => gb_access_rom,
+		ACCESS_RAM => gb_access_ram);
 
 	INTERNAL_OSCILLATOR : component OSCJ
 	-- synthesis translate_off
