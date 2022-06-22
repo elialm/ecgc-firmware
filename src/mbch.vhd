@@ -47,7 +47,7 @@ entity mbch is
 		EFB_CYC_O	: out std_logic;
 		EFB_STB_O	: out std_logic;
 		EFB_WE_O	: out std_logic;
-		EFB_ADR_O	: out std_logic_vector(15 downto 0);
+		EFB_ADR_O	: out std_logic_vector(7 downto 0);
 		EFB_DAT_O	: out std_logic_vector(7 downto 0);
 		EFB_DAT_I	: in std_logic_vector(7 downto 0);
 		EFB_ACK_I	: in std_logic;
@@ -169,7 +169,7 @@ begin
     -- EFB ports
     EFB_CYC_O <= CYC_I;
     EFB_WE_O <= WE_O;
-    EFB_ADR_O <= ADR_I;
+    EFB_ADR_O <= ADR_I(7 downto 0);
     EFB_DAT_O <= DAT_I;
 	
 	-- Bus selection
