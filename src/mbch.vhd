@@ -52,10 +52,11 @@ entity mbch is
 		EFB_DAT_I	: in std_logic_vector(7 downto 0);
 		EFB_ACK_I	: in std_logic;
 
-		ACCESS_ROM	: in std_logic;
-		ACCESS_RAM	: in std_logic;
-		SELECT_MBC  : out std_logic_vector(2 downto 0);
-		RESETN_GB   : out std_logic);
+		ACCESS_ROM		: in std_logic;
+		ACCESS_RAM		: in std_logic;
+		SELECT_MBC  	: out std_logic_vector(2 downto 0);
+		SOFT_RESET_OUT  : out std_logic;
+		SOFT_RESET_IN   : in std_logic);
 end mbch;
 
 architecture behaviour of mbch is
@@ -82,7 +83,6 @@ architecture behaviour of mbch is
 	signal register_data : std_logic_vector(7 downto 0);
 	signal register_ack : std_logic;
 	signal reg_selected_mbc : std_logic_vector(2 downto 0);
-	signal reg_selected_mbc_delayed : std_logic_vector(2 downto 0);
 	signal bus_selector : bus_selection_t;
 
 begin
@@ -97,7 +97,7 @@ begin
 		Q => boot_rom_data);
 	
 	wb_cart_access <= STB_I and CYC_I;
-	boot_rom_enabled <= ACCESS_ROM and boot_rom_accessible;
+	boot_rom_enabled <= boot_rom_accessible and wb_cart_access;
 		
 	-- Address decoder
 	process (CLK_I)
@@ -111,7 +111,7 @@ begin
 				boot_rom_accessible <= '1';
 				boot_rom_ack <= '0';
 				reg_selected_mbc <= "000";
-				reg_selected_mbc_delayed <= "000";
+				SELECT_MBC <= "000";
 			else
 			    if wb_cart_access = '1' then
                     if ACCESS_ROM = '1' then
@@ -138,6 +138,7 @@ begin
                             when b"0_0001_----_----" =>
                                 if WE_O = '1' then
                                     boot_rom_accessible <= DAT_I(7) when boot_rom_accessible = '1' else '0';
+									SOFT_RESET_OUT <= DAT_I(6);
                                     reg_selected_mbc <= DAT_I(2 downto 0);
                                 else
                                     register_data <= boot_rom_accessible & "0000" & reg_selected_mbc;
@@ -149,9 +150,16 @@ begin
                         end case?;
                     end if;
                 end if;
+
+				-- Perform soft reset
+				if SOFT_RESET_IN = '1' then
+					boot_rom_accessible <= '1';
+					reg_selected_mbc <= "000";
+
+					SELECT_MBC <= reg_selected_mbc;
+				end if;
                 
                 boot_rom_ack <= register_ack;
-                reg_selected_mbc_delayed <= reg_selected_mbc;
 			end if;
 			
 			
@@ -181,8 +189,5 @@ begin
                 EFB_STB_O <= '0';
         end case;
 	end process;
-	
-	SELECT_MBC <= reg_selected_mbc_delayed;
-	RESETN_GB <= '1';
 	
 end behaviour;
