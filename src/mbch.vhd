@@ -73,12 +73,11 @@ architecture behaviour of mbch is
 	end component;
 
 	signal wb_cart_access : std_logic;
-	signal outgoing_data : std_logic_vector(7 downto 0);
+	signal wb_ack : std_logic;
 
 	signal boot_rom_enabled : std_logic;
 	signal boot_rom_accessible : std_logic;
 	signal boot_rom_data : std_logic_vector(7 downto 0);
-	signal boot_rom_ack : std_logic;
 	
 	signal register_data : std_logic_vector(7 downto 0);
 	signal register_ack : std_logic;
@@ -109,26 +108,24 @@ begin
 			if RST_I = '1' then
 				register_data <= x"00";
 				boot_rom_accessible <= '1';
-				boot_rom_ack <= '0';
 				reg_selected_mbc <= "000";
 				SELECT_MBC <= "000";
+				SOFT_RESET_OUT <= '0';
 			else
-			    if wb_cart_access = '1' then
+			    if (wb_cart_access and not(wb_ack)) = '1' then
                     if ACCESS_ROM = '1' then
-                    
                         -- Decode ROM addresses
                         case? ADR_I(14 downto 0) is     -- bit 15 = '0'
                             when b"000_----_----_----" =>
                                 if boot_rom_accessible = '1' then
                                     bus_selector <= BS_BOOT_ROM;
-                                else
-                                    register_data <= x"00";
-                                    register_ack <= '1';
                                 end if; 
                             when others =>
-                                register_data <= x"00";
-                                register_ack <= '1';
+                                null;
                         end case?;
+
+						register_ack <= '1';
+						register_data <= x"00";
                     elsif ACCESS_RAM = '1' then
                     
                         -- Decode RAM addresses
@@ -158,11 +155,7 @@ begin
 
 					SELECT_MBC <= reg_selected_mbc;
 				end if;
-                
-                boot_rom_ack <= register_ack;
 			end if;
-			
-			
 		end if;
 	end process;
 	
@@ -171,23 +164,20 @@ begin
     EFB_WE_O <= WE_O;
     EFB_ADR_O <= ADR_I(7 downto 0);
     EFB_DAT_O <= DAT_I;
-	
-	-- Bus selection
-	process (bus_selector)
-	begin
-        case bus_selector is
-            when BS_BOOT_ROM =>
-                DAT_O <= boot_rom_data;
-                ACK_O <= boot_rom_ack;
-            when BS_EFB =>
-                DAT_O <= EFB_DAT_I;
-                ACK_O <= EFB_ACK_I;
-                EFB_STB_O <= '1';
-            when others =>
-                DAT_O <= register_data;
-                ACK_O <= register_ack;
-                EFB_STB_O <= '0';
-        end case;
-	end process;
+
+	-- Bus selection data
+	with bus_selector select DAT_O <=
+		boot_rom_data 	when BS_BOOT_ROM,
+		EFB_DAT_I 		when BS_EFB,
+		register_data 	when others;
+
+	-- Bus selection ack
+	ACK_O <= wb_ack;
+	with bus_selector select wb_ack <=
+		EFB_ACK_I 		when BS_EFB,
+		register_ack 	when others;
+
+	-- Bus selection strobe
+	EFB_STB_O <= '1' when bus_selector = BS_EFB else '0';
 	
 end behaviour;

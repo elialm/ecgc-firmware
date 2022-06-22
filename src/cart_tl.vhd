@@ -131,7 +131,6 @@ begin
 	RESET_CONTROLLER : entity work.reset
 	port map (
 		SYNC_CLK => wb_clk,
-		EXT_HARD => '0',	-- Connect to DONE pin?
 		EXT_SOFT => USER_RST,
 		AUX_SOFT => hv_reset_out,
 		GB_RESETN => open,
@@ -163,18 +162,18 @@ begin
     GB_DATA <= gb_data_outgoing when (GB_CLK nor GB_RDN) = '1' else "ZZZZZZZZ";
     gb_data_incoming <= GB_DATA;
 
-	-- MBC multiplexer
-	process (bus_selector)
-	begin
-		wb_mbch_strb <= '0';
+	-- MBC selector outgoing data
+	with bus_selector select wb_data_outgoing <=
+		wb_mbch_dat when "000",
+		x"00"		when others;
 
-		case bus_selector is
-			when others =>	-- Temp: MBCH is currently the only MBC
-				wb_mbch_strb <= '1';
-				wb_ack <= wb_mbch_ack;
-				wb_data_outgoing <= wb_mbch_dat;
-		end case;
-	end process;
+	-- MBC selector ack
+	with bus_selector select wb_ack <=
+		wb_mbch_ack when "000",
+		'1'			when others;
+
+	-- MBC selector strobe
+	wb_mbch_strb <= '1' when bus_selector = "000" else '0';
 
 	-- MBC Hypervisor instance
 	MBC_HYPERVISOR : entity work.mbch
@@ -223,7 +222,6 @@ begin
         spi_csn(0) => SPI_CSN, 
         ufm_sn => '1',
 		wbc_ufm_irq	=> open);
-	);
 
 	INTERNAL_OSCILLATOR : component OSCJ
 	-- synthesis translate_off

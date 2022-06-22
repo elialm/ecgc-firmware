@@ -15,12 +15,12 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 use ieee.std_logic_misc.all;
 
 entity reset is
     port (
         SYNC_CLK 	: in std_logic;
-        EXT_HARD    : in std_logic;     -- Connected to DONE pin?
         EXT_SOFT    : in std_logic;     -- Connected to reset button
         AUX_SOFT    : in std_logic;     -- Connected to hypervisor reset
         GB_RESETN   : out std_logic;    -- Connected to GB_RST pin
@@ -42,19 +42,41 @@ architecture behaviour of reset is
         DAT_OUT : out std_logic_vector(DATA_WIDTH-1 downto 0));
     end component;
 
-    signal ext_hard_sync    : std_logic;
     signal ext_soft_sync    : std_logic;
+
+    signal reset_counter    : std_logic_vector(3 downto 0) := (others => '0');
+    signal in_hard_reset    : std_logic;
+    signal in_soft_reset    : std_logic;
 
 begin
 
-    -- ???
-    -- Resets need to be async, I think...
-	EXT_SOFT_SYNCHRONISER : component synchroniser
+    -- Hard reset is released first, then soft reset
+    in_hard_reset <= not(reset_counter(reset_counter'high));
+    in_soft_reset <= nand_reduce(reset_counter);
+
+    process (SYNC_CLK)
+    begin
+        if rising_edge(SYNC_CLK) then
+            if in_soft_reset = '1' then
+                reset_counter <= std_logic_vector(unsigned(reset_counter) + 1);
+            end if;
+
+            if (ext_soft_sync or AUX_SOFT) = '1' then
+                reset_counter <= (reset_counter'high => '1', others => '0');
+            end if;
+        end if;
+    end process;
+
+    -- Sychronise EXT_SOFT
+    EXT_SOFT_SYNCHRONISER : component synchroniser
     port map (
         CLK => SYNC_CLK,
-        RST => EXT_HARD,
-        DAT_IN => ,
-        DAT_OUT => 
-    );
+        RST => in_hard_reset,
+        DAT_IN(0) => EXT_SOFT,
+        DAT_OUT(0) => ext_soft_sync);
+
+    GB_RESETN <= not(in_soft_reset);
+    HYPER_VISOR_RESET <= in_soft_reset;
+    PERIPHERAL_RESET <= in_hard_reset;
 	
 end behaviour;

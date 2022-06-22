@@ -75,9 +75,9 @@ begin
 			b"00_0000_0000_0000_0000_0000_0000",	-- idle bus...
 			b"00_0000_0000_0000_0000_0000_0000",	-- idle bus...
 			b"11_0000_0001_0000_0000_1010_0101",	-- not an instruction, just to test if cart correctly ignores writes to ROM
-			b"10_1010_0000_0000_0000_0000_0000",	-- Read from cart RAM (or cart IO space, who knows)
+			b"10_1010_0000_0101_0100_0000_0000",	-- Read from cart RAM (or cart IO space, who knows)
 			b"10_1010_0001_0000_0000_0000_0000",	-- Read from cart RAM (or cart IO space, who knows)
-			b"11_1010_0000_0000_0000_1111_0011",	-- Write to cart RAM (or cart IO space, who knows)
+			b"11_1010_0000_0101_0101_1000_0000",	-- Write to cart RAM (or cart IO space, who knows)
 			b"10_0000_0001_0000_0000_0000_0000");	-- followed by a read to see if the cart recovers
 			
 		type bus_state is (BS_CLK_UP_UP, BS_CLK_UP_DOWN, BS_CLK_HIGH_UP, BS_CLK_HIGH_DOWN, BS_CLK_DOWN_UP, BS_CLK_DOWN_DOWN, BS_CLK_LOW_UP, BS_CLK_LOW_DOWN);
@@ -95,7 +95,7 @@ begin
 			gb_clk <= not(gb_clk);
 		end loop;
 		user_rst <= '0';
-		wait for 875 ns;
+		wait for 375 ns;
 	
 		for i in test_bus_transactions'low to test_bus_transactions'high loop
 			current_transaction := test_bus_transactions(i);

@@ -126,7 +126,6 @@ begin
 			if RST_I = '1' then
 				data_read_register <= "00000000";
 				wb_state <= WBS_AWAIT_RISING_CLK;
-				STB_O <= '0';
 				wb_cyc <= '0';
 				WE_O <= '0';
 			else
