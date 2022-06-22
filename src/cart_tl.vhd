@@ -47,7 +47,7 @@ entity cart_tl is
 		BTD_DIR		: out std_logic;
 
 		-- Temporary for testing
-		USER_RST	: in std_logic;		-- TODO: make synchronous
+		USER_RST	: in std_logic;
 		LED_RST		: out std_logic;
 		LED_GB_CLK	: out std_logic;
 		LED_WB_CLK	: out std_logic;
@@ -118,11 +118,26 @@ architecture behaviour of cart_tl is
 	signal led_gb_clk_divider : std_logic_vector(18 downto 0);
 	signal led_wb_clk_divider : std_logic_vector(24 downto 0);
 
+	signal hv_reset_out		: std_logic;
+	signal hv_reset_in		: std_logic;
+	signal peripheral_reset	: std_logic;
+
 	-- Access signals
 	signal gb_access_rom : std_logic;
 	signal gb_access_ram : std_logic;
 
 begin
+
+	RESET_CONTROLLER : entity work.reset
+	port map (
+		SYNC_CLK => wb_clk,
+		EXT_HARD => '0',	-- Connect to DONE pin?
+		EXT_SOFT => USER_RST,
+		AUX_SOFT => hv_reset_out,
+		GB_RESETN => open,
+		HYPER_VISOR_RESET => hv_reset_in,
+		PERIPHERAL_RESET => peripheral_reset
+	);
 
     GB_SIGNAL_DECODER : entity work.gb_decoder
     port map (
@@ -134,7 +149,7 @@ begin
 		GB_CSN => GB_CSN,
 
 		CLK_I => wb_clk,
-		RST_I => USER_RST,
+		RST_I => peripheral_reset,
 		CYC_O => wb_cyc,
 		WE_O => wb_we,
         ADR_O => wb_adr,
@@ -165,7 +180,7 @@ begin
 	MBC_HYPERVISOR : entity work.mbch
 	port map (
 		CLK_I => wb_clk,
-		RST_I => USER_RST,
+		RST_I => peripheral_reset,
 		STB_I => wb_mbch_strb,
 		CYC_I => wb_cyc,
 		WE_O => wb_we,
@@ -185,15 +200,15 @@ begin
 		ACCESS_ROM => gb_access_rom,
 		ACCESS_RAM => gb_access_ram,
 		SELECT_MBC => bus_selector,
-		SOFT_RESET_OUT => open,
-		SOFT_RESET_IN => '0'	-- Temp: reset mechanism not made yet
+		SOFT_RESET_OUT => hv_reset_out,
+		SOFT_RESET_IN => hv_reset_in
 	);
 
 	-- EFB instance
 	EFB_INST : component efb
 	port map (
 		wb_clk_i => wb_clk,
-		wb_rst_i => USER_RST, 
+		wb_rst_i => peripheral_reset, 
         wb_cyc_i => wb_efb_cyc,
 		wb_stb_i => wb_efb_stb, 
         wb_we_i => wb_efb_we, 
@@ -225,7 +240,7 @@ begin
 	process (GB_CLK)
 	begin
 		if rising_edge(GB_CLK) then
-			if USER_RST = '1' then
+			if peripheral_reset = '1' then
 				led_gb_clk_divider <= (others => '0');
 			else
 				led_gb_clk_divider <= std_logic_vector(unsigned(led_gb_clk_divider) + 1);
@@ -239,7 +254,7 @@ begin
 	process (wb_clk)
 	begin
 		if rising_edge(wb_clk) then
-			if USER_RST = '1' then
+			if peripheral_reset = '1' then
 				led_wb_clk_divider <= (others => '0');
 			else
 				led_wb_clk_divider <= std_logic_vector(unsigned(led_wb_clk_divider) + 1);
@@ -250,14 +265,14 @@ begin
 	LED_WB_CLK <= not(led_wb_clk_divider(led_wb_clk_divider'high));
     
 	-- LED indicator for reset state [TEMP]
-	LED_RST <= not(USER_RST);
+	LED_RST <= not(peripheral_reset);
 
 	-- Other leds off [TEMP]
 	LED_OFF <= (others => '1');
 	
 	-- Bus tranceiver control [TEMP: will assume only reads from cart]
-	BTA_OEN <= USER_RST;
-	BTD_OEN <= GB_CLK or USER_RST;
+	BTA_OEN <= peripheral_reset;
+	BTD_OEN <= GB_CLK or peripheral_reset;
 	BTD_DIR <= '0';
 
 end behaviour;
