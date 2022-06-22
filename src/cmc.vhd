@@ -49,6 +49,8 @@ end cmc;
 
 architecture behaviour of cmc is
 
+    type bus_selection_t is (BS_REGISTER, BS_BOOT_ROM, BS_EFB);
+
 	component prog_mem is
 	port (
 		Address		: in  std_logic_vector(11 downto 0); 
@@ -59,12 +61,16 @@ architecture behaviour of cmc is
 	end component;
 
 	signal wb_cart_access : std_logic;
-	signal wb_ack : std_logic;
 	signal outgoing_data : std_logic_vector(7 downto 0);
 
-	signal boot_rom_within_range : std_logic;
-	signal boot_rom_selected : std_logic;
+	signal boot_rom_enabled : std_logic;
+	signal boot_rom_accessible : std_logic;
 	signal boot_rom_data : std_logic_vector(7 downto 0);
+	signal boot_rom_ack : std_logic;
+	
+	signal register_data : std_logic_vector(7 downto 0);
+	signal register_ack : std_logic;
+	signal bus_selector : bus_selection_t;
 
 begin
 
@@ -73,44 +79,78 @@ begin
 	port map (
 		Address => ADR_I(11 downto 0),
 		OutClock => CLK_I,
-		OutClockEn => '1',
+		OutClockEn => boot_rom_enabled,
 		Reset => RST_I,
 		Q => boot_rom_data);
 	
-	-- Signal whether bootrom is selected
-	boot_rom_within_range <= nor_reduce(ADR_I(15 downto 12));
-	boot_rom_selected <= wb_cart_access and boot_rom_within_range;
-	
 	wb_cart_access <= STB_I and CYC_I;
+	boot_rom_enabled <= ACCESS_ROM and boot_rom_accessible;
 		
 	-- Address decoder
 	process (CLK_I)
 	begin
 		if rising_edge(CLK_I) then
-			wb_ack <= '0';
+			register_ack <= '0';
+			bus_selector <= BS_REGISTER;
 
 			if RST_I = '1' then
-				outgoing_data <= x"00";
+				register_data <= x"00";
+				boot_rom_accessible <= '1';
+				boot_rom_ack <= '0';
 			else
-				if wb_cart_access = '1' then
-					if ACCESS_ROM = '1' then
-						wb_ack <= '1';
-						outgoing_data <= x"00";
-					else	-- ACCESS_RAM = '1'
-						wb_ack <= '1';
-
-						-- If accessing RAM, then ADR_I should be "101-_----_----_----"
-						case ADR_I(12 downto 8) is
-							when b"0_0000" => outgoing_data <= x"FF";
-							when others => outgoing_data <= x"00";
-						end case;
-					end if;
-				end if;
+			    if wb_cart_access = '1' then
+                    if ACCESS_ROM = '1' then
+                    
+                        -- Decode ROM addresses
+                        case? ADR_I(14 downto 0) is     -- bit 15 = '0'
+                            when b"000_----_----_----" =>
+                                bus_selector <= BS_BOOT_ROM;
+                            when others =>
+                                register_data <= x"00";
+                                register_ack <= '1';
+                        end case?;
+                    elsif ACCESS_RAM = '1' then
+                    
+                        -- Decode RAM addresses
+                        case? ADR_I(12 downto 0) is     -- bits (15 downto 13) = "101"
+                            when b"0_0000_----_----" =>
+                                bus_selector <= BS_EFB;
+                            when others =>
+                                register_data <= x"00";
+                                register_ack <= '1';
+                        end case?;
+                    end if;
+                end if;
+                
+                boot_rom_ack <= register_ack;
 			end if;
+			
+			
 		end if;
 	end process;
 	
-	ACK_O <= wb_ack and wb_cart_access;
-	DAT_O <= boot_rom_data when boot_rom_selected = '1' else outgoing_data;
-    
+    -- EFB ports
+    EFB_CYC_O <= CYC_I;
+    EFB_WE_O <= WE_O;
+    EFB_ADR_O <= ADR_I;
+    EFB_DAT_O <= DAT_I;
+	
+	-- Bus selection
+	process (bus_selector)
+	begin
+        case bus_selector is
+            when BS_BOOT_ROM =>
+                DAT_O <= boot_rom_data;
+                ACK_O <= boot_rom_ack;
+            when BS_EFB =>
+                DAT_O <= EFB_DAT_I;
+                ACK_O <= EFB_ACK_I;
+                EFB_STB_O <= '1';
+            when others =>
+                DAT_O <= register_data;
+                ACK_O <= register_ack;
+                EFB_STB_O <= '0';
+        end case;
+	end process;
+	
 end behaviour;
