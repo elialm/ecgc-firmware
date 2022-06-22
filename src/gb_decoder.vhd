@@ -33,7 +33,6 @@ entity gb_decoder is
         
         CLK_I 		: in std_logic;
         RST_I 		: in std_logic;
-		STB_O 		: out std_logic;
 		CYC_O 		: out std_logic;
 		WE_O  		: out std_logic;
         ADR_O 		: out std_logic_vector(15 downto 0);
@@ -140,14 +139,12 @@ begin
 						end if;
 					when WBS_IDLE =>
 						if (gb_access_rom or gb_access_ram) = '1' then
-							STB_O <= '1';
 							wb_cyc <= '1';
 							WE_O <= gb_rdn_sync;
 							wb_state <= WBS_AWAIT_SLAVE;
 						end if;
 					when WBS_AWAIT_SLAVE =>
 						if ACK_I = '1' then
-							STB_O <= '0';
 							wb_cyc <= '0';
 							WE_O <= '0';
 							data_read_register <= DAT_I;
