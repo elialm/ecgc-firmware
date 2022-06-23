@@ -63,7 +63,7 @@ architecture behaviour of mbch is
 
     type bus_selection_t is (BS_REGISTER, BS_BOOT_ROM, BS_EFB);
 
-	component prog_mem is
+	component boot_rom is
 	port (
 		Address		: in  std_logic_vector(11 downto 0); 
 		OutClock	: in  std_logic; 
@@ -87,7 +87,7 @@ architecture behaviour of mbch is
 begin
 
 	-- ROM instance containing boot code
-    CARTRIDGE_BOOTROM : component prog_mem
+    CARTRIDGE_BOOTROM : component boot_rom
 	port map (
 		Address => ADR_I(11 downto 0),
 		OutClock => CLK_I,

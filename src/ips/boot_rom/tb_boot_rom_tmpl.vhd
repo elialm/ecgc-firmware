@@ -13,7 +13,7 @@ end entity tb;
 
 architecture test of tb is 
 
-    component prog_mem
+    component boot_rom
         port (Address : in std_logic_vector(11 downto 0); 
         OutClock: in std_logic; OutClockEn: in std_logic; 
         Reset: in std_logic; Q : out std_logic_vector(7 downto 0)
@@ -26,7 +26,7 @@ architecture test of tb is
     signal Reset: std_logic := '0';
     signal Q : std_logic_vector(7 downto 0);
 begin
-    u1 : prog_mem
+    u1 : boot_rom
         port map (Address => Address, OutClock => OutClock, OutClockEn => OutClockEn, 
             Reset => Reset, Q => Q
         );

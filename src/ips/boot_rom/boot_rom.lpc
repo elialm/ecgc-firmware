@@ -1,0 +1,52 @@
+[Device]
+Family=machxo3d
+PartType=LCMXO3D-9400HC
+PartName=LCMXO3D-9400HC-6BG256C
+SpeedGrade=6
+Package=CABGA256
+OperatingCondition=COM
+Status=S
+
+[IP]
+VendorName=Lattice Semiconductor Corporation
+CoreType=LPM
+CoreStatus=Demo
+CoreName=ROM
+CoreRevision=5.4
+ModuleName=boot_rom
+SourceFormat=VHDL
+ParameterFileVersion=1.0
+Date=06/23/2022
+Time=16:25:38
+
+[Parameters]
+Verilog=0
+VHDL=1
+EDIF=1
+Destination=Synplicity
+Expression=BusA(0 to 7)
+Order=Big Endian [MSB:LSB]
+IO=0
+Address=4096
+Data=8
+enByte=0
+ByteSize=9
+OutputEn=0
+ClockEn=0
+Optimization=Speed
+Reset=Sync
+Reset1=Sync
+Init=0
+MemFile=d:/onedrive - office 365 fontys/self/tinyfpga/cartfirmware/mem/boot.mem
+MemFormat=hex
+EnECC=0
+Pipeline=0
+Write=Normal
+init_data=0
+no_init=0
+
+[FilesGenerated]
+d:/onedrive - office 365 fontys/self/tinyfpga/cartfirmware/mem/boot.mem=mem
+
+[Command]
+cmd_line= -w -n boot_rom -lang vhdl -synth lse -bus_exp 7 -bb -arch se5c00 -type romblk -device LCMXO3D-9400HC -addr_width 12 -data_width 8 -num_words 4096 -cascade -1 -memfile "d:/onedrive - office 365 fontys/self/tinyfpga/cartfirmware/mem/boot.mem" -memformat hex
