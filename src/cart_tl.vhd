@@ -238,7 +238,7 @@ begin
 	process (GB_CLK)
 	begin
 		if rising_edge(GB_CLK) then
-			if peripheral_reset = '1' then
+			if hv_reset_in = '1' then
 				led_gb_clk_divider <= (others => '0');
 			else
 				led_gb_clk_divider <= std_logic_vector(unsigned(led_gb_clk_divider) + 1);
@@ -263,7 +263,7 @@ begin
 	LED_WB_CLK <= not(led_wb_clk_divider(led_wb_clk_divider'high));
     
 	-- LED indicator for reset state [TEMP]
-	LED_RST <= not(peripheral_reset);
+	LED_RST <= not(hv_reset_in);
 
 	-- Other leds off [TEMP]
 	LED_OFF <= (others => '1');

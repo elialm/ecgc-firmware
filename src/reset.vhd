@@ -10,7 +10,7 @@
 ----------------------------------------------------------------------------------
 -- Documentation
 --
--- 
+-- Not working :(
 ----------------------------------------------------------------------------------
 
 library ieee;
@@ -34,7 +34,7 @@ architecture behaviour of reset is
     generic (
         FF_COUNT : natural := 2;
         DATA_WIDTH : natural := 1;
-        RESET_VALUE : std_logic := '0');
+        RESET_VALUE : std_logic := '1');
     port (
         CLK : in std_logic;
         RST : in std_logic;
