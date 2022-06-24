@@ -21,11 +21,13 @@ use ieee.std_logic_misc.all;
 entity reset is
     port (
         SYNC_CLK 	: in std_logic;
+        PUR         : in std_logic;
         EXT_SOFT    : in std_logic;     -- Connected to reset button
         AUX_SOFT    : in std_logic;     -- Connected to hypervisor reset
+
         GB_RESETN   : out std_logic;    -- Connected to GB_RST pin
-        HYPER_VISOR_RESET   : out std_logic;    -- Connected to hypervisor reset
-        PERIPHERAL_RESET    : out std_logic);   -- Connected to all RST(_I)?
+        SOFT_RESET  : out std_logic;    -- Connected to hypervisor reset
+        HARD_RESET  : out std_logic);   -- Connected to all RST(_I)?
 end reset;
 
 architecture behaviour of reset is
@@ -42,28 +44,30 @@ architecture behaviour of reset is
         DAT_OUT : out std_logic_vector(DATA_WIDTH-1 downto 0));
     end component;
 
+    signal soft_reset_s     : std_logic;
     signal ext_soft_sync    : std_logic;
+    signal pur_sync         : std_logic;
+    signal ps_0             : std_logic;
+    signal ps_1             : std_logic;
 
-    signal reset_counter    : std_logic_vector(3 downto 0) := (others => '0');
-    signal in_hard_reset    : std_logic;
-    signal in_soft_reset    : std_logic;
+    -- Auxilary reset delay
+    signal aux_d1   : std_logic;
+    signal aux_d2   : std_logic;
+    signal aux_d3   : std_logic;
 
 begin
 
-    -- Hard reset is released first, then soft reset
-    in_hard_reset <= not(reset_counter(reset_counter'high));
-    in_soft_reset <= nand_reduce(reset_counter);
-
-    process (SYNC_CLK)
+    -- Sychronise PUR
+    process (SYNC_CLK, PUR)
     begin
-        if rising_edge(SYNC_CLK) then
-            if in_soft_reset = '1' then
-                reset_counter <= std_logic_vector(unsigned(reset_counter) + 1);
-            end if;
-
-            if (ext_soft_sync or AUX_SOFT) = '1' then
-                reset_counter <= (reset_counter'high => '1', others => '0');
-            end if;
+        if PUR = '1' then
+            pur_sync <= '1';
+            ps_0 <= '1';
+            ps_1 <= '1';
+        elsif rising_edge(SYNC_CLK) then
+            ps_0 <= '0';
+            ps_1 <= ps_0;
+            pur_sync <= ps_1;
         end if;
     end process;
 
@@ -71,12 +75,30 @@ begin
     EXT_SOFT_SYNCHRONISER : component synchroniser
     port map (
         CLK => SYNC_CLK,
-        RST => in_hard_reset,
+        RST => pur_sync,
         DAT_IN(0) => EXT_SOFT,
         DAT_OUT(0) => ext_soft_sync);
 
-    GB_RESETN <= not(in_soft_reset);
-    HYPER_VISOR_RESET <= in_soft_reset;
-    PERIPHERAL_RESET <= in_hard_reset;
+    -- Delay the Auxilary reset
+    process (SYNC_CLK)
+    begin
+        if rising_edge(SYNC_CLK) then
+            if pur_sync = '1' then
+                aux_d1 <= '1';
+                aux_d2 <= '1';
+                aux_d3 <= '1';
+            else
+                aux_d1 <= AUX_SOFT;
+                aux_d2 <= aux_d1;
+                aux_d3 <= aux_d2;
+            end if;
+        end if;
+    end process;
+
+    soft_reset_s <= ext_soft_sync or aux_d3;
+
+    GB_RESETN <= not(soft_reset_s);
+    SOFT_RESET <= soft_reset_s;
+    HARD_RESET <= pur_sync;
 	
 end behaviour;

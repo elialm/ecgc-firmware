@@ -30,6 +30,7 @@ entity cart_tl is
     port (
 		-- Gameboy signals
         GB_CLK      : in std_logic;
+		GB_RESETN	: out std_logic;
         GB_ADDR     : in std_logic_vector(15 downto 0);
         GB_DATA     : inout std_logic_vector(7 downto 0);
         GB_RDN      : in std_logic;
@@ -88,9 +89,6 @@ architecture behaviour of cart_tl is
 		wbc_ufm_irq	: out std_logic);
 	end component;
 
-	attribute NOM_FREQ : string;
-	attribute NOM_FREQ of INTERNAL_OSCILLATOR : label is "53.20";
-    
     signal gb_data_outgoing : std_logic_vector(7 downto 0);
     signal gb_data_incoming : std_logic_vector(7 downto 0);
 	signal wb_data_outgoing : std_logic_vector(7 downto 0);
@@ -118,24 +116,41 @@ architecture behaviour of cart_tl is
 	signal led_gb_clk_divider : std_logic_vector(18 downto 0);
 	signal led_wb_clk_divider : std_logic_vector(24 downto 0);
 
-	signal hv_reset_out		: std_logic;
-	signal hv_reset_in		: std_logic;
-	signal peripheral_reset	: std_logic;
+	signal power_up_reset	: std_logic;
+	signal soft_reset		: std_logic;
+	signal hard_reset		: std_logic;
+	signal aux_reset		: std_logic;
 
 	-- Access signals
 	signal gb_access_rom : std_logic;
 	signal gb_access_ram : std_logic;
 
+	attribute NOM_FREQ : string;
+	attribute NOM_FREQ of INTERNAL_OSCILLATOR : label is "53.20";
+
+	-- attribute SYN_KEEP : boolean;
+	-- attribute SYN_KEEP of power_up_reset : signal is true;
+	attribute GSR_ENABLED : boolean;
+	attribute GSR_ENABLED of power_up_reset : signal is true;
+
 begin
 
+	-- -- Instantiate Power-Up Reset signal
+	-- GSR_INST : GSR
+	-- port map (GSR => power_up_reset);
+
+	-- power_up_reset <= '1';
+
+	-- Instantiate reset controller (hard and soft resets)
 	RESET_CONTROLLER : entity work.reset
 	port map (
 		SYNC_CLK => wb_clk,
+		PUR => power_up_reset,
 		EXT_SOFT => USER_RST,
-		AUX_SOFT => hv_reset_out,
-		GB_RESETN => open,
-		HYPER_VISOR_RESET => hv_reset_in,
-		PERIPHERAL_RESET => peripheral_reset
+		AUX_SOFT => aux_reset,
+		GB_RESETN => GB_RESETN,
+		SOFT_RESET => soft_reset,
+		HARD_RESET => hard_reset
 	);
 
     GB_SIGNAL_DECODER : entity work.gb_decoder
@@ -148,7 +163,7 @@ begin
 		GB_CSN => GB_CSN,
 
 		CLK_I => wb_clk,
-		RST_I => peripheral_reset,
+		RST_I => hard_reset,
 		CYC_O => wb_cyc,
 		WE_O => wb_we,
         ADR_O => wb_adr,
@@ -179,7 +194,7 @@ begin
 	MBC_HYPERVISOR : entity work.mbch
 	port map (
 		CLK_I => wb_clk,
-		RST_I => peripheral_reset,
+		RST_I => hard_reset,
 		STB_I => wb_mbch_strb,
 		CYC_I => wb_cyc,
 		WE_O => wb_we,
@@ -199,15 +214,15 @@ begin
 		ACCESS_ROM => gb_access_rom,
 		ACCESS_RAM => gb_access_ram,
 		SELECT_MBC => bus_selector,
-		SOFT_RESET_OUT => hv_reset_out,
-		SOFT_RESET_IN => hv_reset_in
+		SOFT_RESET_OUT => aux_reset,
+		SOFT_RESET_IN => soft_reset
 	);
 
 	-- EFB instance
 	EFB_INST : component efb
 	port map (
 		wb_clk_i => wb_clk,
-		wb_rst_i => peripheral_reset, 
+		wb_rst_i => hard_reset, 
         wb_cyc_i => wb_efb_cyc,
 		wb_stb_i => wb_efb_stb, 
         wb_we_i => wb_efb_we, 
@@ -238,7 +253,7 @@ begin
 	process (GB_CLK)
 	begin
 		if rising_edge(GB_CLK) then
-			if hv_reset_in = '1' then
+			if hard_reset = '1' then
 				led_gb_clk_divider <= (others => '0');
 			else
 				led_gb_clk_divider <= std_logic_vector(unsigned(led_gb_clk_divider) + 1);
@@ -252,7 +267,7 @@ begin
 	process (wb_clk)
 	begin
 		if rising_edge(wb_clk) then
-			if peripheral_reset = '1' then
+			if hard_reset = '1' then
 				led_wb_clk_divider <= (others => '0');
 			else
 				led_wb_clk_divider <= std_logic_vector(unsigned(led_wb_clk_divider) + 1);
@@ -263,14 +278,14 @@ begin
 	LED_WB_CLK <= not(led_wb_clk_divider(led_wb_clk_divider'high));
     
 	-- LED indicator for reset state [TEMP]
-	LED_RST <= not(hv_reset_in);
+	LED_RST <= not(soft_reset);
 
 	-- Other leds off [TEMP]
 	LED_OFF <= (others => '1');
 	
 	-- Bus tranceiver control [TEMP: will assume only reads from cart]
-	BTA_OEN <= peripheral_reset;
-	BTD_OEN <= GB_CLK or peripheral_reset;
+	BTA_OEN <= hard_reset;
+	BTD_OEN <= GB_CLK or hard_reset;
 	BTD_DIR <= '0';
 
 end behaviour;
