@@ -116,7 +116,6 @@ architecture behaviour of cart_tl is
 	signal led_gb_clk_divider : std_logic_vector(18 downto 0);
 	signal led_wb_clk_divider : std_logic_vector(24 downto 0);
 
-	signal power_up_reset	: std_logic;
 	signal soft_reset		: std_logic;
 	signal hard_reset		: std_logic;
 	signal aux_reset		: std_logic;
@@ -130,8 +129,6 @@ architecture behaviour of cart_tl is
 
 	-- attribute SYN_KEEP : boolean;
 	-- attribute SYN_KEEP of power_up_reset : signal is true;
-	attribute GSR_ENABLED : boolean;
-	attribute GSR_ENABLED of power_up_reset : signal is true;
 
 begin
 
@@ -145,7 +142,6 @@ begin
 	RESET_CONTROLLER : entity work.reset
 	port map (
 		SYNC_CLK => wb_clk,
-		PUR => power_up_reset,
 		EXT_SOFT => USER_RST,
 		AUX_SOFT => aux_reset,
 		GB_RESETN => GB_RESETN,

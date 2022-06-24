@@ -19,9 +19,10 @@ use ieee.numeric_std.all;
 use ieee.std_logic_misc.all;
 
 entity reset is
+    generic (
+        RESET_FF    : positive := 8);
     port (
         SYNC_CLK 	: in std_logic;
-        PUR         : in std_logic;
         EXT_SOFT    : in std_logic;     -- Connected to reset button
         AUX_SOFT    : in std_logic;     -- Connected to hypervisor reset
 
@@ -44,6 +45,16 @@ architecture behaviour of reset is
         DAT_OUT : out std_logic_vector(DATA_WIDTH-1 downto 0));
     end component;
 
+    component FD1P3AY is
+    port (
+        D   : in std_logic;
+        SP  : in std_logic;
+        CK  : in std_logic;
+        Q   : out std_logic);
+    end component;
+
+    signal ff_stages    : std_logic_vector(RESET_FF-1 downto 0);
+
     signal soft_reset_s     : std_logic;
     signal ext_soft_sync    : std_logic;
     signal pur_sync         : std_logic;
@@ -57,25 +68,28 @@ architecture behaviour of reset is
 
 begin
 
-    -- Sychronise PUR
-    process (SYNC_CLK, PUR)
-    begin
-        if PUR = '1' then
-            pur_sync <= '1';
-            ps_0 <= '1';
-            ps_1 <= '1';
-        elsif rising_edge(SYNC_CLK) then
-            ps_0 <= '0';
-            ps_1 <= ps_0;
-            pur_sync <= ps_1;
-        end if;
-    end process;
+    -- GSR preset FF used for reset pulse
+    GSR_RST_FF_0 : component FD1P3AY
+    port map (
+        D => '0',
+        SP => '1',
+        CK => SYNC_CLK,
+        Q => ff_stages(0));
+
+    GSR_RST_FF_STAGES : for i in 1 to RESET_FF-1 generate
+        GSR_RST_FF_X : component FD1P3AY
+        port map (
+            D => ff_stages(i-1),
+            SP => '1',
+            CK => SYNC_CLK,
+            Q => ff_stages(i));
+    end generate;
 
     -- Sychronise EXT_SOFT
     EXT_SOFT_SYNCHRONISER : component synchroniser
     port map (
         CLK => SYNC_CLK,
-        RST => pur_sync,
+        RST => ff_stages(ff_stages'high),
         DAT_IN(0) => EXT_SOFT,
         DAT_OUT(0) => ext_soft_sync);
 
@@ -83,7 +97,7 @@ begin
     process (SYNC_CLK)
     begin
         if rising_edge(SYNC_CLK) then
-            if pur_sync = '1' then
+            if ff_stages(ff_stages'high) = '1' then
                 aux_d1 <= '1';
                 aux_d2 <= '1';
                 aux_d3 <= '1';
@@ -99,6 +113,6 @@ begin
 
     GB_RESETN <= not(soft_reset_s);
     SOFT_RESET <= soft_reset_s;
-    HARD_RESET <= pur_sync;
+    HARD_RESET <= ff_stages(ff_stages'high);
 	
 end behaviour;
