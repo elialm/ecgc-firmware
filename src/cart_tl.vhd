@@ -222,7 +222,7 @@ begin
 	EFB_INST : component efb
 	port map (
 		wb_clk_i => wb_clk,
-		wb_rst_i => hard_reset, 
+		wb_rst_i => soft_reset, 
         wb_cyc_i => wb_efb_cyc,
 		wb_stb_i => wb_efb_stb, 
         wb_we_i => wb_efb_we, 
@@ -286,6 +286,6 @@ begin
 	-- Bus tranceiver control [TEMP: will assume only reads from cart]
 	BTA_OEN <= hard_reset;
 	BTD_OEN <= GB_CLK or hard_reset;
-	BTD_DIR <= '0';
+	BTD_DIR <= GB_RDN;
 
 end behaviour;
