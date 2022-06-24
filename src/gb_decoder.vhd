@@ -46,7 +46,7 @@ end gb_decoder;
 
 architecture behaviour of gb_decoder is
 
-	type WB_STATE_TYPE is (WBS_AWAIT_RISING_CLK, WBS_IDLE, WBS_AWAIT_SLAVE, WBS_AWAIT_FALLING_CLK);
+	type WB_STATE_TYPE is (WBS_AWAIT_RISING_CLK, WBS_IDLE, WBS_AWAIT_GB_WRITE, WBS_AWAIT_SLAVE, WBS_AWAIT_FALLING_CLK);
 
     component synchroniser is
     generic (
@@ -71,8 +71,9 @@ architecture behaviour of gb_decoder is
 	signal gb_data_sync : std_logic_vector(7 downto 0);
 	
 	-- Access signals (comnbinatorial)
-	signal gb_access_rom : std_logic;
-	signal gb_access_ram : std_logic;
+	signal gb_access_rom 	: std_logic;
+	signal gb_access_ram 	: std_logic;
+	signal gb_access_cart	: std_logic;
 	
 	-- WishBone signals
 	signal wb_state : WB_STATE_TYPE;
@@ -102,19 +103,13 @@ begin
 		RST => RST_I,
 		DAT_IN(0) => GB_CSN,
 		DAT_OUT(0) => gb_csn_sync);
-		
-	RDN_SYNCHRONISER : component synchroniser
-	port map (
-		CLK => CLK_I,
-		RST => RST_I,
-		DAT_IN(0) => GB_RDN,
-		DAT_OUT(0) => gb_rdn_sync);
         
     GB_DATA_OUT <= data_read_register;
 	
 	-- Signals for determining type of access
 	gb_access_rom <= not(gb_addr_sync(2));												-- A15
 	gb_access_ram <= not(gb_csn_sync) and not(gb_addr_sync(1)) and gb_addr_sync(0);		-- ... not(A14) and A13;
+	gb_access_cart <= gb_access_rom or gb_access_ram;
 
 	ACCESS_ROM <= gb_access_rom;
 	ACCESS_RAM <= gb_access_ram;
@@ -137,9 +132,22 @@ begin
 							wb_state <= WBS_IDLE;
 						end if;
 					when WBS_IDLE =>
-						if (gb_access_rom or gb_access_ram) = '1' then
+						if gb_access_cart = '1' then
+							if GB_RDN = '0' then
+								-- Reading from cart
+								wb_cyc <= '1';
+								wb_state <= WBS_AWAIT_SLAVE;
+							else
+								-- Writing to cart
+								wb_state <= WBS_AWAIT_GB_WRITE;
+							end if;
+						end if;
+					when WBS_AWAIT_GB_WRITE =>
+						if gb_clk_sync = '0' then
+							-- Start write on falling edge
 							wb_cyc <= '1';
-							WE_O <= gb_rdn_sync;
+							WE_O <= '1';
+							DAT_O <= GB_DATA_IN;
 							wb_state <= WBS_AWAIT_SLAVE;
 						end if;
 					when WBS_AWAIT_SLAVE =>
