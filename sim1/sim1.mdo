@@ -1,7 +1,7 @@
 if {![file exists "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/sim1/sim1.mpf"]} { 
 	project new "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/sim1" sim1
+	project addfile "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/boot_rom/boot_rom.vhd"
 	project addfile "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/efb/efb.vhd"
-	project addfile "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/prog_mem/prog_mem.vhd"
 	project addfile "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/synchroniser.vhd"
 	project addfile "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/reset.vhd"
 	project addfile "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/gb_decoder.vhd"
@@ -11,8 +11,8 @@ if {![file exists "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/si
 	vlib  work
 	vdel -lib work -all 
 	vlib work
+	vcom -work work "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/boot_rom/boot_rom.vhd"
 	vcom -work work "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/efb/efb.vhd"
-	vcom -work work "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/prog_mem/prog_mem.vhd"
 	vcom -work work "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/synchroniser.vhd"
 	vcom -work work "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/reset.vhd"
 	vcom -work work "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/gb_decoder.vhd"
