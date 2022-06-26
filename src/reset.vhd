@@ -10,7 +10,18 @@
 ----------------------------------------------------------------------------------
 -- Documentation
 --
--- Not working :(
+-- Uses some FF guaranteed to be 0 at startup to extend a reset pulse to
+-- a couple of cycles. This generates a reset pulse to be transmitted to the
+-- entire system at startup.
+--
+-- It also handles the soft reset triggered by the button on the cart or
+-- by a write to the reset bit. The following happens during a soft reset:
+--      - GB_RSTN is asserted low, putting the Gameboy in reset
+--      - The active MBC is switched with the selected MBC written to MBCH_CFG0
+--      - If the boot rom cut-off bit was set to '1', the following also happens
+--          - MBCH will disallow access to boot rom
+--          - Bank 0 will be used to access DRAM
+--      - GB_RSTN is asserted high, allowing the Gameboy to boot
 ----------------------------------------------------------------------------------
 
 library ieee;
