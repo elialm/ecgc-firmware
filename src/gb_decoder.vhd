@@ -66,7 +66,6 @@ architecture behaviour of gb_decoder is
 	-- Synchronised signals from GameBoy
 	signal gb_clk_sync : std_logic;
 	signal gb_csn_sync : std_logic;
-	signal gb_rdn_sync : std_logic;
 	signal gb_addr_sync : std_logic_vector(2 downto 0);
 	signal gb_data_sync : std_logic_vector(7 downto 0);
 	
