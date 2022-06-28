@@ -31,7 +31,8 @@ use ieee.std_logic_misc.all;
 
 entity reset is
     generic (
-        RESET_FF    : positive := 8);
+        RESET_FF    : positive := 8;
+        SIMULATION  : boolean := false);
     port (
         SYNC_CLK 	: in std_logic;
         EXT_SOFT    : in std_logic;     -- Connected to reset button
@@ -48,7 +49,7 @@ architecture behaviour of reset is
     generic (
         FF_COUNT : natural := 2;
         DATA_WIDTH : natural := 1;
-        RESET_VALUE : std_logic := '1');
+        RESET_VALUE : std_logic := '0');
     port (
         CLK : in std_logic;
         RST : in std_logic;
@@ -64,13 +65,10 @@ architecture behaviour of reset is
         Q   : out std_logic);
     end component;
 
-    signal ff_stages    : std_logic_vector(RESET_FF-1 downto 0);
+    signal ff_stages    : std_logic_vector(RESET_FF-1 downto 0) := (others => '1');
 
     signal soft_reset_s     : std_logic;
     signal ext_soft_sync    : std_logic;
-    signal pur_sync         : std_logic;
-    signal ps_0             : std_logic;
-    signal ps_1             : std_logic;
 
     -- Auxilary reset delay
     signal aux_d1   : std_logic;
@@ -79,21 +77,31 @@ architecture behaviour of reset is
 
 begin
 
-    -- GSR preset FF used for reset pulse
-    GSR_RST_FF_0 : component FD1P3AY
-    port map (
-        D => '0',
-        SP => '1',
-        CK => SYNC_CLK,
-        Q => ff_stages(0));
-
-    GSR_RST_FF_STAGES : for i in 1 to RESET_FF-1 generate
-        GSR_RST_FF_X : component FD1P3AY
+    GSR_RST_FF : if SIMULATION = true generate
+        -- In simulation, treat as shift register (initialisation is done at signal)
+        process (SYNC_CLK)
+        begin
+            if rising_edge(SYNC_CLK) then
+                ff_stages <= ff_stages(ff_stages'high-1 downto 0) & '0';
+            end if;
+        end process;
+    else generate
+        -- GSR preset FF used for reset pulse
+        GSR_RST_FF_0 : component FD1P3AY
         port map (
-            D => ff_stages(i-1),
+            D => '0',
             SP => '1',
             CK => SYNC_CLK,
-            Q => ff_stages(i));
+            Q => ff_stages(0));
+    
+        GSR_RST_FF_STAGES : for i in 1 to RESET_FF-1 generate
+            GSR_RST_FF_X : component FD1P3AY
+            port map (
+                D => ff_stages(i-1),
+                SP => '1',
+                CK => SYNC_CLK,
+                Q => ff_stages(i));
+        end generate;
     end generate;
 
     -- Sychronise EXT_SOFT
@@ -109,8 +117,8 @@ begin
     begin
         if rising_edge(SYNC_CLK) then
             if ff_stages(ff_stages'high) = '1' then
-                aux_d1 <= '1';
-                aux_d2 <= '1';
+                aux_d1 <= '0';
+                aux_d2 <= '0';
                 aux_d3 <= '1';
             else
                 aux_d1 <= AUX_SOFT;

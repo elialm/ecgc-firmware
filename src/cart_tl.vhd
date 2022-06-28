@@ -27,6 +27,8 @@ library MACHXO3D;
 use MACHXO3D.all;
 
 entity cart_tl is
+	generic (
+		SIMULATION	: boolean := false);
     port (
 		-- Gameboy signals
         GB_CLK      : in std_logic;
@@ -140,14 +142,15 @@ begin
 
 	-- Instantiate reset controller (hard and soft resets)
 	RESET_CONTROLLER : entity work.reset
+	generic map (
+		SIMULATION => SIMULATION)
 	port map (
 		SYNC_CLK => wb_clk,
 		EXT_SOFT => USER_RST,
 		AUX_SOFT => aux_reset,
 		GB_RESETN => GB_RESETN,
 		SOFT_RESET => soft_reset,
-		HARD_RESET => hard_reset
-	);
+		HARD_RESET => hard_reset);
 
     GB_SIGNAL_DECODER : entity work.gb_decoder
     port map (

@@ -23,23 +23,28 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
+library MachXO3D;
+use MachXO3D.components.all;
+
 entity gameboy_tb is
 end gameboy_tb;
 
 architecture behaviour of gameboy_tb is
 
-	signal gb_internal : std_logic := '0';
-	signal gb_addr     : std_logic_vector(15 downto 0) := "UUUUUUUUUUUUUUUU";
-	signal gb_data     : std_logic_vector(7 downto 0) := "ZZZZZZZZ";
-	signal gb_clk      : std_logic := '0';
-	signal gb_wrn      : std_logic := '1';
-	signal gb_csn      : std_logic := '1';
-	signal gb_rdn      : std_logic := '1';
-	signal user_rst    : std_logic := '0';
+	signal gb_internal  : std_logic := '0';
+	signal gb_addr      : std_logic_vector(15 downto 0) := "UUUUUUUUUUUUUUUU";
+	signal gb_data      : std_logic_vector(7 downto 0) := "ZZZZZZZZ";
+	signal gb_clk       : std_logic := '0';
+	signal gb_wrn       : std_logic := '1';
+	signal gb_csn       : std_logic := '1';
+	signal gb_rdn       : std_logic := '1';
+	signal user_rst     : std_logic := '0';
 
 begin
 
     CARTRIDGE_INST : entity work.cart_tl
+    generic map (
+        SIMULATION => true)
     port map (
         GB_CLK => gb_clk,
         GB_ADDR => gb_addr,
@@ -89,13 +94,14 @@ begin
 		variable transaction_is_read : boolean;
 	begin
 	
-		user_rst <= '1';
-		for i in 0 to 1 loop
-			wait for 500 ns;
-			gb_clk <= not(gb_clk);
-		end loop;
-		user_rst <= '0';
-		wait for 375 ns;
+        -- Not assuming reset to be pressed
+		-- user_rst <= '1';
+		-- for i in 0 to 1 loop
+		-- 	wait for 500 ns;
+		-- 	gb_clk <= not(gb_clk);
+		-- end loop;
+		-- user_rst <= '0';
+		-- wait for 375 ns;
 	
 		for i in test_bus_transactions'low to test_bus_transactions'high loop
 			current_transaction := test_bus_transactions(i);
