@@ -26,6 +26,7 @@ entity as4c32m8sa_controller is
         CLK_I 		: in std_logic;
         RST_I 		: in std_logic;
         CYC_I 		: in std_logic;
+        STB_I 		: in std_logic;
         WE_I  		: in std_logic;
         ADR_I 		: in std_logic_vector(22 downto 0); -- 8 MB of addressable memory 
         TGA_I       : in std_logic_vector(1 downto 0);  -- Used to select bank
@@ -50,7 +51,7 @@ end as4c32m8sa_controller;
 
 architecture behaviour of as4c32m8sa_controller is
 
-    type DRAM_STATE_T is (DS_AWAIT_INIT, DS_CKE_DELAY, DS_PRECHARGE_ALL, DS_MODE_SET, DS_IDLE, DS_AWAIT_TRC);
+    type DRAM_STATE_T is (DS_AWAIT_INIT, DS_CKE_DELAY, DS_PRECHARGE_ALL, DS_MODE_SET, DS_IDLE, DS_AWAIT_TRC, DS_ACTIVATE_BANK, DS_AWAIT_CAS);
 
     -- TODO: grab largest value
     constant GLOBAL_COUNTER_BITS    : positive := positive(ceil(log2(200.00 * CLK_FREQ)));
@@ -80,11 +81,15 @@ architecture behaviour of as4c32m8sa_controller is
     constant T_COMP_REFI    : std_logic_vector(GLOBAL_COUNTER_BITS-1 downto 0) := to_tcomp_ns(7800.00 - ceil(61.00 / T_CLK) - (6.00 * T_CLK));
 
     signal dram_state       : DRAM_STATE_T;
+    signal state_delay      : std_logic;
+    signal idle_delay       : std_logic;
+    signal cas_delay        : std_logic_vector(1 downto 0);
+    signal drive_dq         : std_logic;
+    signal data_register    : std_logic_vector(7 downto 0);
     
     signal global_counter   : std_logic_vector(GLOBAL_COUNTER_BITS-1 downto 0);
     signal global_comp      : std_logic_vector(GLOBAL_COUNTER_BITS-1 downto 0);
     signal timer_elapsed    : std_logic;
-
 
 begin
 
@@ -92,15 +97,21 @@ begin
     begin
         if rising_edge(CLK_I) then
             CSN <= '1';
+            DQM <= '1';
+            drive_dq <= '0';
+            ACK_O <= '0';
+            cas_delay <= (others => '0');
 
             if RST_I = '1' then
                 dram_state <= DS_AWAIT_INIT;
+                state_delay <= '0';
+                idle_delay <= '1';
+                data_register <= (others => '0');
                 global_counter <= (others => '0');
                 global_comp <= T_COMP_INIT;
 
-                DAT_O <= (others => '0');
+                -- DAT_O <= (others => '0');
                 ERR_O <= '0';
-                ACK_O <= '0';
 
                 READY <= '0';
 
@@ -110,8 +121,7 @@ begin
                 RASN <= '1';
                 CASN <= '1';
                 WEN <= '1';
-                DQM <= '1';
-                DQ <= (others => 'Z');
+                -- DQ <= (others => 'Z');
             else
                 case dram_state is
                     when DS_AWAIT_INIT =>
@@ -166,7 +176,21 @@ begin
                         end if;
 
                     when DS_IDLE =>
-                        if timer_elapsed = '1' then
+                        idle_delay <= '1';
+                        
+                        if (CYC_I and STB_I and idle_delay) then
+                            dram_state <= DS_ACTIVATE_BANK;
+                            state_delay <= '0';
+                            idle_delay <= '0';
+
+                            -- Initiate Activate Bank
+                            CSN <= '0';
+                            RASN <= '0';
+                            CASN <= '1';
+                            WEN <= '1';
+                            BA <= TGA_I;
+                            A <= ADR_I(22 downto 10);   -- Row address
+                        elsif timer_elapsed = '1' then
                             dram_state <= DS_AWAIT_TRC;
                             global_counter <= (others => '0');
                             global_comp <= T_COMP_RC;
@@ -192,6 +216,46 @@ begin
 
                             READY <= '1';
                         end if;
+
+                    when DS_ACTIVATE_BANK =>
+                        if state_delay = '0' then
+                            state_delay <= '1';
+                        else
+                            state_delay <= '0';
+
+                            if WE_I = '0' then
+                                -- Initiate Read and Auto Precharge
+                                dram_state <= DS_AWAIT_CAS;
+                                WEN <= '1';
+                            else
+                                -- Initiate Write and Auto Precharge
+                                dram_state <= DS_IDLE;
+                                data_register <= DAT_I;
+                                drive_dq <= '1';
+                                WEN <= '0';
+                                ACK_O <= '1';
+                            end if;
+
+                            -- Assignments common to read and write
+                            CSN <= '0';
+                            RASN <= '1';
+                            CASN <= '0';
+                            DQM <= '0';
+                            A(10) <= '1';                       -- Enable auto precharge
+                            A(9 downto 0) <= ADR_I(9 downto 0); -- Column address
+                        end if;
+
+                    when DS_AWAIT_CAS =>
+                        state_delay <= '1';
+                        cas_delay <= cas_delay(cas_delay'high-1 downto 0) & state_delay;
+
+                        -- Wait for CAS delay
+                        if cas_delay(cas_delay'high) = '1' then
+                            state_delay <= '0';
+                            dram_state <= DS_IDLE;
+                            data_register <= DQ;
+                            ACK_O <= '1';
+                        end if;
                 end case;
 
                 if timer_elapsed = '0' then
@@ -202,5 +266,8 @@ begin
     end process;
 
     timer_elapsed <= '1' when global_counter = global_comp else '0';
+
+    DQ <= data_register when drive_dq = '1' else (others => 'Z');
+    DAT_O <= data_register;
 	
 end behaviour;

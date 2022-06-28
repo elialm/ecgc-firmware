@@ -77,6 +77,7 @@ architecture behaviour of as4c32m8sa_controller_tb is
     signal dram_clk_i   : std_logic := '0';
     signal dram_rst_i   : std_logic := '1';
     signal dram_cyc_i   : std_logic := '0';
+    signal dram_stb_i   : std_logic := '0';
     signal dram_we_i    : std_logic := '0';
     signal dram_adr_i   : std_logic_vector(22 downto 0) := (others => '0');
     signal dram_tga_i   : std_logic_vector(1 downto 0) := (others => '0');
@@ -100,6 +101,7 @@ architecture behaviour of as4c32m8sa_controller_tb is
 
     signal reset_extend : natural := 0;
     signal decoded_cmd  : DRAM_CMD := CMD_UNKNOWN;
+    signal transaction  : natural := 0;
 
     -- Compare entity inputs with given DRAM_CMD_ENCODING_TYPE
     impure function compare_entity(encoding : DRAM_CMD_ENCODING_TYPE)
@@ -142,6 +144,7 @@ begin
         CLK_I => dram_clk_i,
         RST_I => dram_rst_i,
         CYC_I => dram_cyc_i,
+        STB_I => dram_stb_i,
         WE_I => dram_we_i,
         ADR_I => dram_adr_i,
         TGA_I => dram_tga_i,
@@ -192,11 +195,52 @@ begin
         end if;
     end process;
 
+    -- signal dram_cyc_i   : std_logic := '0';
+    -- signal dram_we_i    : std_logic := '0';
+    -- signal dram_adr_i   : std_logic_vector(22 downto 0) := (others => '0');
+    -- signal dram_tga_i   : std_logic_vector(1 downto 0) := (others => '0');
+    -- signal dram_dat_i   : std_logic_vector(7 downto 0) := (others => '0');
+    -- signal dram_dat_o   : std_logic_vector(7 downto 0);
+    -- signal dram_err_o   : std_logic;
+    -- signal dram_ack_o   : std_logic;
+
     -- DRAM access test
     process (dram_clk_i)
     begin
         if rising_edge(dram_clk_i) and dram_ready = '1' then
-            -- much stuff
+            case transaction is
+                when 0 =>
+                    -- Test a read
+                    dram_cyc_i <= '1';
+                    dram_stb_i <= '1';
+                    dram_we_i <= '0';
+                    dram_adr_i <= b"0000000000000_0000000000";
+                    dram_tga_i <= "00";
+                    dram_dq <= x"C3";       -- Test data to be read
+
+                    if dram_ack_o = '1' then
+                        transaction <= transaction + 1;
+                        dram_cyc_i <= '0';
+                        dram_stb_i <= '0';
+                        dram_dq <= x"ZZ";   -- Release the bus
+                    end if;
+                when 1 =>
+                    -- Test a write
+                    dram_cyc_i <= '1';
+                    dram_stb_i <= '1';
+                    dram_we_i <= '1';
+                    dram_adr_i <= b"0000000000000_0000000000";
+                    dram_tga_i <= "00";
+                    dram_dat_i <= x"E1";    -- Test data to be written
+
+                    if dram_ack_o = '1' then
+                        transaction <= transaction + 1;
+                        dram_cyc_i <= '0';
+                        dram_stb_i <= '0';
+                    end if;
+                when others =>
+                    null;
+            end case;
         end if;
     end process;
 	
