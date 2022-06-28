@@ -50,7 +50,7 @@ end as4c32m8sa_controller;
 
 architecture behaviour of as4c32m8sa_controller is
 
-    type DRAM_STATE_T is (DS_AWAIT_INIT, DS_PRECHARGE_ALL, DS_MODE_SET, DS_IDLE);
+    type DRAM_STATE_T is (DS_AWAIT_INIT, DS_CKE_DELAY, DS_PRECHARGE_ALL, DS_MODE_SET, DS_IDLE, DS_AWAIT_TRC);
 
     -- TODO: grab largest value
     constant GLOBAL_COUNTER_BITS    : positive := positive(ceil(log2(200.00 * CLK_FREQ)));
@@ -69,9 +69,15 @@ architecture behaviour of as4c32m8sa_controller is
         return std_logic_vector(to_unsigned(natural(ceil(tns * CLK_FREQ / 1000.00)), GLOBAL_COUNTER_BITS));
     end to_tcomp_ns;
 
+    constant T_CLK          : real := 1000.00 / CLK_FREQ;   -- Clock period in ns
     constant T_COMP_INIT    : std_logic_vector(GLOBAL_COUNTER_BITS-1 downto 0) := to_tcomp_us(200.00);
-    constant T_COMP_RP      : std_logic_vector(GLOBAL_COUNTER_BITS-1 downto 0) := to_tcomp_ns(21.0);
-    constant T_COMP_MRD     : std_logic_vector(GLOBAL_COUNTER_BITS-1 downto 0) := to_tcomp_ns(14.0);
+    constant T_COMP_RP      : std_logic_vector(GLOBAL_COUNTER_BITS-1 downto 0) := to_tcomp_ns(21.00);
+    constant T_COMP_MRD     : std_logic_vector(GLOBAL_COUNTER_BITS-1 downto 0) := to_tcomp_ns(14.00);
+    constant T_COMP_RC      : std_logic_vector(GLOBAL_COUNTER_BITS-1 downto 0) := to_tcomp_ns(61.00);
+
+    -- Time inbetween auto refresh
+    -- Compensate delay after refresh (Trc min.) and with duration of 1 read transaction (read takes longer than write)
+    constant T_COMP_REFI    : std_logic_vector(GLOBAL_COUNTER_BITS-1 downto 0) := to_tcomp_ns(7800.00 - ceil(61.00 / T_CLK) - (6.00 * T_CLK));
 
     signal dram_state       : DRAM_STATE_T;
     
@@ -96,6 +102,8 @@ begin
                 ERR_O <= '0';
                 ACK_O <= '0';
 
+                READY <= '0';
+
                 CKE <= '0';
                 BA <= "00";
                 A <= (others => '0');
@@ -108,17 +116,21 @@ begin
                 case dram_state is
                     when DS_AWAIT_INIT =>
                         if timer_elapsed = '1' then
-                            dram_state <= DS_PRECHARGE_ALL;
-                            global_counter <= (others => '0');
-                            global_comp <= T_COMP_RP;
-
-                            -- Initiate Precharge All command
+                            dram_state <= DS_CKE_DELAY;
                             CKE <= '1';
-                            CSN <= '0';
-                            RASN <= '0';
-                            WEN <= '0';
-                            A(10) <= '1';
                         end if;
+
+                    when DS_CKE_DELAY =>
+                        dram_state <= DS_PRECHARGE_ALL;
+                        global_counter <= (others => '0');
+                        global_comp <= T_COMP_RP;
+
+                        -- Initiate Precharge All command
+                        
+                        CSN <= '0';
+                        RASN <= '0';
+                        WEN <= '0';
+                        A(10) <= '1';
                     
                     when DS_PRECHARGE_ALL =>
                         if timer_elapsed = '1' then
@@ -128,6 +140,9 @@ begin
 
                             -- Initiate Mode Register Set command
                             CSN <= '0';
+                            -- RASN <= '0';
+                            CASN <= '0';
+                            -- WEN <= '0';
                             BA <= "00";                 -- Reserved
                             A(12 downto 10) <= "000";   -- Reserved
                             A(9) <= '1';                -- Burst-Read-Single-Write
@@ -139,13 +154,44 @@ begin
 
                     when DS_MODE_SET =>
                         if timer_elapsed = '1' then
-                            dram_state <= DS_IDLE;
+                            dram_state <= DS_AWAIT_TRC;
+                            global_counter <= (others => '0');
+                            global_comp <= T_COMP_RC;
 
-                            -- Initiate AutoRefresh?
+                            -- Initiate Auto Refresh
+                            CSN <= '0';
+                            RASN <= '0';
+                            CASN <= '0';
+                            WEN <= '1';
                         end if;
 
                     when DS_IDLE =>
-                        null;
+                        if timer_elapsed = '1' then
+                            dram_state <= DS_AWAIT_TRC;
+                            global_counter <= (others => '0');
+                            global_comp <= T_COMP_RC;
+
+                            -- Initiate Auto Refresh
+                            CSN <= '0';
+                            RASN <= '0';
+                            CASN <= '0';
+                            WEN <= '1';
+                        end if;
+
+                    when DS_AWAIT_TRC =>
+                        -- Send NOP
+                        CSN <= '0';
+                        RASN <= '1';
+                        CASN <= '1';
+                        WEN <= '1';
+
+                        if timer_elapsed = '1' then
+                            dram_state <= DS_IDLE;
+                            global_counter <= (others => '0');
+                            global_comp <= T_COMP_REFI;
+
+                            READY <= '1';
+                        end if;
                 end case;
 
                 if timer_elapsed = '0' then
