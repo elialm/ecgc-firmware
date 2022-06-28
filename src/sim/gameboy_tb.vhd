@@ -111,8 +111,9 @@ begin
 			transaction_is_read := current_transaction(24) = '0';
 			
 			for state in bus_state loop
-				wait for 125 ns;
-				
+				-- wait for 125 ns;	-- Normal speed (DMG)
+				wait for 62500 ps;	-- Double speed (GBC)
+
 				gb_internal <= not(gb_internal);
 				if not(transaction_is_idle) then
 					case state is
