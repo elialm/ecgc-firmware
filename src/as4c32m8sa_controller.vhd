@@ -178,7 +178,7 @@ begin
                     when DS_IDLE =>
                         idle_delay <= '1';
                         
-                        if (CYC_I and STB_I and idle_delay) then
+                        if (CYC_I and STB_I and idle_delay) = '1' then
                             dram_state <= DS_ACTIVATE_BANK;
                             state_delay <= '0';
                             idle_delay <= '0';
