@@ -37,7 +37,7 @@ entity as4c32m8sa_controller is
 
         READY       : out std_logic;    -- Signal that controller is initialised and ready to accept transactions
 
-        -- DRAM CLK is same as CLK_I
+        DRAM_CLK    : in std_logic;     -- Same clock to DRAM = CLK_I but 180 degrees phase shifted
         CKE         : out std_logic;
         BA          : out std_logic_vector(1 downto 0);
         A           : out std_logic_vector(12 downto 0);
@@ -83,7 +83,6 @@ architecture behaviour of as4c32m8sa_controller is
     signal dram_state       : DRAM_STATE_T;
     signal state_delay      : std_logic;
     signal idle_delay       : std_logic;
-    signal cas_delay        : std_logic_vector(1 downto 0);
     signal drive_dq         : std_logic;
     signal data_register    : std_logic_vector(7 downto 0);
     
@@ -91,15 +90,36 @@ architecture behaviour of as4c32m8sa_controller is
     signal global_comp      : std_logic_vector(GLOBAL_COUNTER_BITS-1 downto 0);
     signal timer_elapsed    : std_logic;
 
+    signal wb_ack           : std_logic;
+    signal dram_ack         : std_logic;
+
 begin
 
+    -- Wishbone state machine
     process (CLK_I)
     begin
         if rising_edge(CLK_I) then
+            wb_ack <= dram_ack;
+
+            if RST_I = '1' then
+                ERR_O <= '0';
+            else
+                null;
+            end if;
+        end if;
+    end process;
+
+    ACK_O <= wb_ack;
+    DAT_O <= DQ;
+
+    -- DRAM state machine
+    process (DRAM_CLK)
+    begin
+        if rising_edge(DRAM_CLK) then
             CSN <= '1';
             DQM <= '1';
             drive_dq <= '0';
-            ACK_O <= '0';
+            dram_ack <= '0';
             cas_delay <= (others => '0');
 
             if RST_I = '1' then
@@ -109,9 +129,6 @@ begin
                 data_register <= (others => '0');
                 global_counter <= (others => '0');
                 global_comp <= T_COMP_INIT;
-
-                -- DAT_O <= (others => '0');
-                ERR_O <= '0';
 
                 READY <= '0';
 
@@ -177,6 +194,7 @@ begin
 
                     when DS_IDLE =>
                         idle_delay <= '1';
+                        READY <= '1';
                         
                         if (CYC_I and STB_I and idle_delay) = '1' then
                             dram_state <= DS_ACTIVATE_BANK;
@@ -213,8 +231,6 @@ begin
                             dram_state <= DS_IDLE;
                             global_counter <= (others => '0');
                             global_comp <= T_COMP_REFI;
-
-                            READY <= '1';
                         end if;
 
                     when DS_ACTIVATE_BANK =>
@@ -233,7 +249,7 @@ begin
                                 data_register <= DAT_I;
                                 drive_dq <= '1';
                                 WEN <= '0';
-                                ACK_O <= '1';
+                                dram_ack <= '1';
                             end if;
 
                             -- Assignments common to read and write
@@ -246,16 +262,8 @@ begin
                         end if;
 
                     when DS_AWAIT_CAS =>
-                        state_delay <= '1';
-                        cas_delay <= cas_delay(cas_delay'high-1 downto 0) & state_delay;
-
-                        -- Wait for CAS delay
-                        if cas_delay(cas_delay'high) = '1' then
-                            state_delay <= '0';
-                            dram_state <= DS_IDLE;
-                            data_register <= DQ;
-                            ACK_O <= '1';
-                        end if;
+                        dram_state <= DS_IDLE;
+                        dram_ack <= '1';
                 end case;
 
                 if timer_elapsed = '0' then
@@ -268,6 +276,5 @@ begin
     timer_elapsed <= '1' when global_counter = global_comp else '0';
 
     DQ <= data_register when drive_dq = '1' else (others => 'Z');
-    DAT_O <= data_register;
 	
 end behaviour;

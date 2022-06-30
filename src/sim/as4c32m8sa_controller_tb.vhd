@@ -88,6 +88,7 @@ architecture behaviour of as4c32m8sa_controller_tb is
 
     signal dram_ready   : std_logic;
     
+    signal dram_clk_sh  : std_logic := '1';
     signal dram_cke_pre : std_logic;
     signal dram_cke     : std_logic;
     signal dram_ba      : std_logic_vector(1 downto 0);
@@ -155,6 +156,7 @@ begin
 
         READY => dram_ready,
 
+        DRAM_CLK => dram_clk_sh,
         CKE => dram_cke,
         BA => dram_ba,
         A => dram_a,
@@ -171,6 +173,7 @@ begin
         -- wait for 18.79699248 ns;
         wait for 9.398496241 ns;
         dram_clk_i <= not(dram_clk_i);
+        dram_clk_sh <= not(dram_clk_sh);
     end process;
 
     -- Reset generator
