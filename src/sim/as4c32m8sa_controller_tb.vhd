@@ -195,15 +195,6 @@ begin
         end if;
     end process;
 
-    -- signal dram_cyc_i   : std_logic := '0';
-    -- signal dram_we_i    : std_logic := '0';
-    -- signal dram_adr_i   : std_logic_vector(22 downto 0) := (others => '0');
-    -- signal dram_tga_i   : std_logic_vector(1 downto 0) := (others => '0');
-    -- signal dram_dat_i   : std_logic_vector(7 downto 0) := (others => '0');
-    -- signal dram_dat_o   : std_logic_vector(7 downto 0);
-    -- signal dram_err_o   : std_logic;
-    -- signal dram_ack_o   : std_logic;
-
     -- DRAM access test
     process (dram_clk_i)
     begin
@@ -222,7 +213,7 @@ begin
                         transaction <= transaction + 1;
                         dram_cyc_i <= '0';
                         dram_stb_i <= '0';
-                        dram_dq <= x"ZZ";   -- Release the bus
+                        dram_dq <= "ZZZZZZZZ";   -- Release the bus
                     end if;
                 when 1 =>
                     -- Test a write

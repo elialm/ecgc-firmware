@@ -35,6 +35,7 @@ entity reset is
         SIMULATION  : boolean := false);
     port (
         SYNC_CLK 	: in std_logic;
+        PLL_LOCK    : in std_logic;
         EXT_SOFT    : in std_logic;     -- Connected to reset button
         AUX_SOFT    : in std_logic;     -- Connected to hypervisor reset
 
@@ -90,7 +91,7 @@ begin
         GSR_RST_FF_0 : component FD1P3AY
         port map (
             D => '0',
-            SP => '1',
+            SP => PLL_LOCK,
             CK => SYNC_CLK,
             Q => ff_stages(0));
     
@@ -98,7 +99,7 @@ begin
             GSR_RST_FF_X : component FD1P3AY
             port map (
                 D => ff_stages(i-1),
-                SP => '1',
+                SP => PLL_LOCK,
                 CK => SYNC_CLK,
                 Q => ff_stages(i));
         end generate;

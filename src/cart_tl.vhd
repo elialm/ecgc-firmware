@@ -71,6 +71,14 @@ architecture behaviour of cart_tl is
 		OSCESB 		: out std_logic);
 	end component;
 
+	component pll
+	port (
+		CLKI    : in std_logic;
+		CLKOP   : out std_logic; 
+		CLKOS   : out std_logic;
+		LOCK    : out std_logic);
+	end component;
+		
 	component efb
     port (
 		wb_clk_i	: in std_logic;
@@ -90,6 +98,12 @@ architecture behaviour of cart_tl is
         ufm_sn		: in std_logic;
 		wbc_ufm_irq	: out std_logic);
 	end component;
+
+	-- PLL signals
+    signal pll_clk_in   : std_logic;
+    signal pll_clk_op   : std_logic;
+    signal pll_clk_os   : std_logic;
+    signal pll_lock     : std_logic;
 
     signal gb_data_outgoing : std_logic_vector(7 downto 0);
     signal gb_data_incoming : std_logic_vector(7 downto 0);
@@ -134,18 +148,33 @@ architecture behaviour of cart_tl is
 
 begin
 
-	-- -- Instantiate Power-Up Reset signal
-	-- GSR_INST : GSR
-	-- port map (GSR => power_up_reset);
+    -- Occilator instantiation
+    INTERNAL_OSCILLATOR : component OSCJ
+    -- synthesis translate_off
+    generic map (
+        NOM_FREQ => "53.20")
+    -- synthesis translate_on
+    port map (
+        STDBY => '0',
+        OSC => pll_clk_in,
+        SEDSTDBY => open,
+        OSCESB => open);
 
-	-- power_up_reset <= '1';
+	-- PLL instantiation
+    CART_PLL : pll
+    port map (
+        CLKI => pll_clk_in,
+        CLKOP => pll_clk_op,
+        CLKOS => pll_clk_os,
+        LOCK => pll_lock);
 
 	-- Instantiate reset controller (hard and soft resets)
 	RESET_CONTROLLER : entity work.reset
 	generic map (
 		SIMULATION => SIMULATION)
 	port map (
-		SYNC_CLK => wb_clk,
+		SYNC_CLK => pll_clk_op,
+		PLL_LOCK => pll_lock,
 		EXT_SOFT => USER_RST,
 		AUX_SOFT => aux_reset,
 		GB_RESETN => GB_RESETN,
@@ -161,7 +190,7 @@ begin
 		GB_RDN => GB_RDN,
 		GB_CSN => GB_CSN,
 
-		CLK_I => wb_clk,
+		CLK_I => pll_clk_op,
 		RST_I => hard_reset,
 		CYC_O => wb_cyc,
 		WE_O => wb_we,
@@ -192,7 +221,7 @@ begin
 	-- MBC Hypervisor instance
 	MBC_HYPERVISOR : entity work.mbch
 	port map (
-		CLK_I => wb_clk,
+		CLK_I => pll_clk_op,
 		RST_I => hard_reset,
 		STB_I => wb_mbch_strb,
 		CYC_I => wb_cyc,
@@ -220,7 +249,7 @@ begin
 	-- EFB instance
 	EFB_INST : component efb
 	port map (
-		wb_clk_i => wb_clk,
+		wb_clk_i => pll_clk_op,
 		wb_rst_i => soft_reset, 
         wb_cyc_i => wb_efb_cyc,
 		wb_stb_i => wb_efb_stb, 
@@ -237,17 +266,6 @@ begin
         ufm_sn => '1',
 		wbc_ufm_irq	=> open);
 
-	INTERNAL_OSCILLATOR : component OSCJ
-	-- synthesis translate_off
-	generic map (
-		NOM_FREQ => "53.20")
-	-- synthesis translate_on
-	port map (
-		STDBY => '0',
-		OSC => wb_clk,
-		SEDSTDBY => open,
-		OSCESB => open);
-
 	-- GB clock indicator LED
 	process (GB_CLK)
 	begin
@@ -263,9 +281,9 @@ begin
 	LED_GB_CLK <= not(led_gb_clk_divider(led_gb_clk_divider'high));
 
 	-- WB clock indicator LED
-	process (wb_clk)
+	process (pll_clk_op)
 	begin
-		if rising_edge(wb_clk) then
+		if rising_edge(pll_clk_op) then
 			if hard_reset = '1' then
 				led_wb_clk_divider <= (others => '0');
 			else
