@@ -19,10 +19,14 @@
 ----------------------------------------------------------------------------------
 
 
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use ieee.std_logic_misc.all;
 
 entity gb_decoder is
+	generic (
+		ENABLE_TIMEOUT_DETECTION	: boolean := false);
     port (
         GB_CLK      : in std_logic;
         GB_ADDR     : in std_logic_vector(15 downto 0);
@@ -41,7 +45,8 @@ entity gb_decoder is
         ACK_I 		: in std_logic;
 		
 		ACCESS_ROM	: out std_logic;
-		ACCESS_RAM	: out std_logic);
+		ACCESS_RAM	: out std_logic;
+		WB_TIMEOUT	: out std_logic);
 end gb_decoder;
 
 architecture behaviour of gb_decoder is
@@ -77,6 +82,9 @@ architecture behaviour of gb_decoder is
 	-- WishBone signals
 	signal wb_state : WB_STATE_TYPE;
     signal wb_cyc   : std_logic;
+
+	signal cyc_counter	: std_logic_vector(3 downto 0);
+	signal cyc_timeout	: std_logic;
 
 begin
 
@@ -121,9 +129,10 @@ begin
 				data_read_register <= "00000000";
 				wb_state <= WBS_AWAIT_RISING_CLK;
 				wb_cyc <= '0';
+				cyc_counter <= (others => '0');
 				WE_O <= '0';
+				WB_TIMEOUT <= '0';
 			else
-				-- TODO: implement write state
 				-- NOTE: WBS_AWAIT_RISING_CLK and WBS_IDLE could be implemented into 1 state... probably...
 				case wb_state is
 					when WBS_AWAIT_RISING_CLK =>
@@ -136,6 +145,7 @@ begin
 								-- Reading from cart
 								wb_cyc <= '1';
 								wb_state <= WBS_AWAIT_SLAVE;
+								cyc_counter <= "1001";
 							else
 								-- Writing to cart
 								wb_state <= WBS_AWAIT_GB_WRITE;
@@ -148,6 +158,7 @@ begin
 							WE_O <= '1';
 							DAT_O <= GB_DATA_IN;
 							wb_state <= WBS_AWAIT_SLAVE;
+							cyc_counter <= "1001";
 						end if;
 					when WBS_AWAIT_SLAVE =>
 						if ACK_I = '1' then
@@ -155,6 +166,9 @@ begin
 							WE_O <= '0';
 							data_read_register <= DAT_I;
 							wb_state <= WBS_AWAIT_FALLING_CLK;
+						elsif cyc_timeout = '1' then
+							-- WishBone timeout occurred							
+							WB_TIMEOUT <= '1';
 						end if;
 					when WBS_AWAIT_FALLING_CLK =>
 						if gb_clk_sync = '0' then
@@ -162,8 +176,19 @@ begin
 						end if;
 				end case;
 			end if;
+
+			-- Decrement counter
+			if cyc_timeout = '0' and ENABLE_TIMEOUT_DETECTION then
+				cyc_counter <= std_logic_vector(unsigned(cyc_counter) - 1);
+			end if;
 		end if;
 	end process;
+
+	CYC_TIMEOUT_SIGNAL : if ENABLE_TIMEOUT_DETECTION generate
+		cyc_timeout <= nor_reduce(cyc_counter);
+	else generate
+		cyc_timeout <= '0';
+	end generate;
 
     CYC_O <= wb_cyc;
 	

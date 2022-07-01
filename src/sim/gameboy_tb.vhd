@@ -101,7 +101,7 @@ begin
 		-- 	gb_clk <= not(gb_clk);
 		-- end loop;
 		-- user_rst <= '0';
-		-- wait for 375 ns;
+		wait for 500 ns;
 	
 		for i in test_bus_transactions'low to test_bus_transactions'high loop
 			current_transaction := test_bus_transactions(i);

@@ -182,6 +182,8 @@ begin
 		HARD_RESET => hard_reset);
 
     GB_SIGNAL_DECODER : entity work.gb_decoder
+	generic map (
+		ENABLE_TIMEOUT_DETECTION => true)
     port map (
         GB_CLK => GB_CLK,
         GB_ADDR => GB_ADDR,
