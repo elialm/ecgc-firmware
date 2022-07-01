@@ -23,7 +23,7 @@ entity as4c32m8sa_controller is
     generic (
         CLK_FREQ    : real := 53.20);
     port (
-        CLK_I 		: in std_logic;
+        CLK_I 		: in std_logic;     -- WishBone clock, same as the DRAM CLK
         RST_I 		: in std_logic;
         CYC_I 		: in std_logic;
         STB_I 		: in std_logic;
@@ -37,7 +37,7 @@ entity as4c32m8sa_controller is
 
         READY       : out std_logic;    -- Signal that controller is initialised and ready to accept transactions
 
-        DRAM_CLK    : in std_logic;     -- Same clock to DRAM = CLK_I but 180 degrees phase shifted
+        CLK_SM      : in std_logic;     -- CLK_I but 180 degrees phase shifted, used by state machine logic
         CKE         : out std_logic;
         BA          : out std_logic_vector(1 downto 0);
         A           : out std_logic_vector(12 downto 0);
@@ -113,14 +113,13 @@ begin
     DAT_O <= DQ;
 
     -- DRAM state machine
-    process (DRAM_CLK)
+    process (CLK_SM)
     begin
-        if rising_edge(DRAM_CLK) then
+        if rising_edge(CLK_SM) then
             CSN <= '1';
             DQM <= '1';
             drive_dq <= '0';
             dram_ack <= '0';
-            cas_delay <= (others => '0');
 
             if RST_I = '1' then
                 dram_state <= DS_AWAIT_INIT;

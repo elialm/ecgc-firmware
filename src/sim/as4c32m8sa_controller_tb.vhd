@@ -156,7 +156,7 @@ begin
 
         READY => dram_ready,
 
-        DRAM_CLK => dram_clk_sh,
+        CLK_SM => dram_clk_sh,
         CKE => dram_cke,
         BA => dram_ba,
         A => dram_a,
