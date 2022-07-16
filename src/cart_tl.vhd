@@ -49,12 +49,21 @@ entity cart_tl is
 		BTD_OEN		: out std_logic;
 		BTD_DIR		: out std_logic;
 
+		-- DRAM signals
+		DRAM_CLK    : out std_logic;
+		DRAM_CKE    : out std_logic;
+		DRAM_BA     : out std_logic_vector(1 downto 0);
+		DRAM_A      : out std_logic_vector(12 downto 0);
+		DRAM_CSN    : out std_logic;
+		DRAM_RASN   : out std_logic;
+		DRAM_CASN   : out std_logic;
+		DRAM_WEN    : out std_logic;
+		DRAM_DQM    : out std_logic;
+		DRAM_DQ     : inout std_logic_vector(7 downto 0);
+
 		-- Temporary for testing
 		USER_RST	: in std_logic;
-		LED_RST		: out std_logic;
-		LED_GB_CLK	: out std_logic;
-		LED_WB_CLK	: out std_logic;
-		LED_OFF		: out std_logic_vector(4 downto 0));
+		STATUS_LED  : out std_logic_vector(7 downto 0));
 end cart_tl;
 
 architecture behaviour of cart_tl is
@@ -129,12 +138,24 @@ architecture behaviour of cart_tl is
 	signal wb_efb_rdat	: std_logic_vector(7 downto 0);
 	signal wb_efb_ack	: std_logic;
 
-	signal led_gb_clk_divider : std_logic_vector(18 downto 0);
-	signal led_wb_clk_divider : std_logic_vector(24 downto 0);
+    signal wb_dram_cyc	: std_logic;
+	signal wb_dram_stb	: std_logic;
+	signal wb_dram_we	: std_logic;
+	signal wb_dram_adr	: std_logic_vector(22 downto 0);
+	signal wb_dram_tga	: std_logic_vector(1 downto 0);
+	signal wb_dram_wdat	: std_logic_vector(7 downto 0);
+	signal wb_dram_rdat	: std_logic_vector(7 downto 0);
+	signal wb_dram_ack	: std_logic;
+
+	signal led_gb_clk_divider   : std_logic_vector(18 downto 0);
+	signal led_wb_clk_divider   : std_logic_vector(24 downto 0);
+	signal led_wbn_clk_divider  : std_logic_vector(24 downto 0);
 
 	signal soft_reset		: std_logic;
 	signal hard_reset		: std_logic;
 	signal aux_reset		: std_logic;
+
+    signal dram_ready       : std_logic;
 
 	-- Access signals
 	signal gb_access_rom : std_logic;
@@ -227,7 +248,7 @@ begin
 		RST_I => hard_reset,
 		STB_I => wb_mbch_strb,
 		CYC_I => wb_cyc,
-		WE_O => wb_we,
+		WE_I => wb_we,
 		ACK_O => wb_mbch_ack,
 		ADR_I => wb_adr,
 		DAT_I => wb_data_incoming,
@@ -241,12 +262,22 @@ begin
 		EFB_DAT_I => wb_efb_rdat,
 		EFB_ACK_I => wb_efb_ack,
 
+        DRAM_CYC_O => wb_dram_cyc,
+		DRAM_STB_O => wb_dram_stb,
+		DRAM_WE_O => wb_dram_we,
+		DRAM_ADR_O => wb_dram_adr,
+		DRAM_TGA_O => wb_dram_tga,
+		DRAM_DAT_O => wb_dram_wdat,
+		DRAM_DAT_I => wb_dram_rdat,
+		DRAM_ACK_I => wb_dram_ack,
+		DRAM_ERR_I => '0',
+
 		ACCESS_ROM => gb_access_rom,
 		ACCESS_RAM => gb_access_ram,
 		SELECT_MBC => bus_selector,
 		SOFT_RESET_OUT => aux_reset,
-		SOFT_RESET_IN => soft_reset
-	);
+		SOFT_RESET_IN => soft_reset,
+        DRAM_READY => dram_ready);
 
 	-- EFB instance
 	EFB_INST : component efb
@@ -268,6 +299,36 @@ begin
         ufm_sn => '1',
 		wbc_ufm_irq	=> open);
 
+	-- DRAM controller instance
+	DRAM_CTRL_INST : entity work.as4c32m8sa_controller
+	generic map (
+		CLK_FREQ => 53.20)
+	port map (
+		CLK_I => pll_clk_op,
+        RST_I => hard_reset,
+        CYC_I => wb_dram_cyc,
+        STB_I => wb_dram_stb,
+        WE_I => wb_dram_we,
+        ADR_I => wb_dram_adr,
+        TGA_I => wb_dram_tga,
+        DAT_I => wb_dram_wdat,
+        DAT_O => wb_dram_rdat,
+        ACK_O => wb_dram_ack,
+        ERR_O => open,
+        READY => dram_ready,
+        CLK_SM => pll_clk_os,
+        CKE => DRAM_CKE,
+        BA => DRAM_BA,
+        A => DRAM_A,
+        CSN => DRAM_CSN,
+        RASN => DRAM_RASN,
+        CASN => DRAM_CASN,
+        WEN => DRAM_WEN,
+        DQM => DRAM_DQM,
+        DQ => DRAM_DQ);
+
+    DRAM_CLK <= pll_clk_op;
+
 	-- GB clock indicator LED
 	process (GB_CLK)
 	begin
@@ -280,7 +341,7 @@ begin
 		end if;
 	end process;
 
-	LED_GB_CLK <= not(led_gb_clk_divider(led_gb_clk_divider'high));
+	STATUS_LED(7) <= not(led_gb_clk_divider(led_gb_clk_divider'high));
 
 	-- WB clock indicator LED
 	process (pll_clk_op)
@@ -294,13 +355,27 @@ begin
 		end if;
 	end process;
 
-	LED_WB_CLK <= not(led_wb_clk_divider(led_wb_clk_divider'high));
+	STATUS_LED(6) <= not(led_wb_clk_divider(led_wb_clk_divider'high));
+
+    -- WBN clock indicator LED
+	process (pll_clk_os)
+	begin
+		if rising_edge(pll_clk_os) then
+			if hard_reset = '1' then
+				led_wbn_clk_divider <= (others => '0');
+			else
+				led_wbn_clk_divider <= std_logic_vector(unsigned(led_wbn_clk_divider) + 1);
+			end if;
+		end if;
+	end process;
+
+    STATUS_LED(5) <= not(led_wbn_clk_divider(led_wbn_clk_divider'high));
     
 	-- LED indicator for reset state [TEMP]
-	LED_RST <= not(soft_reset);
+	STATUS_LED(4) <= not(soft_reset);
 
 	-- Other leds off [TEMP]
-	LED_OFF <= (others => '1');
+	STATUS_LED(3 downto 0) <= (others => '1');
 	
 	-- Bus tranceiver control [TEMP: will assume only reads from cart]
 	BTA_OEN <= hard_reset;

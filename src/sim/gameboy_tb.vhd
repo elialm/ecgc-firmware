@@ -62,7 +62,7 @@ begin
 			--24		: 0 = read, 1 = write
 			--25		: 1 = perform cart access, 0 = perform internal access
 		type gb_bus_transactions is array (integer range <>) of std_logic_vector(25 downto 0);
-		variable test_bus_transactions : gb_bus_transactions(0 to 20) := (
+		variable test_bus_transactions : gb_bus_transactions(0 to 22) := (
 			b"10_0000_0001_0000_0000_0000_0000",	-- NOP
 			b"10_0000_0001_0000_0001_0000_0000",	-- JP $0150
 			b"10_0000_0001_0000_0010_0000_0000",
@@ -80,6 +80,8 @@ begin
 			b"00_0000_0000_0000_0000_0000_0000",	-- idle bus...
 			b"00_0000_0000_0000_0000_0000_0000",	-- idle bus...
 			b"11_0000_0001_0000_0000_1010_0101",	-- not an instruction, just to test if cart correctly ignores writes to ROM
+			b"10_0100_0000_0000_0000_0000_0000",	-- Read from DRAM
+			b"11_0100_0000_0000_0000_1010_0101",	-- Write to DRAM
 			b"10_1010_0000_0101_0100_0000_0000",	-- Read from cart RAM (or cart IO space, who knows)
 			b"10_1010_0001_0000_0000_0000_0000",	-- Read from cart RAM (or cart IO space, who knows)
 			b"11_1010_0000_0101_0101_1000_0000",	-- Write to cart RAM (or cart IO space, who knows)
@@ -101,7 +103,9 @@ begin
 		-- 	gb_clk <= not(gb_clk);
 		-- end loop;
 		-- user_rst <= '0';
-		wait for 500 ns;
+		-- wait for 500 ns;
+
+		wait for 200 us;
 	
 		for i in test_bus_transactions'low to test_bus_transactions'high loop
 			current_transaction := test_bus_transactions(i);

@@ -38,7 +38,7 @@ entity mbch is
 		RST_I	: in std_logic;
 		STB_I	: in std_logic;
 		CYC_I	: in std_logic;
-		WE_O  	: in std_logic;
+		WE_I  	: in std_logic;
 		ACK_O	: out std_logic;
 		ADR_I	: in std_logic_vector(15 downto 0);
 		DAT_I	: in std_logic_vector(7 downto 0);
@@ -52,16 +52,27 @@ entity mbch is
 		EFB_DAT_I	: in std_logic_vector(7 downto 0);
 		EFB_ACK_I	: in std_logic;
 
+		DRAM_CYC_O	: out std_logic;
+		DRAM_STB_O	: out std_logic;
+		DRAM_WE_O	: out std_logic;
+		DRAM_ADR_O	: out std_logic_vector(22 downto 0);
+		DRAM_TGA_O	: out std_logic_vector(1 downto 0);
+		DRAM_DAT_O	: out std_logic_vector(7 downto 0);
+		DRAM_DAT_I	: in std_logic_vector(7 downto 0);
+		DRAM_ACK_I	: in std_logic;
+		DRAM_ERR_I	: in std_logic;
+
 		ACCESS_ROM		: in std_logic;
 		ACCESS_RAM		: in std_logic;
 		SELECT_MBC  	: out std_logic_vector(2 downto 0);
 		SOFT_RESET_OUT  : out std_logic;
-		SOFT_RESET_IN   : in std_logic);
+		SOFT_RESET_IN   : in std_logic;
+		DRAM_READY		: in std_logic);
 end mbch;
 
 architecture behaviour of mbch is
 
-    type bus_selection_t is (BS_REGISTER, BS_BOOT_ROM, BS_EFB);
+    type bus_selection_t is (BS_REGISTER, BS_BOOT_ROM, BS_EFB, BS_DRAM);
 
 	component boot_rom is
 	port (
@@ -120,6 +131,8 @@ begin
                                 if boot_rom_accessible = '1' then
                                     bus_selector <= BS_BOOT_ROM;
                                 end if; 
+							when b"1--_----_----_----" =>
+								bus_selector <= BS_DRAM;
                             when others =>
                                 null;
                         end case?;
@@ -133,12 +146,12 @@ begin
                             when b"0_0000_----_----" =>
                                 bus_selector <= BS_EFB;
                             when b"0_0001_----_----" =>
-                                if WE_O = '1' then
+                                if WE_I = '1' then
                                     boot_rom_accessible <= DAT_I(7) when boot_rom_accessible = '1' else '0';
 									SOFT_RESET_OUT <= DAT_I(6);
                                     reg_selected_mbc <= DAT_I(2 downto 0);
                                 else
-                                    register_data <= boot_rom_accessible & "0000" & reg_selected_mbc;
+                                    register_data <= boot_rom_accessible & DRAM_READY & "000" & reg_selected_mbc;
                                 end if;
                                 register_ack <= '1';
                             when others =>
@@ -161,23 +174,33 @@ begin
 	
     -- EFB ports
     EFB_CYC_O <= CYC_I;
-    EFB_WE_O <= WE_O;
+    EFB_WE_O <= WE_I;
     EFB_ADR_O <= ADR_I(7 downto 0);
     EFB_DAT_O <= DAT_I;
+
+	-- DRAM ports
+	DRAM_CYC_O <= CYC_I;
+	DRAM_WE_O <= WE_I;
+	DRAM_ADR_O <= "000000000" & ADR_I(13 downto 0);
+	DRAM_TGA_O <= "00";
+	DRAM_DAT_O <= DAT_I;
 
 	-- Bus selection data
 	with bus_selector select DAT_O <=
 		boot_rom_data 	when BS_BOOT_ROM,
 		EFB_DAT_I 		when BS_EFB,
+		DRAM_DAT_I		when BS_DRAM,
 		register_data 	when others;
 
 	-- Bus selection ack
 	ACK_O <= wb_ack;
 	with bus_selector select wb_ack <=
 		EFB_ACK_I 		when BS_EFB,
+		DRAM_ACK_I		when BS_DRAM,
 		register_ack 	when others;
 
 	-- Bus selection strobe
 	EFB_STB_O <= '1' when bus_selector = BS_EFB else '0';
+	DRAM_STB_O <= '1' when bus_selector = BS_DRAM else '0';
 	
 end behaviour;
