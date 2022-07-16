@@ -32,6 +32,7 @@ use ieee.std_logic_misc.all;
 entity reset is
     generic (
         RESET_FF    : positive := 8;
+        AUX_FF      : positive := 9;
         SIMULATION  : boolean := false);
     port (
         SYNC_CLK 	: in std_logic;
@@ -70,11 +71,7 @@ architecture behaviour of reset is
 
     signal soft_reset_s     : std_logic;
     signal ext_soft_sync    : std_logic;
-
-    -- Auxilary reset delay
-    signal aux_d1   : std_logic;
-    signal aux_d2   : std_logic;
-    signal aux_d3   : std_logic;
+    signal aux_extender     : std_logic_vector(AUX_FF-1 downto 0);
 
 begin
 
@@ -113,23 +110,21 @@ begin
         DAT_IN(0) => EXT_SOFT,
         DAT_OUT(0) => ext_soft_sync);
 
-    -- Delay the Auxilary reset
+    -- Extend the auxilary reset
     process (SYNC_CLK)
     begin
         if rising_edge(SYNC_CLK) then
-            if ff_stages(ff_stages'high) = '1' then
-                aux_d1 <= '0';
-                aux_d2 <= '0';
-                aux_d3 <= '1';
+            if (ff_stages(ff_stages'high) or AUX_SOFT) = '1' then
+                aux_extender <= (aux_extender'high => '1', others => '0');
             else
-                aux_d1 <= AUX_SOFT;
-                aux_d2 <= aux_d1;
-                aux_d3 <= aux_d2;
+                if aux_extender(aux_extender'high) = '1' then
+                    aux_extender <= std_logic_vector(unsigned(aux_extender) + 1);
+                end if;
             end if;
         end if;
     end process;
 
-    soft_reset_s <= ext_soft_sync or aux_d3;
+    soft_reset_s <= ext_soft_sync or aux_extender(aux_extender'high);
 
     GB_RESETN <= not(soft_reset_s);
     SOFT_RESET <= soft_reset_s;

@@ -83,17 +83,19 @@ architecture behaviour of mbch is
 		Q			: out  std_logic_vector(7 downto 0));
 	end component;
 
-	signal wb_cart_access : std_logic;
-	signal wb_ack : std_logic;
+	signal wb_cart_access 	: std_logic;
+	signal wb_ack 			: std_logic;
 
-	signal boot_rom_enabled : std_logic;
-	signal boot_rom_accessible : std_logic;
-	signal boot_rom_data : std_logic_vector(7 downto 0);
+	signal boot_rom_enabled 		: std_logic;
+	signal boot_rom_accessible 		: std_logic;
+	signal boot_rom_accessible_reg 	: std_logic;
+	signal boot_rom_data 			: std_logic_vector(7 downto 0);
 	
-	signal register_data : std_logic_vector(7 downto 0);
-	signal register_ack : std_logic;
-	signal reg_selected_mbc : std_logic_vector(2 downto 0);
-	signal bus_selector : bus_selection_t;
+	signal register_data 		: std_logic_vector(7 downto 0);
+	signal register_ack 		: std_logic;
+	signal reg_selected_mbc 	: std_logic_vector(2 downto 0);
+	signal bus_selector 		: bus_selection_t;
+	signal soft_reset_rising	: std_logic;
 
 begin
 
@@ -115,13 +117,15 @@ begin
 		if rising_edge(CLK_I) then
 			register_ack <= '0';
 			bus_selector <= BS_REGISTER;
+			SOFT_RESET_OUT <= '0';
 
 			if RST_I = '1' then
 				register_data <= x"00";
+				boot_rom_accessible_reg <= '1';
 				boot_rom_accessible <= '1';
 				reg_selected_mbc <= "000";
+				soft_reset_rising <= '1';
 				SELECT_MBC <= "000";
-				SOFT_RESET_OUT <= '0';
 			else
 			    if (wb_cart_access and not(wb_ack)) = '1' then
                     if ACCESS_ROM = '1' then
@@ -147,11 +151,11 @@ begin
                                 bus_selector <= BS_EFB;
                             when b"0_0001_----_----" =>
                                 if WE_I = '1' then
-                                    boot_rom_accessible <= DAT_I(7) when boot_rom_accessible = '1' else '0';
-									SOFT_RESET_OUT <= DAT_I(6);
+									SOFT_RESET_OUT <= DAT_I(7);
+                                    boot_rom_accessible_reg <= DAT_I(6);
                                     reg_selected_mbc <= DAT_I(2 downto 0);
                                 else
-                                    register_data <= boot_rom_accessible & DRAM_READY & "000" & reg_selected_mbc;
+                                    register_data <= "0" & boot_rom_accessible_reg & boot_rom_accessible & DRAM_READY & "0" & reg_selected_mbc;
                                 end if;
                                 register_ack <= '1';
                             when others =>
@@ -162,11 +166,15 @@ begin
                 end if;
 
 				-- Perform soft reset
-				if SOFT_RESET_IN = '1' then
-					boot_rom_accessible <= '1';
+				if (SOFT_RESET_IN and soft_reset_rising) = '1' then
+					boot_rom_accessible_reg <= '1';
+					boot_rom_accessible <= boot_rom_accessible_reg;
 					reg_selected_mbc <= "000";
+					soft_reset_rising <= '0';
 
 					SELECT_MBC <= reg_selected_mbc;
+				elsif SOFT_RESET_IN = '0' then
+					soft_reset_rising <= '1';
 				end if;
 			end if;
 		end if;
