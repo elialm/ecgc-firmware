@@ -44,20 +44,13 @@ entity mbch is
 		DAT_I	: in std_logic_vector(7 downto 0);
 		DAT_O	: out std_logic_vector(7 downto 0);
 
-		EFB_CYC_O	: out std_logic;
 		EFB_STB_O	: out std_logic;
-		EFB_WE_O	: out std_logic;
-		EFB_ADR_O	: out std_logic_vector(7 downto 0);
-		EFB_DAT_O	: out std_logic_vector(7 downto 0);
 		EFB_DAT_I	: in std_logic_vector(7 downto 0);
 		EFB_ACK_I	: in std_logic;
 
-		DRAM_CYC_O	: out std_logic;
 		DRAM_STB_O	: out std_logic;
-		DRAM_WE_O	: out std_logic;
-		DRAM_ADR_O	: out std_logic_vector(22 downto 0);
+		DRAM_ADR_O	: out std_logic_vector(8 downto 0);
 		DRAM_TGA_O	: out std_logic_vector(1 downto 0);
-		DRAM_DAT_O	: out std_logic_vector(7 downto 0);
 		DRAM_DAT_I	: in std_logic_vector(7 downto 0);
 		DRAM_ACK_I	: in std_logic;
 		DRAM_ERR_I	: in std_logic;
@@ -180,18 +173,9 @@ begin
 		end if;
 	end process;
 	
-    -- EFB ports
-    EFB_CYC_O <= CYC_I;
-    EFB_WE_O <= WE_I;
-    EFB_ADR_O <= ADR_I(7 downto 0);
-    EFB_DAT_O <= DAT_I;
-
 	-- DRAM ports
-	DRAM_CYC_O <= CYC_I;
-	DRAM_WE_O <= WE_I;
-	DRAM_ADR_O <= "000000000" & ADR_I(13 downto 0);
-	DRAM_TGA_O <= "00";
-	DRAM_DAT_O <= DAT_I;
+	DRAM_ADR_O <= "000000000";	-- TODO: GB bank selection
+	DRAM_TGA_O <= "00";			-- TODO: DRAM bank selection
 
 	-- Bus selection data
 	with bus_selector select DAT_O <=
