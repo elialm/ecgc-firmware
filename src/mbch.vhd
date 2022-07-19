@@ -83,6 +83,12 @@ architecture behaviour of mbch is
 	signal boot_rom_accessible 		: std_logic;
 	signal boot_rom_accessible_reg 	: std_logic;
 	signal boot_rom_data 			: std_logic_vector(7 downto 0);
+
+	signal dram_bank_mbc			: std_logic_vector(8 downto 0);		-- MBC bank selector register
+	signal dram_bank				: std_logic_vector(1 downto 0);		-- DRAM bank selector register
+	signal dram_bank_select_zero	: std_logic;						-- Set if MBC & DRAM banks 0 is selected (zero bank)
+	signal dram_bank_passthrough	: std_logic;						-- Set if selector registers should be used to select bank, otherwise will force bank 1 
+	signal dram_bank_force_zero		: std_logic;						-- Set to force zero bank to be selected
 	
 	signal register_data 		: std_logic_vector(7 downto 0);
 	signal register_ack 		: std_logic;
@@ -110,30 +116,40 @@ begin
 		if rising_edge(CLK_I) then
 			register_ack <= '0';
 			bus_selector <= BS_REGISTER;
+			dram_bank_force_zero <= '0';
 			SOFT_RESET_OUT <= '0';
 
 			if RST_I = '1' then
 				register_data <= x"00";
 				boot_rom_accessible_reg <= '1';
 				boot_rom_accessible <= '1';
+                dram_bank_mbc <= (others => '0');
+				dram_bank <= (others => '0');
 				reg_selected_mbc <= "000";
 				soft_reset_rising <= '1';
+
 				SELECT_MBC <= "000";
 			else
 			    if (wb_cart_access and not(wb_ack)) = '1' then
                     if ACCESS_ROM = '1' then
                         -- Decode ROM addresses
-                        case? ADR_I(14 downto 0) is     -- bit 15 = '0'
-                            when b"000_----_----_----" =>
-                                if boot_rom_accessible = '1' then
-                                    bus_selector <= BS_BOOT_ROM;
-                                end if; 
-							when b"1--_----_----_----" =>
-								bus_selector <= BS_DRAM;
-                            when others =>
-                                null;
-                        end case?;
 
+						if boot_rom_accessible = '1' then
+							-- Boot ROM handles control
+							case? ADR_I(14 downto 0) is     -- bit 15 = '0'
+								when b"000_----_----_----" =>
+									bus_selector <= BS_BOOT_ROM;
+								when b"1--_----_----_----" =>
+									bus_selector <= BS_DRAM;
+								when others =>
+									null;
+							end case?;
+						else
+							-- DRAM zero bank handles control
+							dram_bank_force_zero <= not(ADR_I(14));
+							bus_selector <= BS_DRAM;
+						end if; 
+						
 						register_ack <= '1';
 						register_data <= x"00";
                     elsif ACCESS_RAM = '1' then
@@ -151,6 +167,21 @@ begin
                                     register_data <= "0" & boot_rom_accessible_reg & boot_rom_accessible & DRAM_READY & "0" & reg_selected_mbc;
                                 end if;
                                 register_ack <= '1';
+							when b"0_0010_----_----" =>
+								if WE_I = '1' then
+									dram_bank_mbc(7 downto 0) <= DAT_I;
+								else
+									register_data <= dram_bank_mbc(7 downto 0);
+								end if;
+								register_ack <= '1';
+							when b"0_0011_----_----" =>
+								if WE_I = '1' then
+									dram_bank_mbc(8) <= DAT_I(0);
+									dram_bank <= DAT_I(2 downto 1);
+								else
+									register_data <= "00000" & dram_bank & dram_bank_mbc(8);
+								end if;
+								register_ack <= '1';
                             when others =>
                                 register_data <= x"00";
                                 register_ack <= '1';
@@ -173,9 +204,19 @@ begin
 		end if;
 	end process;
 	
+	-- DRAM bank selection
+	dram_bank_select_zero <= nor_reduce(dram_bank) nor nor_reduce(dram_bank_mbc);
+	dram_bank_passthrough <= (dram_bank_select_zero nor boot_rom_accessible) or boot_rom_accessible;
+
 	-- DRAM ports
-	DRAM_ADR_O <= "000000000";	-- TODO: GB bank selection
-	DRAM_TGA_O <= "00";			-- TODO: DRAM bank selection
+	with dram_bank_passthrough & dram_bank_force_zero select DRAM_ADR_O <=
+		(0 => '1', others => '0')	when "00",
+		dram_bank_mbc				when "10",
+		(others => '0')				when others;
+
+	with dram_bank_force_zero select DRAM_TGA_O <=
+		dram_bank 					when '0',
+		(others => '0')				when others;
 
 	-- Bus selection data
 	with bus_selector select DAT_O <=
