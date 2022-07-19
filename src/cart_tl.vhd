@@ -135,7 +135,7 @@ architecture behaviour of cart_tl is
 	signal wb_efb_ack	: std_logic;
 
 	signal wb_dram_stb	: std_logic;
-	signal wb_dram_adr	: std_logic_vector(8 downto 0);
+	signal wb_dram_bank	: std_logic_vector(8 downto 0);
 	signal wb_dram_tga	: std_logic_vector(1 downto 0);
 	signal wb_dram_rdat	: std_logic_vector(7 downto 0);
 	signal wb_dram_ack	: std_logic;
@@ -252,7 +252,7 @@ begin
 		EFB_ACK_I => wb_efb_ack,
 
 		DRAM_STB_O => wb_dram_stb,
-		DRAM_ADR_O => wb_dram_adr,
+		DRAM_ADR_O => wb_dram_bank,
 		DRAM_TGA_O => wb_dram_tga,
 		DRAM_DAT_I => wb_dram_rdat,
 		DRAM_ACK_I => wb_dram_ack,
@@ -295,7 +295,7 @@ begin
         CYC_I => wb_cyc,
         STB_I => wb_dram_stb,
         WE_I => wb_we,
-        ADR_I => wb_dram_adr & wb_adr(13 downto 0),		-- Is always divided up into 16 kB blocks
+        ADR_I => wb_dram_bank & wb_adr(13 downto 0),		-- Is always divided up into 16 kB blocks
         TGA_I => wb_dram_tga,
         DAT_I => wb_data_incoming,
         DAT_O => wb_dram_rdat,
