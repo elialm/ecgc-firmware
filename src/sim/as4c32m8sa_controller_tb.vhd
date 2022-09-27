@@ -24,13 +24,13 @@ end as4c32m8sa_controller_tb;
 architecture behaviour of as4c32m8sa_controller_tb is
 
     type DRAM_CMD is
-		(CMD_BANK_ACTIVATE, CMD_BANK_PRECHARGE, CMD_PRECHARGE_ALL,
-		CMD_WRITE, CMD_WRITE_AUTO_PRECHARGE, CMD_READ, CMD_READ_AUTO_PRECHARGE,
-		CMD_MODE_REGISTER_SET, CMD_NOP, CMD_BURST_STOP, CMD_DEVICE_DESELECT,
-		CMD_AUTO_REFRESH, CMD_SELF_REFRESH_ENTRY, CMD_SELF_REFRESH_EXIT,
-		CMD_CLOCK_SUSPEND_MODE_ENTRY, CMD_POWER_DOWN_MODE_ENTRY,
-		CMD_CLOCK_SUSPEND_MODE_EXIT, CMD_POWER_DOWN_MODE_EXIT, CMD_OUTPUT_ENABLE,
-		CMD_OUTPUT_DISABLE, CMD_UNKNOWN);
+        (CMD_BANK_ACTIVATE, CMD_BANK_PRECHARGE, CMD_PRECHARGE_ALL,
+        CMD_WRITE, CMD_WRITE_AUTO_PRECHARGE, CMD_READ, CMD_READ_AUTO_PRECHARGE,
+        CMD_MODE_REGISTER_SET, CMD_NOP, CMD_BURST_STOP, CMD_DEVICE_DESELECT,
+        CMD_AUTO_REFRESH, CMD_SELF_REFRESH_ENTRY, CMD_SELF_REFRESH_EXIT,
+        CMD_CLOCK_SUSPEND_MODE_ENTRY, CMD_POWER_DOWN_MODE_ENTRY,
+        CMD_CLOCK_SUSPEND_MODE_EXIT, CMD_POWER_DOWN_MODE_EXIT, CMD_OUTPUT_ENABLE,
+        CMD_OUTPUT_DISABLE, CMD_UNKNOWN);
     type DRAM_CMD_ENCODING_TYPE is record
         previous_cke		: std_logic;
         current_cke			: std_logic;
@@ -46,7 +46,7 @@ architecture behaviour of as4c32m8sa_controller_tb is
     type DRAM_CMD_ENCODING_ARRAY_TYPE is array (0 to 23) of DRAM_CMD_ENCODING_TYPE;
 
     -- DRAM commands encodings lookup table
-	constant DRAM_CMD_ENCODINGS : DRAM_CMD_ENCODING_ARRAY_TYPE := (
+    constant DRAM_CMD_ENCODINGS : DRAM_CMD_ENCODING_ARRAY_TYPE := (
     --  CKE-1 	CKE  	DQM 	BA(1:0)    	  A(12:0)    CS# 	RAS#	CAS#	WE#		Command
         ('1',	'-',	'-',	"--",	"-------------", '0',	'0', 	'1', 	'1', 	CMD_BANK_ACTIVATE),
         ('1',	'-',	'-',	"--",	"--0----------", '0',	'0',	'1',	'0',	CMD_BANK_PRECHARGE),
@@ -237,5 +237,5 @@ begin
             end case;
         end if;
     end process;
-	
+    
 end behaviour;

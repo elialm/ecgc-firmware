@@ -129,5 +129,5 @@ begin
     GB_RESETN <= not(soft_reset_s);
     SOFT_RESET <= soft_reset_s;
     HARD_RESET <= ff_stages(ff_stages'high);
-	
+    
 end behaviour;

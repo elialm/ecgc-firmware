@@ -275,5 +275,5 @@ begin
     timer_elapsed <= '1' when global_counter = global_comp else '0';
 
     DQ <= data_register when drive_dq = '1' else (others => 'Z');
-	
+    
 end behaviour;
