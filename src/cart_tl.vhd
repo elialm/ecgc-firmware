@@ -39,11 +39,13 @@ entity cart_tl is
         GB_CSN      : in std_logic;
 
         -- SPI signals
-        SPI_CLK		: inout std_logic;
-        SPI_MISO	: inout std_logic;
-        SPI_MOSI	: inout std_logic;
-        SPI_CSN		: out std_logic;
-        
+        SPI_CLK		    : inout std_logic;
+        SPI_MISO	    : inout std_logic;
+        SPI_MOSI	    : inout std_logic;
+        SPI_HARD_CSN    : out std_logic;
+        SPI_SDC_CSN     : out std_logic;
+        SPI_DBG_CSN     : out std_logic;
+
         -- Bus tranceivers
         BTA_OEN		: out std_logic;
         BTD_OEN		: out std_logic;
@@ -103,7 +105,7 @@ architecture behaviour of cart_tl is
         spi_miso	: inout std_logic;
         spi_mosi	: inout std_logic; 
         spi_scsn	: in std_logic; 
-        spi_csn		: out std_logic_vector(0 downto 0); 
+        spi_csn		: out std_logic_vector(2 downto 0); 
         ufm_sn		: in std_logic;
         wbc_ufm_irq	: out std_logic);
     end component;
@@ -281,7 +283,9 @@ begin
         spi_miso => SPI_MISO,
         spi_mosi => SPI_MOSI, 
         spi_scsn => '1', 
-        spi_csn(0) => SPI_CSN, 
+        spi_csn(0) => SPI_HARD_CSN,
+        spi_csn(1) => SPI_SDC_CSN,
+        spi_csn(2) => SPI_DBG_CSN,
         ufm_sn => '1',
         wbc_ufm_irq	=> open);
 

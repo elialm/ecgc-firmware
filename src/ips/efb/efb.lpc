@@ -16,8 +16,8 @@ CoreRevision=1.2
 ModuleName=efb
 SourceFormat=VHDL
 ParameterFileVersion=1.0
-Date=06/20/2022
-Time=23:59:45
+Date=10/13/2022
+Time=12:31:43
 
 [Parameters]
 Verilog=0
@@ -47,7 +47,7 @@ pll=0
 pll_cnt=1
 spi=1
 spi_clkinv=0
-spi_cs=1
+spi_cs=3
 spi_en=0
 spi_freq=1
 spi_lsb=0
@@ -138,4 +138,4 @@ t_wbport=0
 t_portlock=0
 
 [Command]
-cmd_line= -w -n efb -lang vhdl -synth lse -bus_exp 7 -bb -type efb -arch se5c00 -freq 50 -spi -spi_mode Both -spi_freq 1 -spi_cs 1 -ufm0 -ufm0_ebr 0 -mem_size0 3582 -ufm0_0 -efb_ufm_boot INT_SINGLE_BOOT_CFG0 -wb -dev 9400
+cmd_line= -w -n efb -lang vhdl -synth lse -bus_exp 7 -bb -type efb -arch se5c00 -freq 50 -spi -spi_mode Both -spi_freq 1 -spi_cs 3 -ufm0 -ufm0_ebr 0 -mem_size0 3582 -ufm0_0 -efb_ufm_boot INT_SINGLE_BOOT_CFG0 -wb -dev 9400
