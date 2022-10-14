@@ -55,6 +55,9 @@ entity mbch is
         DRAM_ACK_I	: in std_logic;
         DRAM_ERR_I	: in std_logic;
 
+        GPIO_IN     : in std_logic_vector(3 downto 0);
+        GPIO_OUT    : out std_logic_vector(3 downto 0);
+
         ACCESS_ROM		: in std_logic;
         ACCESS_RAM		: in std_logic;
         SELECT_MBC  	: out std_logic_vector(2 downto 0);
@@ -76,6 +79,18 @@ architecture behaviour of mbch is
         Q			: out  std_logic_vector(7 downto 0));
     end component;
 
+    component synchroniser is
+    generic (
+        FF_COUNT : natural := 2;
+        DATA_WIDTH : natural := 4;
+        RESET_VALUE : std_logic := '0');
+    port (
+        CLK : in std_logic;
+        RST : in std_logic;
+        DAT_IN : in std_logic_vector(DATA_WIDTH-1 downto 0);
+        DAT_OUT : out std_logic_vector(DATA_WIDTH-1 downto 0));
+    end component;
+
     signal wb_cart_access 	: std_logic;
     signal wb_ack 			: std_logic;
 
@@ -89,6 +104,9 @@ architecture behaviour of mbch is
     signal dram_bank_select_zero	: std_logic;						-- Set if MBC & DRAM banks 0 is selected (zero bank)
     signal dram_bank_passthrough	: std_logic;						-- Set if selector registers should be used to select bank, otherwise will force bank 1 
     signal dram_bank_force_zero		: std_logic;						-- Set to force zero bank to be selected
+
+    signal gpio_out_reg         : std_logic_vector(3 downto 0);
+    signal gpio_in_sync         : std_logic_vector(3 downto 0);
     
     signal register_data 		: std_logic_vector(7 downto 0);
     signal register_ack 		: std_logic;
@@ -110,6 +128,16 @@ begin
     wb_cart_access <= STB_I and CYC_I;
     boot_rom_enabled <= boot_rom_accessible and wb_cart_access;
         
+    -- GPIO input synchroniser
+    GPIO_IN_SYNCHRONISER : component synchroniser
+    port map (
+        CLK => CLK_I,
+        RST => RST_I,
+        DAT_IN => GPIO_IN,
+        DAT_OUT => gpio_in_sync);
+
+    GPIO_OUT <= gpio_out_reg;
+
     -- Address decoder
     process (CLK_I)
     begin
@@ -127,6 +155,7 @@ begin
                 dram_bank <= (others => '0');
                 reg_selected_mbc <= "000";
                 soft_reset_rising <= '1';
+                gpio_out_reg <= (others => '0');
 
                 SELECT_MBC <= "000";
             else
@@ -157,8 +186,10 @@ begin
                         -- Decode RAM addresses
                         case? ADR_I(12 downto 0) is     -- bits (15 downto 13) = "101"
                             when b"0_0000_----_----" =>
+                                -- EFB access
                                 bus_selector <= BS_EFB;
                             when b"0_0001_----_----" =>
+                                -- MBCH Control 0 reg
                                 if WE_I = '1' then
                                     SOFT_RESET_OUT <= DAT_I(7);
                                     boot_rom_accessible_reg <= DAT_I(6);
@@ -168,6 +199,7 @@ begin
                                 end if;
                                 register_ack <= '1';
                             when b"0_0010_----_----" =>
+                                -- MBCH DRAM bank sel 0 reg
                                 if WE_I = '1' then
                                     dram_bank_mbc(7 downto 0) <= DAT_I;
                                 else
@@ -175,11 +207,20 @@ begin
                                 end if;
                                 register_ack <= '1';
                             when b"0_0011_----_----" =>
+                                -- MBCH DRAM bank sel 1 reg
                                 if WE_I = '1' then
                                     dram_bank_mbc(8) <= DAT_I(0);
                                     dram_bank <= DAT_I(2 downto 1);
                                 else
                                     register_data <= "00000" & dram_bank & dram_bank_mbc(8);
+                                end if;
+                                register_ack <= '1';
+                            when b"0_0100_----_----" =>
+                                -- MBCH GPIO reg
+                                if WE_I = '1' then
+                                    gpio_out_reg <= DAT_I(7 downto 4);
+                                else
+                                    register_data <= gpio_out_reg & gpio_in_sync;
                                 end if;
                                 register_ack <= '1';
                             when others =>

@@ -46,6 +46,12 @@ entity cart_tl is
         SPI_SDC_CSN     : out std_logic;
         SPI_DBG_CSN     : out std_logic;
 
+        -- Programmer signals
+        PRGMR_FLSHEN    : in std_logic;
+        PGRMR_DONE      : in std_logic;
+        -- PGRMR_RST       : in std_logic;
+        PGMRR_RDY       : out std_logic;
+
         -- Bus tranceivers
         BTA_OEN		: out std_logic;
         BTD_OEN		: out std_logic;
@@ -259,6 +265,15 @@ begin
         DRAM_DAT_I => wb_dram_rdat,
         DRAM_ACK_I => wb_dram_ack,
         DRAM_ERR_I => '0',
+
+        GPIO_IN(0) => PRGMR_FLSHEN,
+        GPIO_IN(1) => PGRMR_DONE,
+        GPIO_IN(2) => '0',
+        GPIO_IN(3) => '0',
+        GPIO_OUT(0) => PGMRR_RDY,
+        GPIO_OUT(1) => open,
+        GPIO_OUT(2) => open,
+        GPIO_OUT(3) => open,
 
         ACCESS_ROM => gb_access_rom,
         ACCESS_RAM => gb_access_ram,
