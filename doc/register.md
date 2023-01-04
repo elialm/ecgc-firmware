@@ -155,7 +155,11 @@ Using other values shall result in undefined behaviour.
 
 ## MBCH_MEMSEL0
 
+**TODO: document**
+
 ## MBCH_MEMSEL1
+
+**TODO: document**
 
 <style>
 .table-register-description tr td {
