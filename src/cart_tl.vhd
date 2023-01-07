@@ -45,6 +45,7 @@ entity cart_tl is
         SPI_HARD_CSN    : out std_logic;
         SPI_SDC_CSN     : out std_logic;
         SPI_DBG_CSN     : in std_logic;
+        SPI_UFM_CSN     : in std_logic;
 
         -- Programmer signals
         PRGMR_FLSHEN    : in std_logic;
@@ -300,7 +301,7 @@ begin
         spi_scsn => SPI_DBG_CSN, 
         spi_csn(0) => SPI_HARD_CSN,
         spi_csn(1) => SPI_SDC_CSN,
-        ufm_sn => '1',
+        ufm_sn => SPI_UFM_CSN,
         wbc_ufm_irq	=> open);
 
     -- DRAM controller instance
