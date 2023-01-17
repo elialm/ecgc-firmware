@@ -10,89 +10,98 @@ z2
 cModel Technology
 Z0 dD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/sim/sim_dma
 Edma_controller
-Z1 w1673882180
-Z2 DPx3 std 6 textio 0 22 zE1`LPoLg^DX3Oz^4Fj1K3
-Z3 DPx4 ieee 14 std_logic_1164 0 22 cVAk:aDinOX8^VGI1ekP<3
-!i122 5
+Z1 w1673964005
+Z2 DPx8 synopsys 10 attributes 0 22 dc>JdEHRM@6GGENe5bZ?D1
+Z3 DPx4 ieee 14 std_logic_misc 0 22 dN]HY6l5ohPcZ:TaC@B;53
+Z4 DPx4 ieee 11 numeric_std 0 22 aU^R8eGcicLcUFIaBQSL>3
+Z5 DPx3 std 6 textio 0 22 zE1`LPoLg^DX3Oz^4Fj1K3
+Z6 DPx4 ieee 14 std_logic_1164 0 22 cVAk:aDinOX8^VGI1ekP<3
+!i122 30
 R0
-Z4 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/dma_controller.vhd
-Z5 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/dma_controller.vhd
+Z7 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/dma_controller.vhd
+Z8 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/dma_controller.vhd
 l0
-L24 1
-VahXBLonglQ:fAR4i5JXg@0
-!s100 ;JHK>l2FSbQ[kFS_LaDZ<3
-Z6 OT;C;2020.3;71
+Z9 L26 1
+V?fS_eZ01gA85g;X2>G4^A3
+!s100 fY>nZj6eU@dN^c4BhWo5o0
+Z10 OT;C;2020.3;71
 33
-Z7 !s110 1673882190
+Z11 !s110 1673964008
 !i10b 1
-Z8 !s108 1673882190.000000
-Z9 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/dma_controller.vhd|
-Z10 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/dma_controller.vhd|
+Z12 !s108 1673964008.000000
+Z13 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/dma_controller.vhd|
+Z14 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/dma_controller.vhd|
 !i113 1
-Z11 o-work work -2008 -explicit -O0
-Z12 tExplicit 1 NoCoverage 1 CvgOpt 0
+Z15 o-work work -2008 -explicit -O0
+Z16 tExplicit 1 NoCoverage 1 CvgOpt 0
 Abehaviour
 R2
 R3
-Z13 DEx4 work 14 dma_controller 0 22 ahXBLonglQ:fAR4i5JXg@0
-!i122 5
-l52
-L46 43
-VOI;5gnI`:3gBj2;1XEcmJ3
-!s100 o67:EfY^EDVf2Wc>1=FH<1
+R4
+R5
 R6
-33
-R7
-!i10b 1
-R8
-R9
+Z17 DEx4 work 14 dma_controller 0 22 ?fS_eZ01gA85g;X2>G4^A3
+!i122 30
+l68
+L48 164
+VeHmMUjTEXY;m9>RbEa9G31
+!s100 ag?9KbhZ8341I<NU>mA:@2
 R10
-!i113 1
-R11
-R12
-Edma_controller_tb
-Z14 w1673881962
-Z15 DPx8 synopsys 10 attributes 0 22 dc>JdEHRM@6GGENe5bZ?D1
-Z16 DPx4 ieee 14 std_logic_misc 0 22 dN]HY6l5ohPcZ:TaC@B;53
-R2
-R3
-!i122 4
-R0
-Z17 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/dma_controller_tb.vhd
-Z18 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/dma_controller_tb.vhd
-l0
-L25 1
-Vki^2C?`CXzFF_F@aa<U_b1
-!s100 DFaF0eAYi`?U3HFCe?4]M3
-R6
 33
-Z19 !s110 1673881968
-!i10b 1
-Z20 !s108 1673881968.000000
-Z21 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/dma_controller_tb.vhd|
-Z22 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/dma_controller_tb.vhd|
-!i113 1
 R11
+!i10b 1
 R12
-Abehaviour
 R13
+R14
+!i113 1
 R15
 R16
+Edma_controller_tb
+Z18 w1673964208
+Z19 DPx4 ieee 9 math_real 0 22 gNk<PdFJ<XNPcfef`f?Z81
 R2
 R3
-DEx4 work 17 dma_controller_tb 0 22 ki^2C?`CXzFF_F@aa<U_b1
-!i122 4
-l49
-L28 67
-V98M<2Rz@lQR=Wh7@dBQ:V1
-!s100 [UNkQOIc8=D:z`kY2jnOQ3
+R5
 R6
+!i122 31
+R0
+Z20 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/dma_controller_tb.vhd
+Z21 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/dma_controller_tb.vhd
+l0
+R9
+VT]hXM9J]lQG2o:TLMj96^0
+!s100 8_:nYm0kafCJeG8FJT_6D1
+R10
 33
-R19
+Z22 !s110 1673964213
 !i10b 1
-R20
-R21
-R22
+Z23 !s108 1673964213.000000
+Z24 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/dma_controller_tb.vhd|
+Z25 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/dma_controller_tb.vhd|
 !i113 1
-R11
-R12
+R15
+R16
+Abehaviour
+R4
+R17
+R19
+R2
+R3
+R5
+R6
+Z26 DEx4 work 17 dma_controller_tb 0 22 T]hXM9J]lQG2o:TLMj96^0
+!i122 31
+l65
+L29 157
+Vn@1;Z4BBD5CmjOAh6mMDm1
+!s100 iYV6M]KMzQEPgYcMd]CD`2
+R10
+33
+R22
+!i10b 1
+R23
+R24
+R25
+!i113 1
+R15
+R16
