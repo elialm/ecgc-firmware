@@ -1,0 +1,8 @@
+<BaliSimProject version="1.3" path="sim" stage="0" language="-1" name="sim_spi" simType="ModelSim">
+    <Source worklib="work" path="src/spi_slave.vhd" type="VHDL" include="none"/>
+    <Source worklib="work" path="src/sim/spi_slave_tb.vhd" type="VHDL" include="none"/>
+    <SimLib value="pmi_work ovi_machxo3d"/>
+    <GlbInc value=""/>
+    <Macro value=""/>
+    <TopModule instance="" language="VHDL" name="spi_slave_tb"/>
+</BaliSimProject>
