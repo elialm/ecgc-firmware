@@ -36,7 +36,7 @@ architecture behaviour of spi_slave_tb is
 
     signal transaction_id   : natural := 0;
 
-    type SPI_DATA_TYPE is array (integer range <>) of std_logic_vector(7 downto 0);
+    type SPI_DATA_TYPE is array (integer range <>) of std_logic_vector(8 downto 0);
 
 begin
 
@@ -61,30 +61,30 @@ begin
     -- SPI transactions
     process
         variable spi_data : SPI_DATA_TYPE(0 to 3) := (
-            b"1010_1010",
-            b"1111_0101",
-            b"0000_0000",
-            b"1111_1111");
+            b"0_1010_1010",
+            b"1_1111_0101",
+            b"0_0000_0000",
+            b"0_1111_1111");
 
-        variable current_data : std_logic_vector(7 downto 0);
+        variable current_data : std_logic_vector(8 downto 0);
     begin
-        wait for 50 ns;
+        wait for 500 ns;
 
         for i in spi_data'range loop
             current_data := spi_data(i);
-            spi_csn <= '0';
+            spi_csn <= current_data(8);
 
-            for j in current_data'range loop
+            for j in 7 downto 0 loop
                 spi_mosi <= current_data(j);
-                wait for 50 ns;
+                wait for 500 ns;
                 spi_clk <= '1';
-                wait for 50 ns;
+                wait for 500 ns;
                 spi_clk <= '0';
             end loop;
 
-            wait for 50 ns;
+            wait for 500 ns;
             spi_csn <= '1';
-            wait for 50 ns;
+            wait for 500 ns;
         end loop;
 
         wait;
