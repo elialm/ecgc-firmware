@@ -27,12 +27,19 @@ end spi_slave_tb;
 
 architecture behaviour of spi_slave_tb is
 
-    signal spi_clk     : std_logic := '0';
-    signal spi_csn     : std_logic := '1';
-    signal spi_mosi    : std_logic := '0';
-    signal spi_miso    : std_logic;
-    signal clk_i       : std_logic := '0';
-    signal rst_i       : std_logic := '1';
+    signal spi_clk          : std_logic := '0';
+    signal spi_csn          : std_logic := '1';
+    signal spi_mosi         : std_logic := '0';
+    signal spi_miso         : std_logic;
+    signal clk_i            : std_logic := '0';
+    signal rst_i            : std_logic := '1';
+    signal cyc_i            : std_logic := '0';
+    signal ack_o            : std_logic;    
+    signal we_i             : std_logic := '0';
+    signal dat_i            : std_logic_vector(7 downto 0) := x"00";
+    signal dat_o            : std_logic_vector(7 downto 0);
+    signal status_received  : std_logic;
+    signal status_overrun   : std_logic;
 
     signal transaction_id   : natural := 0;
 
@@ -47,7 +54,14 @@ begin
         SPI_MOSI => spi_mosi,
         SPI_MISO => spi_miso,
         CLK_I => clk_i,
-        RST_I => rst_i);
+        RST_I => rst_i,
+        CYC_I => cyc_i,
+        ACK_O => ack_o,
+        WE_I => we_i,
+        DAT_I => dat_i,
+        DAT_O => dat_o,
+        STATUS_RECEIVED => status_received,
+        STATUS_OVERRUN => status_overrun);
 
     -- Main clock
     process
@@ -101,8 +115,18 @@ begin
                     null;
                 when 1 =>
                     rst_i <= '0';
-                when others =>
+                when 180 =>
+                    cyc_i <= '1';
+                when 182 =>
+                    we_i <= '1';
+                    dat_i <= x"8E";
+                when 184 =>
+                    cyc_i <= '0';
+                    we_i <= '0';
+                when 185 =>
                     transaction_id <= transaction_id;
+                when others =>
+                    null;
             end case;
         end if;
     end process;

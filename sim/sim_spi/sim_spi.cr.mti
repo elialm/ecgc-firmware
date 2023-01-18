@@ -6,6 +6,8 @@ Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oc
 -- Loading package NUMERIC_STD
 -- Compiling entity spi_slave_tb
 -- Compiling architecture behaviour of spi_slave_tb
+-- Loading package ATTRIBUTES
+-- Loading package std_logic_misc
 -- Loading entity spi_slave
 
 } {} {}} {D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/synchroniser.vhd} {1 {vcom -work work -2008 -explicit -stats=none {D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/synchroniser.vhd}
