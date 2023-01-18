@@ -71,7 +71,7 @@ architecture behaviour of spi_slave is
     signal spi_clk_has_edge_f   : std_logic;
     signal spi_clocked_data     : std_logic_vector(7 downto 0);
     signal spi_data_out         : std_logic;
-    signal spi_bit_count        : std_logic_vector(2 downto 0);
+    signal spi_bit_count        : std_logic_vector(3 downto 0);
     signal spi_byte_received    : std_logic;
     signal spi_byte_received_l  : std_logic;
 
@@ -96,7 +96,7 @@ begin
     spi_clk_has_edge <= spi_clk_sync_delay xor spi_clk_sync;
     spi_clk_has_edge_r <= spi_clk_has_edge and spi_clk_sync;
     spi_clk_has_edge_f <= spi_clk_has_edge and spi_clk_sync_delay;
-    spi_byte_received <= and_reduce(spi_bit_count);
+    spi_byte_received <= spi_bit_count(spi_bit_count'high);
 
     process (CLK_I)
     begin
@@ -128,7 +128,7 @@ begin
 
                 -- Reset bit count
                 if (spi_csn_sync or spi_byte_received) = '1' then
-                    spi_bit_count <= (others => '0');
+                    spi_bit_count(spi_bit_count'high) <= '0';
                 end if;
 
                 -- Set data out whenever byte is received
@@ -145,8 +145,7 @@ begin
                 -- WishBone bus
                 if (CYC_I and not(wb_ack_o)) = '1' then
                     if WE_I = '1' then
-                        spi_clocked_data(7) <= '0';
-                        spi_clocked_data(6 downto 0) <= DAT_I(7 downto 1);
+                        spi_clocked_data <= DAT_I(7 downto 0);
                         spi_data_out <= DAT_I(0);
                         wb_ack_o <= '1';
                     elsif spi_byte_received_l = '1' then

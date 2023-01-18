@@ -115,15 +115,15 @@ begin
                     null;
                 when 1 =>
                     rst_i <= '0';
-                when 180 =>
+                when 220 =>
                     cyc_i <= '1';
-                when 182 =>
+                when 222 =>
                     we_i <= '1';
                     dat_i <= x"8E";
-                when 184 =>
+                when 224 =>
                     cyc_i <= '0';
                     we_i <= '0';
-                when 185 =>
+                when 225 =>
                     transaction_id <= transaction_id;
                 when others =>
                     null;
