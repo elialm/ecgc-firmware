@@ -38,6 +38,7 @@ entity spi_slave is
         CLK_I   : in std_logic;
         RST_I   : in std_logic;
         CYC_I   : in std_logic;
+        STB_I   : in std_logic;
         ACK_O   : out std_logic;
         WE_I    : in std_logic;
         DAT_I   : in std_logic_vector(7 downto 0);
@@ -146,7 +147,7 @@ begin
                 end if;
 
                 -- WishBone bus
-                if (CYC_I and not(wb_ack_o)) = '1' then
+                if (CYC_I and STB_I and not(wb_ack_o)) = '1' then
                     if WE_I = '1' then
                         spi_clocked_data <= DAT_I(7 downto 0);
                         spi_data_out <= DAT_I(0);
