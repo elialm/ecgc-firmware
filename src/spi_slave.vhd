@@ -115,7 +115,6 @@ begin
 
                 DAT_O <= (others => '0');
                 STATUS_OVERRUN <= '0';
-                STATUS_TXRDY <= '1';
             else
                 spi_clk_sync_delay <= spi_clk_sync;
                 wb_ack_o <= '0';
@@ -123,13 +122,12 @@ begin
                 -- Rising edge on SPI_CLK
                 if (spi_clk_has_edge_r and not(spi_csn_sync)) = '1' then
                     spi_clocked_data <= SPI_MOSI & spi_clocked_data(7 downto 1);
-                    spi_bit_count <= std_logic_vector(unsigned(spi_bit_count) + 1);
                 end if;
 
                 -- Falling edge on SPI_CLK
                 if (spi_clk_has_edge_f and not(spi_csn_sync)) = '1' then
                     spi_data_out <= spi_clocked_data(0);
-                    STATUS_TXRDY <= spi_send_empty;
+                    spi_bit_count <= std_logic_vector(unsigned(spi_bit_count) + 1);                    
                 end if;
 
                 -- Reset bit count
@@ -165,5 +163,6 @@ begin
     SPI_MISO <= spi_data_out when SPI_CSN = '0' else 'Z';
     ACK_O <= wb_ack_o;
     STATUS_RXRDY <= spi_byte_received_l;
+    STATUS_TXRDY <= spi_send_empty;
 
 end behaviour;
