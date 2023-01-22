@@ -38,7 +38,8 @@ architecture behaviour of spi_slave_tb is
     signal we_i             : std_logic := '0';
     signal dat_i            : std_logic_vector(7 downto 0) := x"00";
     signal dat_o            : std_logic_vector(7 downto 0);
-    signal status_received  : std_logic;
+    signal status_rxrdy     : std_logic;
+    signal status_txrdy     : std_logic;
     signal status_overrun   : std_logic;
 
     signal transaction_id   : natural := 0;
@@ -60,7 +61,8 @@ begin
         WE_I => we_i,
         DAT_I => dat_i,
         DAT_O => dat_o,
-        STATUS_RECEIVED => status_received,
+        STATUS_RXRDY => status_rxrdy,
+        STATUS_TXRDY => status_txrdy,
         STATUS_OVERRUN => status_overrun);
 
     -- Main clock

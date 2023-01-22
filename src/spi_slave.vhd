@@ -44,7 +44,8 @@ entity spi_slave is
         DAT_O   : out std_logic_vector(7 downto 0);
 
         -- Status signals
-        STATUS_RECEIVED : out std_logic;
+        STATUS_RXRDY    : out std_logic;
+        STATUS_TXRDY    : out std_logic;
         STATUS_OVERRUN  : out std_logic);
 end spi_slave;
 
@@ -74,6 +75,7 @@ architecture behaviour of spi_slave is
     signal spi_bit_count        : std_logic_vector(3 downto 0);
     signal spi_byte_received    : std_logic;
     signal spi_byte_received_l  : std_logic;
+    signal spi_send_empty       : std_logic;
 
     signal wb_ack_o     : std_logic;
 
@@ -107,10 +109,12 @@ begin
                 spi_data_out <= '0';
                 spi_bit_count <= (others => '0');
                 spi_byte_received_l <= '0';
+                spi_send_empty <= '1';
                 wb_ack_o <= '0';
 
                 DAT_O <= (others => '0');
                 STATUS_OVERRUN <= '0';
+                STATUS_TXRDY <= '1';
             else
                 spi_clk_sync_delay <= spi_clk_sync;
                 wb_ack_o <= '0';
@@ -124,6 +128,7 @@ begin
                 -- Falling edge on SPI_CLK
                 if (spi_clk_has_edge_f and not(spi_csn_sync)) = '1' then
                     spi_data_out <= spi_clocked_data(0);
+                    STATUS_TXRDY <= spi_send_empty;
                 end if;
 
                 -- Reset bit count
@@ -134,12 +139,10 @@ begin
                 -- Set data out whenever byte is received
                 -- Latch spi_byte_received signal
                 if spi_byte_received = '1' then
-                    if (spi_byte_received and spi_byte_received_l) = '1' then
-                        STATUS_OVERRUN <= '1';
-                    end if;
-
+                    STATUS_OVERRUN <= spi_byte_received_l;
                     DAT_O <= spi_clocked_data(7 downto 0);
                     spi_byte_received_l <= '1';
+                    spi_send_empty <= '1';
                 end if;
 
                 -- WishBone bus
@@ -147,6 +150,7 @@ begin
                     if WE_I = '1' then
                         spi_clocked_data <= DAT_I(7 downto 0);
                         spi_data_out <= DAT_I(0);
+                        spi_send_empty <= '0';
                         wb_ack_o <= '1';
                     elsif spi_byte_received_l = '1' then
                         spi_byte_received_l <= '0';
@@ -159,6 +163,6 @@ begin
 
     SPI_MISO <= spi_data_out when SPI_CSN = '0' else 'Z';
     ACK_O <= wb_ack_o;
-    STATUS_RECEIVED <= spi_byte_received_l;
+    STATUS_RXRDY <= spi_byte_received_l;
 
 end behaviour;
