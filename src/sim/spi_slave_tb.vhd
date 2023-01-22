@@ -34,6 +34,7 @@ architecture behaviour of spi_slave_tb is
     signal clk_i            : std_logic := '0';
     signal rst_i            : std_logic := '1';
     signal cyc_i            : std_logic := '0';
+    signal stb_i            : std_logic := '1';
     signal ack_o            : std_logic;    
     signal we_i             : std_logic := '0';
     signal dat_i            : std_logic_vector(7 downto 0) := x"00";
@@ -57,6 +58,7 @@ begin
         CLK_I => clk_i,
         RST_I => rst_i,
         CYC_I => cyc_i,
+        STB_I => stb_i,
         ACK_O => ack_o,
         WE_I => we_i,
         DAT_I => dat_i,
@@ -79,7 +81,7 @@ begin
         variable spi_data : SPI_DATA_TYPE(0 to 3) := (
             b"0_1010_1010",
             b"1_1111_0101",
-            b"0_0000_0000",
+            b"0_0110_1001",
             b"0_1111_1111");
 
         variable current_data : std_logic_vector(8 downto 0);
@@ -90,7 +92,7 @@ begin
             current_data := spi_data(i);
             spi_csn <= current_data(8);
 
-            for j in 7 downto 0 loop
+            for j in 0 to 7 loop
                 spi_mosi <= current_data(j);
                 wait for 500 ns;
                 spi_clk <= '1';
