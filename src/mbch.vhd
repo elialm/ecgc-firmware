@@ -58,6 +58,11 @@ entity mbch is
         GPIO_IN     : in std_logic_vector(3 downto 0);
         GPIO_OUT    : out std_logic_vector(3 downto 0);
 
+        SPI_CLK     : in std_logic;
+        SPI_CSN     : in std_logic;
+        SPI_MOSI    : in std_logic;
+        SPI_MISO    : out std_logic;
+
         ACCESS_ROM		: in std_logic;
         ACCESS_RAM		: in std_logic;
         SELECT_MBC  	: out std_logic_vector(2 downto 0);
@@ -68,7 +73,7 @@ end mbch;
 
 architecture behaviour of mbch is
 
-    type bus_selection_t is (BS_REGISTER, BS_BOOT_ROM, BS_EFB, BS_DRAM);
+    type bus_selection_t is (BS_REGISTER, BS_BOOT_ROM, BS_EFB, BS_DRAM, BS_SPI);
 
     component boot_rom is
     port (
@@ -114,6 +119,13 @@ architecture behaviour of mbch is
     signal bus_selector 		: bus_selection_t;
     signal soft_reset_rising	: std_logic;
 
+    signal spi_rxrdy    : std_logic;
+    signal spi_txrdy    : std_logic;
+    signal spi_overrun  : std_logic;
+    signal spi_dat_o    : std_logic_vector(7 downto 0);
+    signal spi_ack_o    : std_logic;
+    signal spi_stb_i    : std_logic;
+
 begin
 
     -- ROM instance containing boot code
@@ -137,6 +149,25 @@ begin
         DAT_OUT => gpio_in_sync);
 
     GPIO_OUT <= gpio_out_reg;
+
+    -- SPI slave [TEMP]
+    SPI_SLAVE : entity work.spi_slave
+    port map (
+        SPI_CLK => SPI_CLK,
+        SPI_CSN => SPI_CSN,
+        SPI_MOSI => SPI_MOSI,
+        SPI_MISO => SPI_MISO,
+        CLK_I => CLK_I,
+        RST_I => SOFT_RESET_IN,
+        CYC_I => CYC_I,
+        STB_I => spi_stb_i,
+        ACK_O => spi_ack_o,
+        WE_I => WE_I,
+        DAT_I => DAT_I,
+        DAT_O => spi_dat_o,
+        STATUS_RXRDY => spi_rxrdy,
+        STATUS_TXRDY => spi_txrdy,
+        STATUS_OVERRUN => spi_overrun);
 
     -- Address decoder
     process (CLK_I)
@@ -223,6 +254,13 @@ begin
                                     register_data <= gpio_out_reg & gpio_in_sync;
                                 end if;
                                 register_ack <= '1';
+                            when b"0_0101_----_----" =>
+                                -- SPI slave data [TEMP]
+                                bus_selector <= BS_SPI;
+                            when b"0_0110_----_----" =>
+                                -- SPI slave status [TEMP]
+                                register_data <= "000" & spi_overrun & "00" & spi_txrdy & spi_rxrdy;
+                                register_ack <= '1';
                             when others =>
                                 register_data <= x"00";
                                 register_ack <= '1';
@@ -264,6 +302,7 @@ begin
         boot_rom_data 	when BS_BOOT_ROM,
         EFB_DAT_I 		when BS_EFB,
         DRAM_DAT_I		when BS_DRAM,
+        spi_dat_o       when BS_SPI,
         register_data 	when others;
 
     -- Bus selection ack
@@ -271,10 +310,12 @@ begin
     with bus_selector select wb_ack <=
         EFB_ACK_I 		when BS_EFB,
         DRAM_ACK_I		when BS_DRAM,
+        spi_ack_o       when BS_SPI,
         register_ack 	when others;
 
     -- Bus selection strobe
     EFB_STB_O <= '1' when bus_selector = BS_EFB else '0';
     DRAM_STB_O <= '1' when bus_selector = BS_DRAM else '0';
+    spi_stb_i <= '1' when bus_selector = BS_SPI else '0';
     
 end behaviour;

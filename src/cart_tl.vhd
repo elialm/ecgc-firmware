@@ -47,6 +47,12 @@ entity cart_tl is
         SPI_DBG_CSN     : in std_logic;
         SPI_UFM_CSN     : in std_logic;
 
+        -- SPI slave [TEMP]
+        SPI_SLAVE_CLK   : in std_logic;
+        SPI_SLAVE_CSN   : in std_logic;
+        SPI_SLAVE_MOSI  : in std_logic;
+        SPI_SLAVE_MISO  : out std_logic;
+
         -- Programmer signals
         PRGMR_FLSHEN    : in std_logic;
         PGRMR_DONE      : in std_logic;
@@ -275,6 +281,11 @@ begin
         GPIO_OUT(1) => open,
         GPIO_OUT(2) => open,
         GPIO_OUT(3) => open,
+
+        SPI_CLK => SPI_SLAVE_CLK,
+        SPI_CSN => SPI_SLAVE_CSN,
+        SPI_MOSI => SPI_SLAVE_MOSI,
+        SPI_MISO => SPI_SLAVE_MISO,
 
         ACCESS_ROM => gb_access_rom,
         ACCESS_RAM => gb_access_ram,
