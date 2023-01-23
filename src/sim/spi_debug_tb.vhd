@@ -76,12 +76,15 @@ begin
 
     -- SPI transactions
     process
-        variable spi_data : SPI_DATA_TYPE(0 to 5) := (
+        variable spi_data : SPI_DATA_TYPE(0 to 8) := (
             b"0000_1111",   -- NOP
             b"0000_0011",   -- SET_ADDR_H
+            b"0000_1111",   -- NOP
             b"1010_0000",
             b"0000_0010",   -- SET_ADDR_L
+            b"0000_1111",   -- NOP
             b"0101_1001",
+            b"0000_0100",   -- AUTO_INC_EN
             b"0000_1111");  -- NOP
 
         variable current_data : std_logic_vector(7 downto 0);

@@ -46,7 +46,7 @@ end spi_debug;
 
 architecture behaviour of spi_debug is
 
-    type DBG_STATE_TYPE is (DBGS_DEACTIVATED, DBGS_IDLE, DBGS_AWAIT_NOT_RXRDY, DBGS_SET_ADDR_H, DBGS_SET_ADDR_L);
+    type DBG_STATE_TYPE is (DBGS_DEACTIVATED, DBGS_IDLE, DBGS_AWAIT_NOT_RXRDY, DBGS_IGNORE_RX, DBGS_SET_ADDR_H, DBGS_SET_ADDR_L);
 
     component spi_slave is
     port (
@@ -73,10 +73,13 @@ architecture behaviour of spi_debug is
     signal spi_slv_rxrdy    : std_logic;
     signal spi_slv_txrdy    : std_logic;
 
-    signal current_state    : DBG_STATE_TYPE;
-    signal next_state       : DBG_STATE_TYPE;
+    signal current_state            : DBG_STATE_TYPE;
+    signal after_not_rxrdy_state    : DBG_STATE_TYPE;
+    signal after_ignore_state       : DBG_STATE_TYPE;
 
     signal dbg_wb_addr      : std_logic_vector(15 downto 0);
+    signal dbg_inc_addr     : std_logic;
+    signal dbg_byte_cnt     : std_logic_vector(3 downto 0);
 
 begin
 
@@ -106,7 +109,11 @@ begin
                 spi_slv_we <= '0';
                 spi_slv_dat_i <= (others => '0');
                 current_state <= DBGS_DEACTIVATED;
+                after_not_rxrdy_state <= DBGS_DEACTIVATED;
+                after_ignore_state <= DBGS_DEACTIVATED;
                 dbg_wb_addr <= (others => '0');
+                dbg_inc_addr <= '0';
+                dbg_byte_cnt <= (others => '0');
 
                 CYC_O <= '0';
                 WE_O <= '0';
@@ -140,14 +147,57 @@ begin
                             -- Decode SPI data as cmd
                             case spi_slv_dat_o(3 downto 0) is
                                 when x"F" =>
-                                    next_state <= DBGS_IDLE;
+                                    -- NOP
+                                    after_not_rxrdy_state <= DBGS_IDLE;
                                     current_state <= DBGS_AWAIT_NOT_RXRDY;
                                 when x"2" =>
-                                    next_state <= DBGS_SET_ADDR_L;
+                                    -- SET_ADDR_L
+                                    after_not_rxrdy_state <= DBGS_IGNORE_RX;
+                                    after_ignore_state <= DBGS_SET_ADDR_L;
                                     current_state <= DBGS_AWAIT_NOT_RXRDY;
                                 when x"3" =>
-                                    next_state <= DBGS_SET_ADDR_H;
+                                    -- SET_ADDR_H
+                                    after_not_rxrdy_state <= DBGS_IGNORE_RX;
+                                    after_ignore_state <= DBGS_SET_ADDR_H;
                                     current_state <= DBGS_AWAIT_NOT_RXRDY;
+                                when x"4" =>
+                                    -- AUTO_INC_EN
+                                    after_not_rxrdy_state <= DBGS_IDLE;
+                                    current_state <= DBGS_AWAIT_NOT_RXRDY;
+                                    dbg_inc_addr <= '1';
+                                when x"5" =>
+                                    -- AUTO_INC_DIS
+                                    after_not_rxrdy_state <= DBGS_IDLE;
+                                    current_state <= DBGS_AWAIT_NOT_RXRDY;
+                                    dbg_inc_addr <= '0';
+                                when x"8" =>
+                                    -- [NYI]
+                                    -- READ
+                                    after_not_rxrdy_state <= DBGS_IGNORE_RX;
+                                    after_ignore_state <= DBGS_IDLE;
+                                    current_state <= DBGS_AWAIT_NOT_RXRDY;
+                                    dbg_byte_cnt <= "0000";
+                                when x"9" =>
+                                    -- [NYI]
+                                    -- WRITE
+                                    after_not_rxrdy_state <= DBGS_IGNORE_RX;
+                                    after_ignore_state <= DBGS_IDLE;
+                                    current_state <= DBGS_AWAIT_NOT_RXRDY;
+                                    dbg_byte_cnt <= "0000";
+                                when x"A" =>
+                                    -- [NYI]
+                                    -- READ_BURST
+                                    after_not_rxrdy_state <= DBGS_IGNORE_RX;
+                                    after_ignore_state <= DBGS_IDLE;
+                                    current_state <= DBGS_AWAIT_NOT_RXRDY;
+                                    dbg_byte_cnt <= "1111";
+                                when x"B" =>
+                                    -- [NYI]
+                                    -- WRITE_BURST
+                                    after_not_rxrdy_state <= DBGS_IGNORE_RX;
+                                    after_ignore_state <= DBGS_IDLE;
+                                    current_state <= DBGS_AWAIT_NOT_RXRDY;
+                                    dbg_byte_cnt <= "1111";
                                 when others =>
                                     -- Invalid cmd
                                     spi_slv_dat_i(0) <= '0';
@@ -155,7 +205,16 @@ begin
                         end if;
                     when DBGS_AWAIT_NOT_RXRDY =>
                         if spi_slv_rxrdy = '0' then
-                            current_state <= next_state;
+                            current_state <= after_not_rxrdy_state;
+                        end if;
+                    when DBGS_IGNORE_RX =>
+                        if spi_slv_rxrdy = '1' then
+                            spi_slv_cyc <= '1';
+                            spi_slv_cyc_d <= '1';
+                            spi_slv_we <= '1';
+
+                            current_state <= DBGS_AWAIT_NOT_RXRDY;
+                            after_not_rxrdy_state <= after_ignore_state;
                         end if;
                     when DBGS_SET_ADDR_H =>
                         if spi_slv_rxrdy = '1' then
@@ -169,7 +228,7 @@ begin
                             -- Decode SPI data as high address
                             dbg_wb_addr(15 downto 8) <= spi_slv_dat_o;
 
-                            next_state <= DBGS_IDLE;
+                            after_not_rxrdy_state <= DBGS_IDLE;
                             current_state <= DBGS_AWAIT_NOT_RXRDY;
                         end if;
                     when DBGS_SET_ADDR_L =>
@@ -184,7 +243,7 @@ begin
                             -- Decode SPI data as low address
                             dbg_wb_addr(7 downto 0) <= spi_slv_dat_o;
 
-                            next_state <= DBGS_IDLE;
+                            after_not_rxrdy_state <= DBGS_IDLE;
                             current_state <= DBGS_AWAIT_NOT_RXRDY;
                         end if;
                     when others =>
