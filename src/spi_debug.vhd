@@ -81,6 +81,7 @@ architecture behaviour of spi_debug is
 
     signal dbg_wb_addr      : std_logic_vector(15 downto 0);
     signal dbg_inc_addr     : std_logic;
+    signal dbg_inc_addr_en  : std_logic;
     signal dbg_byte_cnt     : std_logic_vector(3 downto 0);
     signal dbg_cnt_is_zero  : std_logic;
 
@@ -102,7 +103,7 @@ begin
         STATUS_TXRDY => spi_slv_txrdy,
         STATUS_OVERRUN => open);
 
-    -- Debug state machine
+    -- Main process
     process (CLK_I)
     begin
         if rising_edge(CLK_I) then
@@ -116,6 +117,7 @@ begin
                 after_ignore_state <= DBGS_DEACTIVATED;
                 dbg_wb_addr <= (others => '0');
                 dbg_inc_addr <= '0';
+                dbg_inc_addr_en <= '0';
                 dbg_byte_cnt <= (others => '0');
 
                 CYC_O <= '0';
@@ -127,6 +129,13 @@ begin
                 spi_slv_cyc_d <= '0';
                 spi_slv_we <= '0';
 
+                -- Increment address
+                dbg_inc_addr <= '0';
+                if dbg_inc_addr = '1' then
+                    dbg_wb_addr <= std_logic_vector(unsigned(dbg_wb_addr) + 1);
+                end if;
+
+                -- Debug core state machine
                 case current_state is
                     when DBGS_DEACTIVATED => 
                         if DBG_ENABLE = '1' then
@@ -166,12 +175,12 @@ begin
                                     -- AUTO_INC_EN
                                     after_not_rxrdy_state <= DBGS_IDLE;
                                     current_state <= DBGS_AWAIT_NOT_RXRDY;
-                                    dbg_inc_addr <= '1';
+                                    dbg_inc_addr_en <= '1';
                                 when x"5" =>
                                     -- AUTO_INC_DIS
                                     after_not_rxrdy_state <= DBGS_IDLE;
                                     current_state <= DBGS_AWAIT_NOT_RXRDY;
-                                    dbg_inc_addr <= '0';
+                                    dbg_inc_addr_en <= '0';
                                 when x"8" =>
                                     -- READ
                                     after_not_rxrdy_state <= DBGS_IGNORE_RX;
@@ -254,6 +263,7 @@ begin
                             spi_slv_cyc <= '1';
                             spi_slv_we <= '1';
                             spi_slv_dat_i <= DAT_I;
+                            dbg_inc_addr <= dbg_inc_addr_en;
                             dbg_byte_cnt <= std_logic_vector(unsigned(dbg_byte_cnt) - 1);
 
                             current_state <= DBGS_IGNORE_RX;
