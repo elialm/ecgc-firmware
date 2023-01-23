@@ -20,6 +20,8 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use ieee.std_logic_misc.all;
 
 entity spi_debug is
     port (
@@ -46,7 +48,7 @@ end spi_debug;
 
 architecture behaviour of spi_debug is
 
-    type DBG_STATE_TYPE is (DBGS_DEACTIVATED, DBGS_IDLE, DBGS_AWAIT_NOT_RXRDY, DBGS_IGNORE_RX, DBGS_SET_ADDR_H, DBGS_SET_ADDR_L);
+    type DBG_STATE_TYPE is (DBGS_DEACTIVATED, DBGS_IDLE, DBGS_AWAIT_NOT_RXRDY, DBGS_IGNORE_RX, DBGS_SET_ADDR_H, DBGS_SET_ADDR_L, DBGS_READ_AWAIT_ACK);
 
     component spi_slave is
     port (
@@ -80,6 +82,7 @@ architecture behaviour of spi_debug is
     signal dbg_wb_addr      : std_logic_vector(15 downto 0);
     signal dbg_inc_addr     : std_logic;
     signal dbg_byte_cnt     : std_logic_vector(3 downto 0);
+    signal dbg_cnt_is_zero  : std_logic;
 
 begin
 
@@ -117,7 +120,6 @@ begin
 
                 CYC_O <= '0';
                 WE_O <= '0';
-                ADR_O <= (others => '0');
                 DAT_O <= (others => '0');
                 DBG_ACTIVE <= '0';
             else
@@ -171,10 +173,9 @@ begin
                                     current_state <= DBGS_AWAIT_NOT_RXRDY;
                                     dbg_inc_addr <= '0';
                                 when x"8" =>
-                                    -- [NYI]
                                     -- READ
                                     after_not_rxrdy_state <= DBGS_IGNORE_RX;
-                                    after_ignore_state <= DBGS_IDLE;
+                                    after_ignore_state <= DBGS_READ_AWAIT_ACK;
                                     current_state <= DBGS_AWAIT_NOT_RXRDY;
                                     dbg_byte_cnt <= "0000";
                                 when x"9" =>
@@ -185,10 +186,9 @@ begin
                                     current_state <= DBGS_AWAIT_NOT_RXRDY;
                                     dbg_byte_cnt <= "0000";
                                 when x"A" =>
-                                    -- [NYI]
                                     -- READ_BURST
                                     after_not_rxrdy_state <= DBGS_IGNORE_RX;
-                                    after_ignore_state <= DBGS_IDLE;
+                                    after_ignore_state <= DBGS_READ_AWAIT_ACK;
                                     current_state <= DBGS_AWAIT_NOT_RXRDY;
                                     dbg_byte_cnt <= "1111";
                                 when x"B" =>
@@ -246,6 +246,23 @@ begin
                             after_not_rxrdy_state <= DBGS_IDLE;
                             current_state <= DBGS_AWAIT_NOT_RXRDY;
                         end if;
+                    when DBGS_READ_AWAIT_ACK =>
+                        CYC_O <= '1';
+                        WE_O <= '0';
+
+                        if ACK_I = '1' then
+                            spi_slv_cyc <= '1';
+                            spi_slv_we <= '1';
+                            spi_slv_dat_i <= DAT_I;
+                            dbg_byte_cnt <= std_logic_vector(unsigned(dbg_byte_cnt) - 1);
+
+                            current_state <= DBGS_IGNORE_RX;
+                            after_ignore_state <= DBGS_IDLE
+                                when dbg_cnt_is_zero = '1'
+                                else DBGS_READ_AWAIT_ACK;
+
+                            CYC_O <= '0';
+                        end if;
                     when others =>
                         current_state <= DBGS_DEACTIVATED;
                         DBG_ACTIVE <= '0';
@@ -253,5 +270,8 @@ begin
             end if;
         end if;
     end process;
+
+    dbg_cnt_is_zero <= nor_reduce(dbg_byte_cnt);
+    ADR_O <= dbg_wb_addr;
 
 end behaviour;

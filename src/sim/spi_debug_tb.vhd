@@ -21,6 +21,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.math_real.all;
 
 entity spi_debug_tb is
 end spi_debug_tb;
@@ -45,6 +46,21 @@ architecture behaviour of spi_debug_tb is
     signal transaction_id   : natural := 0;
 
     type SPI_DATA_TYPE is array (integer range <>) of std_logic_vector(7 downto 0);
+
+    shared variable random_seed1   : positive := 467832;
+    shared variable random_seed2   : positive := 785342;
+
+    impure function rand_vec(len : integer) return std_logic_vector is
+        variable r              : real;
+        variable vec            : std_logic_vector(len - 1 downto 0);
+    begin
+        for i in vec'range loop
+            uniform(random_seed1, random_seed2, r);
+            vec(i) := '1' when r > 0.5 else '0';
+        end loop;
+
+        return vec;
+    end function;
 
 begin
 
@@ -76,7 +92,7 @@ begin
 
     -- SPI transactions
     process
-        variable spi_data : SPI_DATA_TYPE(0 to 8) := (
+        variable spi_data : SPI_DATA_TYPE(0 to 29) := (
             b"0000_1111",   -- NOP
             b"0000_0011",   -- SET_ADDR_H
             b"0000_1111",   -- NOP
@@ -85,6 +101,27 @@ begin
             b"0000_1111",   -- NOP
             b"0101_1001",
             b"0000_0100",   -- AUTO_INC_EN
+            b"0000_1111",   -- NOP
+            b"0000_1000",   -- READ
+            b"0000_1111",   -- NOP
+            b"0000_1111",   -- NOP
+            b"0000_1010",   -- READ_BURST
+            b"0000_1111",   -- NOP
+            b"0000_1111",   -- NOP
+            b"0000_1111",   -- NOP
+            b"0000_1111",   -- NOP
+            b"0000_1111",   -- NOP
+            b"0000_1111",   -- NOP
+            b"0000_1111",   -- NOP
+            b"0000_1111",   -- NOP
+            b"0000_1111",   -- NOP
+            b"0000_1111",   -- NOP
+            b"0000_1111",   -- NOP
+            b"0000_1111",   -- NOP
+            b"0000_1111",   -- NOP
+            b"0000_1111",   -- NOP
+            b"0000_1111",   -- NOP
+            b"0000_1111",   -- NOP
             b"0000_1111");  -- NOP
 
         variable current_data : std_logic_vector(7 downto 0);
@@ -109,6 +146,22 @@ begin
         end loop;
 
         wait;
+    end process;
+
+    -- Present random data to debug core
+    process (clk_i)
+    begin
+        if rising_edge(clk_i) then
+            ack_i <= '0';
+
+            if (cyc_o and not(ack_i)) = '1' then
+                if we_o = '0' then
+                    dat_i <= rand_vec(8);
+                end if;
+
+                ack_i <= '1';
+            end if;
+        end if;
     end process;
 
     -- Bus transactions
