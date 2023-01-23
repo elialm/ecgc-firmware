@@ -38,8 +38,6 @@ entity spi_slave is
         CLK_I   : in std_logic;
         RST_I   : in std_logic;
         CYC_I   : in std_logic;
-        STB_I   : in std_logic;
-        ACK_O   : out std_logic;
         WE_I    : in std_logic;
         DAT_I   : in std_logic_vector(7 downto 0);
         DAT_O   : out std_logic_vector(7 downto 0);
@@ -78,8 +76,6 @@ architecture behaviour of spi_slave is
     signal spi_byte_received_l  : std_logic;
     signal spi_send_empty       : std_logic;
 
-    signal wb_ack_o     : std_logic;
-
 begin
 
     SPI_CLK_SYNCHRONISER : component synchroniser
@@ -111,13 +107,11 @@ begin
                 spi_bit_count <= (others => '0');
                 spi_byte_received_l <= '0';
                 spi_send_empty <= '1';
-                wb_ack_o <= '0';
 
                 DAT_O <= (others => '0');
                 STATUS_OVERRUN <= '0';
             else
                 spi_clk_sync_delay <= spi_clk_sync;
-                wb_ack_o <= '0';
 
                 -- Rising edge on SPI_CLK
                 if (spi_clk_has_edge_r and not(spi_csn_sync)) = '1' then
@@ -145,15 +139,13 @@ begin
                 end if;
 
                 -- WishBone bus
-                if (CYC_I and STB_I and not(wb_ack_o)) = '1' then
+                if CYC_I = '1' then
                     if WE_I = '1' then
                         spi_clocked_data <= DAT_I(7 downto 0);
                         spi_data_out <= DAT_I(0);
                         spi_send_empty <= '0';
-                        wb_ack_o <= '1';
                     elsif spi_byte_received_l = '1' then
                         spi_byte_received_l <= '0';
-                        wb_ack_o <= '1';
                     end if;
                 end if;
             end if;
@@ -161,7 +153,6 @@ begin
     end process;
 
     SPI_MISO <= spi_data_out when SPI_CSN = '0' else 'Z';
-    ACK_O <= wb_ack_o;
     STATUS_RXRDY <= spi_byte_received_l;
     STATUS_TXRDY <= spi_send_empty;
 

@@ -10,25 +10,25 @@ z2
 cModel Technology
 Z0 dD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/sim/sim_spi
 Espi_slave
-Z1 w1674404809
+Z1 w1674477999
 Z2 DPx8 synopsys 10 attributes 0 22 dc>JdEHRM@6GGENe5bZ?D1
 Z3 DPx4 ieee 14 std_logic_misc 0 22 dN]HY6l5ohPcZ:TaC@B;53
 Z4 DPx4 ieee 11 numeric_std 0 22 aU^R8eGcicLcUFIaBQSL>3
 Z5 DPx3 std 6 textio 0 22 zE1`LPoLg^DX3Oz^4Fj1K3
 Z6 DPx4 ieee 14 std_logic_1164 0 22 cVAk:aDinOX8^VGI1ekP<3
-!i122 37
+!i122 40
 R0
 Z7 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/spi_slave.vhd
 Z8 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/spi_slave.vhd
 l0
 L26 1
-V96]BZI8U^[flMUGf12aaO2
-!s100 8CnJeQac2D?XjmVP;d:9Q2
+VnE3CVjbcHlR?4Ud<nOQVb0
+!s100 :Ek`R?B24<PHllHiPmKHA1
 Z9 OT;C;2020.3;71
 33
-Z10 !s110 1674404833
+Z10 !s110 1674478007
 !i10b 1
-Z11 !s108 1674404833.000000
+Z11 !s108 1674478007.000000
 Z12 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/spi_slave.vhd|
 Z13 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/spi_slave.vhd|
 !i113 1
@@ -40,12 +40,12 @@ R3
 R4
 R5
 R6
-Z16 DEx4 work 9 spi_slave 0 22 96]BZI8U^[flMUGf12aaO2
-!i122 37
-l83
-L53 116
-V2jc0Bg?UJ;^RlzH0ki3]k0
-!s100 L2FUVQm]eJn>P_hQJ0SCE3
+Z16 DEx4 work 9 spi_slave 0 22 nE3CVjbcHlR?4Ud<nOQVb0
+!i122 40
+l79
+L51 109
+V9Via[XaadOoI<@z?QV<Ka2
+!s100 Y_ZTo4Kl<S4A5:h^>Pl:D0
 R9
 33
 R10
@@ -57,11 +57,11 @@ R13
 R14
 R15
 Espi_slave_tb
-Z17 w1674402962
+Z17 w1674477623
 R4
 R5
 R6
-!i122 35
+!i122 39
 R0
 Z18 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/spi_slave_tb.vhd
 Z19 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/spi_slave_tb.vhd
@@ -71,9 +71,9 @@ Vh:T4_CJbHDBZPlYmXQc3m2
 !s100 5k3=iSnUdfleD7fV3=mV82
 R9
 33
-Z21 !s110 1674402966
+Z21 !s110 1674477674
 !i10b 1
-Z22 !s108 1674402966.000000
+Z22 !s108 1674477674.000000
 Z23 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/spi_slave_tb.vhd|
 Z24 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/spi_slave_tb.vhd|
 !i113 1
@@ -87,11 +87,11 @@ R4
 R5
 R6
 DEx4 work 12 spi_slave_tb 0 22 h:T4_CJbHDBZPlYmXQc3m2
-!i122 35
-l50
-L28 111
-VmQFnaGTB3YgWM1ZaUJ`jQ1
-!s100 0WL23CjZWagZHTODza@bR3
+!i122 39
+l48
+L28 107
+V0Rf><c03i7BEZ9elDS:?z2
+!s100 TgK5Q]I7UPKc^UhVfOa7L2
 R9
 33
 R21
