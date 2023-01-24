@@ -42,13 +42,12 @@ entity spi_debug is
         SPI_DBG_MISO    : out std_logic;
 
         -- Control pins
-        DBG_ENABLE  : in std_logic;
-        DBG_ACTIVE  : out std_logic);
+        DBG_ENABLE  : in std_logic);
 end spi_debug;
 
 architecture behaviour of spi_debug is
 
-    type DBG_STATE_TYPE is (DBGS_DEACTIVATED, DBGS_IDLE, DBGS_AWAIT_NOT_RXRDY, DBGS_IGNORE_RX, DBGS_SET_ADDR_H, DBGS_SET_ADDR_L, DBGS_READ_AWAIT_ACK);
+    type DBG_STATE_TYPE is (DBGS_DEACTIVATED, DBGS_IDLE, DBGS_AWAIT_NOT_RXRDY, DBGS_IGNORE_RX, DBGS_SET_ADDR_H, DBGS_SET_ADDR_L, DBGS_READ_AWAIT_ACK, DBGS_WRITE_AWAIT_SPI, DBGS_WRITE_AWAIT_ACK);
 
     component spi_slave is
     port (
@@ -123,7 +122,6 @@ begin
                 CYC_O <= '0';
                 WE_O <= '0';
                 DAT_O <= (others => '0');
-                DBG_ACTIVE <= '0';
             else
                 spi_slv_cyc <= spi_slv_cyc_d;
                 spi_slv_cyc_d <= '0';
@@ -140,12 +138,10 @@ begin
                     when DBGS_DEACTIVATED => 
                         if DBG_ENABLE = '1' then
                             current_state <= DBGS_IDLE;
-                            DBG_ACTIVE <= '1';
                         end if;
                     when DBGS_IDLE =>
                         if DBG_ENABLE = '0' then
                             current_state <= DBGS_DEACTIVATED;
-                            DBG_ACTIVE <= '0';
                         elsif spi_slv_rxrdy = '1' then
                             spi_slv_cyc <= '1';
                             spi_slv_cyc_d <= '1';
@@ -188,10 +184,9 @@ begin
                                     current_state <= DBGS_AWAIT_NOT_RXRDY;
                                     dbg_byte_cnt <= "0000";
                                 when x"9" =>
-                                    -- [NYI]
                                     -- WRITE
                                     after_not_rxrdy_state <= DBGS_IGNORE_RX;
-                                    after_ignore_state <= DBGS_IDLE;
+                                    after_ignore_state <= DBGS_WRITE_AWAIT_SPI;
                                     current_state <= DBGS_AWAIT_NOT_RXRDY;
                                     dbg_byte_cnt <= "0000";
                                 when x"A" =>
@@ -201,10 +196,9 @@ begin
                                     current_state <= DBGS_AWAIT_NOT_RXRDY;
                                     dbg_byte_cnt <= "1111";
                                 when x"B" =>
-                                    -- [NYI]
                                     -- WRITE_BURST
                                     after_not_rxrdy_state <= DBGS_IGNORE_RX;
-                                    after_ignore_state <= DBGS_IDLE;
+                                    after_ignore_state <= DBGS_WRITE_AWAIT_SPI;
                                     current_state <= DBGS_AWAIT_NOT_RXRDY;
                                     dbg_byte_cnt <= "1111";
                                 when others =>
@@ -219,8 +213,6 @@ begin
                     when DBGS_IGNORE_RX =>
                         if spi_slv_rxrdy = '1' then
                             spi_slv_cyc <= '1';
-                            spi_slv_cyc_d <= '1';
-                            spi_slv_we <= '1';
 
                             current_state <= DBGS_AWAIT_NOT_RXRDY;
                             after_not_rxrdy_state <= after_ignore_state;
@@ -273,9 +265,33 @@ begin
 
                             CYC_O <= '0';
                         end if;
+                    when DBGS_WRITE_AWAIT_SPI =>
+                        if spi_slv_rxrdy = '1' then
+                            spi_slv_cyc <= '1';
+                            spi_slv_cyc_d <= '1';
+                            spi_slv_we <= '1';
+                            spi_slv_dat_i <= spi_slv_dat_o;
+                            DAT_O <= spi_slv_dat_o;
+
+                            current_state <= DBGS_AWAIT_NOT_RXRDY;
+                            after_not_rxrdy_state <= DBGS_WRITE_AWAIT_ACK;
+                        end if;
+                    when DBGS_WRITE_AWAIT_ACK =>
+                        CYC_O <= '1';
+                        WE_O <= '1';
+
+                        if ACK_I = '1' then
+                            dbg_inc_addr <= dbg_inc_addr_en;
+                            dbg_byte_cnt <= std_logic_vector(unsigned(dbg_byte_cnt) - 1);
+
+                            current_state <= DBGS_IDLE
+                                when dbg_cnt_is_zero = '1'
+                                else DBGS_WRITE_AWAIT_SPI;
+
+                            CYC_O <= '0';
+                        end if;
                     when others =>
                         current_state <= DBGS_DEACTIVATED;
-                        DBG_ACTIVE <= '0';
                 end case;
             end if;
         end if;

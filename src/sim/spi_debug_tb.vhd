@@ -41,7 +41,6 @@ architecture behaviour of spi_debug_tb is
     signal dat_i            : std_logic_vector(7 downto 0) := x"00";
     signal dat_o            : std_logic_vector(7 downto 0);
     signal dbg_enable       : std_logic := '1';
-    signal dbg_active       : std_logic;
 
     signal transaction_id   : natural := 0;
 
@@ -78,8 +77,7 @@ begin
         SPI_DBG_CSN => spi_csn,
         SPI_DBG_MOSI => spi_mosi,
         SPI_DBG_MISO => spi_miso,
-        DBG_ENABLE => dbg_enable,
-        DBG_ACTIVE => dbg_active);
+        DBG_ENABLE => dbg_enable);
 
     -- Main clock
     process
@@ -92,7 +90,7 @@ begin
 
     -- SPI transactions
     process
-        variable spi_data : SPI_DATA_TYPE(0 to 29) := (
+        variable spi_data : SPI_DATA_TYPE(0 to 50) := (
             b"0000_1111",   -- NOP
             b"0000_0011",   -- SET_ADDR_H
             b"0000_1111",   -- NOP
@@ -102,6 +100,27 @@ begin
             b"0101_1001",
             b"0000_0100",   -- AUTO_INC_EN
             b"0000_1111",   -- NOP
+            b"0000_1001",   -- WRITE
+            b"0000_1111",   -- NOP
+            b"0101_0011",
+            b"0000_1011",   -- WRITE_BURST
+            b"0000_1111",   -- NOP
+            b"0001_1000",
+            b"0100_0000",
+            b"0101_1111",
+            b"0000_0110",
+            b"1001_0000",
+            b"0101_0000",
+            b"1101_1100",
+            b"0011_1111",
+            b"1011_1010",
+            b"0011_0001",
+            b"1100_1110",
+            b"1110_1010",
+            b"0000_1011",
+            b"0000_0000",
+            b"1000_1001",
+            b"1110_1100",
             b"0000_1000",   -- READ
             b"0000_1111",   -- NOP
             b"0000_1111",   -- NOP

@@ -7,8 +7,8 @@ Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oc
 -- Loading package MATH_REAL
 -- Compiling entity spi_debug_tb
 -- Compiling architecture behaviour of spi_debug_tb
+** Warning: D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/spi_debug_tb.vhd(49): (vcom-1236) Shared variables must be of a protected type.
 ** Warning: D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/spi_debug_tb.vhd(50): (vcom-1236) Shared variables must be of a protected type.
-** Warning: D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/spi_debug_tb.vhd(51): (vcom-1236) Shared variables must be of a protected type.
 -- Loading package ATTRIBUTES
 -- Loading package std_logic_misc
 -- Loading entity spi_debug
