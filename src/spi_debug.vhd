@@ -42,7 +42,8 @@ entity spi_debug is
         SPI_DBG_MISO    : out std_logic;
 
         -- Control pins
-        DBG_ENABLE  : in std_logic);
+        DBG_ENABLE  : in std_logic,
+        DBG_ACTIVE  : out std_logic);
 end spi_debug;
 
 architecture behaviour of spi_debug is
@@ -122,6 +123,7 @@ begin
                 CYC_O <= '0';
                 WE_O <= '0';
                 DAT_O <= (others => '0');
+                DBG_ACTIVE <= '0';
             else
                 spi_slv_cyc <= spi_slv_cyc_d;
                 spi_slv_cyc_d <= '0';
@@ -138,10 +140,12 @@ begin
                     when DBGS_DEACTIVATED => 
                         if DBG_ENABLE = '1' then
                             current_state <= DBGS_IDLE;
+                            DBG_ACTIVE <= '1';
                         end if;
                     when DBGS_IDLE =>
                         if DBG_ENABLE = '0' then
                             current_state <= DBGS_DEACTIVATED;
+                            DBG_ACTIVE <= '0';
                         elsif spi_slv_rxrdy = '1' then
                             spi_slv_cyc <= '1';
                             spi_slv_cyc_d <= '1';
@@ -292,6 +296,7 @@ begin
                         end if;
                     when others =>
                         current_state <= DBGS_DEACTIVATED;
+                        DBG_ACTIVE <= '0';
                 end case;
             end if;
         end if;
