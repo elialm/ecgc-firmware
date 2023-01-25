@@ -126,7 +126,7 @@ begin
 
                 -- Reset bit count
                 if (spi_csn_sync or spi_byte_received) = '1' then
-                    spi_bit_count(spi_bit_count'high) <= '0';
+                    spi_bit_count <= (others => '0');
                 end if;
 
                 -- Set data out whenever byte is received
