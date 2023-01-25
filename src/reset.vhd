@@ -143,7 +143,7 @@ begin
 
     soft_reset_s <= ext_soft_sync or aux_extender(aux_extender'high);
 
-    GB_RESETN <= not(soft_reset_s and DBG_ACTIVE);
+    GB_RESETN <= not(soft_reset_s) and not(DBG_ACTIVE);
     SOFT_RESET <= soft_reset_s;
     HARD_RESET <= ff_stages(ff_stages'high);
     
