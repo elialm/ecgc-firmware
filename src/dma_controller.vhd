@@ -25,6 +25,7 @@ use ieee.std_logic_misc.all;
 
 entity dma_controller is
     port (
+        -- Global signals
         CLK_I       : in std_logic;
         RST_I       : in std_logic;
 
@@ -42,7 +43,10 @@ entity dma_controller is
         CFG_WE_I    : in std_logic;
         CFG_ADR_I   : in std_logic_vector(3 downto 0);
         CFG_DAT_O   : out std_logic_vector(7 downto 0);
-        CFG_DAT_I   : in std_logic_vector(7 downto 0));
+        CFG_DAT_I   : in std_logic_vector(7 downto 0);
+        
+        -- Status signals
+        STATUS_BUSY : out std_logic);
 end dma_controller;
 
 architecture behaviour of dma_controller is
@@ -207,5 +211,7 @@ begin
 
     CFG_DAT_O <= slave_data;
     CFG_ACK_O <= slave_ack;
+
+    STATUS_BUSY <= dma_is_busy;
 
 end behaviour;
