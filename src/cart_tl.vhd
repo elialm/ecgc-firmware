@@ -18,7 +18,6 @@
 -- 
 ----------------------------------------------------------------------------------
 
-
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
@@ -47,17 +46,12 @@ entity cart_tl is
         SPI_DBG_CSN     : in std_logic;
         SPI_UFM_CSN     : in std_logic;
 
-        -- SPI slave [TEMP]
-        SPI_SLAVE_CLK   : in std_logic;
-        SPI_SLAVE_CSN   : in std_logic;
-        SPI_SLAVE_MOSI  : in std_logic;
-        SPI_SLAVE_MISO  : out std_logic;
-
-        -- Programmer signals
-        PRGMR_FLSHEN    : in std_logic;
-        PGRMR_DONE      : in std_logic;
-        -- PGRMR_RST       : in std_logic;
-        PGMRR_RDY       : out std_logic;
+        -- Debugger signals
+        DBG_CLK     : in std_logic;
+        DBG_CSN     : in std_logic;
+        DBG_MOSI    : in std_logic;
+        DBG_MISO    : out std_logic;
+        DBG_ENABLE  : in std_logic;
 
         -- Bus tranceivers
         BTA_OEN		: out std_logic;
@@ -134,11 +128,49 @@ architecture behaviour of cart_tl is
     signal wb_data_outgoing : std_logic_vector(7 downto 0);
     signal wb_data_incoming : std_logic_vector(7 downto 0);
 
-    signal wb_clk   : std_logic;
     signal wb_adr   : std_logic_vector(15 downto 0);
     signal wb_we 	: std_logic;
     signal wb_cyc   : std_logic;
     signal wb_ack	: std_logic;
+
+    signal gbd_cyc      : std_logic;
+    signal gbd_ack      : std_logic;
+    signal gbd_we       : std_logic;
+    signal gbd_adr      : std_logic_vector(15 downto 0);
+    signal gbd_dat_i    : std_logic_vector(7 downto 0);
+    signal gbd_dat_o    : std_logic_vector(7 downto 0);
+
+    signal ccb_cyc      : std_logic;
+    signal ccb_stb      : std_logic;
+    signal ccb_ack      : std_logic;
+    signal ccb_we       : std_logic;
+    signal ccb_adr      : std_logic_vector(15 downto 0);
+    signal ccb_dat_i    : std_logic_vector(7 downto 0);
+    signal ccb_dat_o    : std_logic_vector(7 downto 0);
+
+    signal dma_cyc      : std_logic;
+    signal dma_ack      : std_logic;
+    signal dma_we       : std_logic;
+    signal dma_adr      : std_logic_vector(15 downto 0);
+    signal dma_dat_i    : std_logic_vector(7 downto 0);
+    signal dma_dat_o    : std_logic_vector(7 downto 0);
+    signal dma_busy     : std_logic;
+
+    signal dma_cfg_cyc      : std_logic;
+    signal dma_cfg_stb      : std_logic;
+    signal dma_cfg_ack      : std_logic;
+    signal dma_cfg_we       : std_logic;
+    signal dma_cfg_adr      : std_logic_vector(3 downto 0);
+    signal dma_cfg_dat_i    : std_logic_vector(7 downto 0);
+    signal dma_cfg_dat_o    : std_logic_vector(7 downto 0);
+
+    signal dbg_cyc      : std_logic;
+    signal dbg_ack      : std_logic;
+    signal dbg_we       : std_logic;
+    signal dbg_adr      : std_logic_vector(15 downto 0);
+    signal dbg_dat_i    : std_logic_vector(7 downto 0);
+    signal dbg_dat_o    : std_logic_vector(7 downto 0);
+    signal dbg_active   : std_logic;
 
     signal bus_selector	: std_logic_vector(2 downto 0);
     signal wb_mbch_strb : std_logic;
@@ -206,10 +238,12 @@ begin
         PLL_LOCK => pll_lock,
         EXT_SOFT => USER_RST,
         AUX_SOFT => aux_reset,
+        DBG_ACTIVE => dbg_active,
         GB_RESETN => GB_RESETN,
         SOFT_RESET => soft_reset,
         HARD_RESET => hard_reset);
 
+    -- Gameboy decoder instance
     GB_SIGNAL_DECODER : entity work.gb_decoder
     generic map (
         ENABLE_TIMEOUT_DETECTION => true)
@@ -223,18 +257,127 @@ begin
 
         CLK_I => pll_clk_op,
         RST_I => hard_reset,
-        CYC_O => wb_cyc,
-        WE_O => wb_we,
-        ADR_O => wb_adr,
-        DAT_I => wb_data_outgoing,
-        DAT_O => wb_data_incoming,
-        ACK_I => wb_ack,
+        CYC_O => gbd_cyc,
+        WE_O => gbd_we,
+        ADR_O => gbd_adr,
+        DAT_I => gbd_dat_i,
+        DAT_O => gbd_dat_o,
+        ACK_I => gbd_ack,
 
         ACCESS_ROM => gb_access_rom,
         ACCESS_RAM => gb_access_ram);
-        
+
     GB_DATA <= gb_data_outgoing when (GB_CLK nor GB_RDN) = '1' else "ZZZZZZZZ";
     gb_data_incoming <= GB_DATA;
+
+    -- Decoder crossbar instance
+    CROSSBAR_DECODER : entity work.wb_crossbar_decoder
+    port map (
+        CLK_I => pll_clk_op,
+        RST_I => hard_reset,
+        ACCESS_RAM => gb_access_ram,
+        SELECT_MBC => bus_selector,
+
+        CYC_I => gbd_cyc,
+        ACK_O => gbd_ack,
+        WE_I => gbd_we,
+        ADR_I => gbd_adr,
+        DAT_O => gbd_dat_i,
+        DAT_I => gbd_dat_o,
+
+        CCB_CYC_O => ccb_cyc,
+        CCB_STB_O => ccb_stb,
+        CCB_ACK_I => ccb_ack,
+        CCB_WE_O => ccb_we,
+        CCB_ADR_O => ccb_adr,
+        CCB_DAT_O => ccb_dat_o,
+        CCB_DAT_I => ccb_dat_i,
+
+        DMA_CYC_O => dma_cfg_cyc,
+        DMA_STB_O => dma_cfg_stb,
+        DMA_ACK_I => dma_cfg_ack,
+        DMA_WE_O => dma_cfg_we,
+        DMA_ADR_O => dma_cfg_adr,
+        DMA_DAT_O => dma_cfg_dat_o,
+        DMA_DAT_I => dma_cfg_dat_i);
+
+    -- DMA controller instance
+    DMA_CONTROLLER : entity work.dma_controller
+    port map (
+        CLK_I => pll_clk_op,
+        RST_I => soft_reset,
+
+        DMA_CYC_O => dma_cyc,
+        DMA_ACK_I => dma_ack,
+        DMA_WE_O => dma_we,
+        DMA_ADR_O => dma_adr,
+        DMA_DAT_O => dma_dat_o,
+        DMA_DAT_I => dma_dat_i,
+
+        CFG_CYC_I => dma_cfg_cyc,
+        CFG_STB_I => dma_cfg_stb,
+        CFG_ACK_O => dma_cfg_ack,
+        CFG_WE_I => dma_cfg_we,
+        CFG_ADR_I => dma_cfg_adr,
+        CFG_DAT_O => dma_cfg_dat_i,
+        CFG_DAT_I => dma_cfg_dat_o,
+
+        STATUS_BUSY => dma_busy);
+
+    -- Debug core instance
+    SPI_DBG_CORE : entity work.spi_debug
+    port map (
+        CLK_I => pll_clk_op,
+        RST_I => hard_reset,
+        CYC_O => dbg_cyc,
+        ACK_I => dbg_ack,
+        WE_O => dbg_we,
+        ADR_O => dbg_adr,
+        DAT_O => dbg_dat_o,
+        DAT_I => dbg_dat_i,
+        SPI_DBG_CLK => DBG_CLK,
+        SPI_DBG_CSN => DBG_CSN,
+        SPI_DBG_MOSI => DBG_MOSI,
+        SPI_DBG_MISO => DBG_MISO,
+        DBG_ENABLE => DBG_ENABLE,
+        DBG_ACTIVE => dbg_active);
+
+    -- Central crossbar instance
+    CROSSBAR_CENTRAL : entity work.wb_crossbar_central
+    port map (
+        CLK_I => pll_clk_op,
+        RST_I => hard_reset,
+        DMA_BUSY => dma_busy,
+        DBG_ACTIVE => dbg_active,
+
+        DBG_CYC_I => dbg_cyc,
+        DBG_ACK_O => dbg_ack,
+        DBG_WE_I => dbg_we,
+        DBG_ADR_I => dbg_adr,
+        DBG_DAT_O => dbg_dat_i,
+        DBG_DAT_I => dbg_dat_o,
+
+        GBD_CYC_I => ccb_cyc,
+        GBD_STB_I => ccb_stb,
+        GBD_ACK_O => ccb_ack,
+        GBD_WE_I => ccb_we,
+        GBD_ADR_I => ccb_adr,
+        GBD_DAT_O => ccb_dat_i,
+        GBD_DAT_I => ccb_dat_o,
+
+        DMA_CYC_I => dma_cyc,
+        DMA_ACK_O => dma_ack,
+        DMA_WE_I => dma_we,
+        DMA_ADR_I => dma_adr,
+        DMA_DAT_O => dma_dat_i,
+        DMA_DAT_I => dma_dat_o,
+
+        CYC_O => wb_cyc,
+        ACK_I => wb_ack,
+        WE_O => wb_we,
+        ADR_O => wb_adr,
+        DAT_O => wb_data_incoming,
+        DAT_I => wb_data_outgoing);
 
     -- MBC selector outgoing data
     with bus_selector select wb_data_outgoing <=
@@ -273,11 +416,11 @@ begin
         DRAM_ACK_I => wb_dram_ack,
         DRAM_ERR_I => '0',
 
-        GPIO_IN(0) => PRGMR_FLSHEN,
-        GPIO_IN(1) => PGRMR_DONE,
+        GPIO_IN(0) => '0',
+        GPIO_IN(1) => '0',
         GPIO_IN(2) => '0',
         GPIO_IN(3) => '0',
-        GPIO_OUT(0) => PGMRR_RDY,
+        GPIO_OUT(0) => open,
         GPIO_OUT(1) => open,
         GPIO_OUT(2) => open,
         GPIO_OUT(3) => open,

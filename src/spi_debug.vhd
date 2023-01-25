@@ -42,7 +42,7 @@ entity spi_debug is
         SPI_DBG_MISO    : out std_logic;
 
         -- Control pins
-        DBG_ENABLE  : in std_logic,
+        DBG_ENABLE  : in std_logic;
         DBG_ACTIVE  : out std_logic);
 end spi_debug;
 

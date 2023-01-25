@@ -39,6 +39,7 @@ entity dma_controller is
     
         -- Configuration slave port
         CFG_CYC_I   : in std_logic;
+        CFG_STB_I   : in std_logic;
         CFG_ACK_O   : out std_logic;
         CFG_WE_I    : in std_logic;
         CFG_ADR_I   : in std_logic_vector(3 downto 0);
@@ -145,7 +146,7 @@ begin
                 end case;
 
                 -- Configuration address decoder
-                if (CFG_CYC_I and not(slave_ack)) = '1' then
+                if (CFG_CYC_I and CFG_STB_I and not(slave_ack)) = '1' then
                     case CFG_ADR_I is
                         -- Configuration register
                         when b"0000" =>

@@ -27,8 +27,6 @@ entity wb_crossbar_central is
         -- Global signals
         CLK_I           : in std_logic;
         RST_I           : in std_logic;
-        ACCESS_RAM		: in std_logic;
-        SELECT_MBC  	: out std_logic_vector(2 downto 0);
         DMA_BUSY        : in std_logic;
         DBG_ACTIVE      : in std_logic;
 
