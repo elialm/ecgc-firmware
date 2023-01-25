@@ -207,6 +207,8 @@ begin
                                     dbg_byte_cnt <= "1111";
                                 when others =>
                                     -- Invalid cmd
+                                    after_not_rxrdy_state <= DBGS_IDLE;
+                                    current_state <= DBGS_AWAIT_NOT_RXRDY;
                                     spi_slv_dat_i(0) <= '0';
                             end case;
                         end if;
