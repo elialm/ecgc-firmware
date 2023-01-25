@@ -219,6 +219,9 @@ begin
                     when DBGS_IGNORE_RX =>
                         if spi_slv_rxrdy = '1' then
                             spi_slv_cyc <= '1';
+                            spi_slv_cyc_d <= '1';
+                            spi_slv_we <= '1';
+                            spi_slv_dat_i <= x"00";
 
                             current_state <= DBGS_AWAIT_NOT_RXRDY;
                             after_not_rxrdy_state <= after_ignore_state;
