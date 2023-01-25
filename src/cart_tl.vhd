@@ -282,11 +282,6 @@ begin
         GPIO_OUT(2) => open,
         GPIO_OUT(3) => open,
 
-        SPI_CLK => SPI_SLAVE_CLK,
-        SPI_CSN => SPI_SLAVE_CSN,
-        SPI_MOSI => SPI_SLAVE_MOSI,
-        SPI_MISO => SPI_SLAVE_MISO,
-
         ACCESS_ROM => gb_access_rom,
         ACCESS_RAM => gb_access_ram,
         SELECT_MBC => bus_selector,
