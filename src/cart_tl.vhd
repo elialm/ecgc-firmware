@@ -196,7 +196,6 @@ architecture behaviour of cart_tl is
     signal dram_ready       : std_logic;
 
     -- Access signals
-    signal gb_access_rom : std_logic;
     signal gb_access_ram : std_logic;
 
     attribute NOM_FREQ : string;
@@ -261,9 +260,10 @@ begin
         DAT_I => gbd_dat_i,
         DAT_O => gbd_dat_o,
         ACK_I => gbd_ack,
-
-        ACCESS_ROM => gb_access_rom,
-        ACCESS_RAM => gb_access_ram);
+        
+        ACCESS_ROM => open,
+        ACCESS_RAM => gb_access_ram,
+        WB_TIMEOUT => open);
 
     GB_DATA <= gb_data_outgoing when (GB_CLK nor GB_RDN) = '1' else "ZZZZZZZZ";
     gb_data_incoming <= GB_DATA;
@@ -420,8 +420,6 @@ begin
         GPIO_IN(3) => '0',
         GPIO_OUT => open,
 
-        ACCESS_ROM => gb_access_rom,
-        ACCESS_RAM => gb_access_ram,
         SELECT_MBC => bus_selector,
         SOFT_RESET_OUT => aux_reset,
         SOFT_RESET_IN => soft_reset,
