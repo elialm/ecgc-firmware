@@ -1,0 +1,43 @@
+if {![file exists "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/sim/gameboy_tb/gameboy_tb.mpf"]} { 
+	project new "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/sim/gameboy_tb" gameboy_tb
+	project addfile "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/boot_rom/boot_rom.vhd"
+	project addfile "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/as4c32m8sa_controller.vhd"
+	project addfile "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/efb/efb.vhd"
+	project addfile "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/mbch.vhd"
+	project addfile "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/wb_crossbar_central.vhd"
+	project addfile "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/spi_debug.vhd"
+	project addfile "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/dma_controller.vhd"
+	project addfile "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/wb_crossbar_decoder.vhd"
+	project addfile "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/gb_decoder.vhd"
+	project addfile "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/reset.vhd"
+	project addfile "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/pll/pll.vhd"
+	project addfile "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/cart_tl.vhd"
+	project addfile "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/gameboy_tb.vhd"
+	project addfile "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/synchroniser.vhd"
+	project addfile "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/spi_slave.vhd"
+	vlib  work
+	vdel -lib work -all 
+	vlib work
+	vcom -work work "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/boot_rom/boot_rom.vhd"
+	vcom -work work "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/as4c32m8sa_controller.vhd"
+	vcom -work work "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/efb/efb.vhd"
+	vcom -work work "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/mbch.vhd"
+	vcom -work work "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/wb_crossbar_central.vhd"
+	vcom -work work "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/spi_debug.vhd"
+	vcom -work work "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/dma_controller.vhd"
+	vcom -work work "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/wb_crossbar_decoder.vhd"
+	vcom -work work "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/gb_decoder.vhd"
+	vcom -work work "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/reset.vhd"
+	vcom -work work "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/pll/pll.vhd"
+	vcom -work work "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/cart_tl.vhd"
+	vcom -work work "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/gameboy_tb.vhd"
+	vcom -work work "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/synchroniser.vhd"
+	vcom -work work "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/spi_slave.vhd"
+} else {
+	project open "D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/sim/gameboy_tb/gameboy_tb"
+	project compileoutofdate
+}
+vsim -L work -L pmi_work -L ovi_machxo3d  gameboy_tb
+view wave
+add wave /*
+run 1000ns

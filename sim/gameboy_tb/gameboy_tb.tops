@@ -1,0 +1,3 @@
+boot_rom,/,D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/boot_rom/boot_rom.vhd
+gameboy_tb,/,D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/gameboy_tb.vhd
+spi_slave,/,D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/spi_slave.vhd
