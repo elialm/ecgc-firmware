@@ -43,8 +43,6 @@ entity cart_tl is
         SPI_MOSI	    : inout std_logic;
         SPI_HARD_CSN    : out std_logic;
         SPI_SDC_CSN     : out std_logic;
-        SPI_DBG_CSN     : in std_logic;
-        SPI_UFM_CSN     : in std_logic;
 
         -- Debugger signals
         DBG_CLK     : in std_logic;
@@ -420,10 +418,7 @@ begin
         GPIO_IN(1) => '0',
         GPIO_IN(2) => '0',
         GPIO_IN(3) => '0',
-        GPIO_OUT(0) => open,
-        GPIO_OUT(1) => open,
-        GPIO_OUT(2) => open,
-        GPIO_OUT(3) => open,
+        GPIO_OUT => open,
 
         ACCESS_ROM => gb_access_rom,
         ACCESS_RAM => gb_access_ram,
@@ -447,10 +442,10 @@ begin
         spi_clk => SPI_CLK,
         spi_miso => SPI_MISO,
         spi_mosi => SPI_MOSI,
-        spi_scsn => SPI_DBG_CSN,
+        spi_scsn => '1',
         spi_csn(0) => SPI_HARD_CSN,
         spi_csn(1) => SPI_SDC_CSN,
-        ufm_sn => SPI_UFM_CSN,
+        ufm_sn => '1',
         wbc_ufm_irq	=> open);
 
     -- DRAM controller instance
