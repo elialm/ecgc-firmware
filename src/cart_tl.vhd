@@ -187,16 +187,14 @@ architecture behaviour of cart_tl is
 
     signal led_gb_clk_divider   : std_logic_vector(18 downto 0);
     signal led_wb_clk_divider   : std_logic_vector(24 downto 0);
-    signal led_wbn_clk_divider  : std_logic_vector(24 downto 0);
 
     signal soft_reset		: std_logic;
     signal hard_reset		: std_logic;
     signal aux_reset		: std_logic;
 
     signal dram_ready       : std_logic;
-
-    -- Access signals
-    signal gb_access_ram : std_logic;
+    signal gb_access_ram    : std_logic;
+    signal gb_timeout       : std_logic;
 
     attribute NOM_FREQ : string;
     attribute NOM_FREQ of INTERNAL_OSCILLATOR : label is "53.20";
@@ -263,7 +261,7 @@ begin
         
         ACCESS_ROM => open,
         ACCESS_RAM => gb_access_ram,
-        WB_TIMEOUT => open);
+        WB_TIMEOUT => gb_timeout);
 
     GB_DATA <= gb_data_outgoing when (GB_CLK nor GB_RDN) = '1' else "ZZZZZZZZ";
     gb_data_incoming <= GB_DATA;
@@ -503,23 +501,12 @@ begin
     end process;
 
     STATUS_LED(6) <= not(led_wb_clk_divider(led_wb_clk_divider'high));
-
-    -- WBN clock indicator LED
-    process (pll_clk_os)
-    begin
-        if rising_edge(pll_clk_os) then
-            if hard_reset = '1' then
-                led_wbn_clk_divider <= (others => '0');
-            else
-                led_wbn_clk_divider <= std_logic_vector(unsigned(led_wbn_clk_divider) + 1);
-            end if;
-        end if;
-    end process;
-
-    STATUS_LED(5) <= not(led_wbn_clk_divider(led_wbn_clk_divider'high));
     
     -- LED indicator for reset state [TEMP]
-    STATUS_LED(4) <= not(soft_reset);
+    STATUS_LED(5) <= not(soft_reset);
+
+    -- LED indicator for gb_decoder timeout [TEMP]
+    STATUS_LED(4) <= not(gb_timeout);
 
     -- Other leds off [TEMP]
     STATUS_LED(3 downto 0) <= (others => '1');
