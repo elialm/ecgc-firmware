@@ -61,20 +61,23 @@ entity mbch is
         SELECT_MBC  	: out std_logic_vector(2 downto 0);
         SOFT_RESET_OUT  : out std_logic;
         SOFT_RESET_IN   : in std_logic;
-        DRAM_READY		: in std_logic);
+        DRAM_READY		: in std_logic;
+        DBG_ACTIVE      : in std_logic);
 end mbch;
 
 architecture behaviour of mbch is
 
     type bus_selection_t is (BS_REGISTER, BS_BOOT_ROM, BS_EFB, BS_DRAM);
 
-    component boot_rom is
+    component boot_ram is
     port (
-        Address		: in  std_logic_vector(11 downto 0); 
-        OutClock	: in  std_logic; 
-        OutClockEn	: in  std_logic; 
-        Reset		: in  std_logic; 
-        Q			: out  std_logic_vector(7 downto 0));
+        Clock	    : in std_logic; 
+        ClockEn	    : in std_logic; 
+        Reset		: in std_logic; 
+        WE          : in std_logic;
+        Address		: in std_logic_vector(11 downto 0); 
+        Data		: in std_logic_vector(7 downto 0); 
+        Q			: out std_logic_vector(7 downto 0));
     end component;
 
     component synchroniser is
@@ -96,6 +99,7 @@ architecture behaviour of mbch is
     signal boot_rom_accessible 		: std_logic;
     signal boot_rom_accessible_reg 	: std_logic;
     signal boot_rom_data 			: std_logic_vector(7 downto 0);
+    signal boot_rom_we              : std_logic;
 
     signal dram_bank_mbc			: std_logic_vector(8 downto 0);		-- MBC bank selector register
     signal dram_bank				: std_logic_vector(1 downto 0);		-- DRAM bank selector register
@@ -115,16 +119,19 @@ architecture behaviour of mbch is
 begin
 
     -- ROM instance containing boot code
-    CARTRIDGE_BOOTROM : component boot_rom
+    CARTRIDGE_BOOTROM : component boot_ram
     port map (
-        Address => ADR_I(11 downto 0),
-        OutClock => CLK_I,
-        OutClockEn => boot_rom_enabled,
+        Clock => CLK_I,
+        ClockEn => boot_rom_enabled,
         Reset => RST_I,
+        WE => boot_rom_we,
+        Address => ADR_I(11 downto 0),
+        Data => DAT_I,
         Q => boot_rom_data);
     
     wb_cart_access <= STB_I and CYC_I;
     boot_rom_enabled <= boot_rom_accessible and wb_cart_access;
+    boot_rom_we <= WE_I and DBG_ACTIVE;
         
     -- GPIO input synchroniser
     GPIO_IN_SYNCHRONISER : component synchroniser

@@ -421,7 +421,8 @@ begin
         SELECT_MBC => bus_selector,
         SOFT_RESET_OUT => aux_reset,
         SOFT_RESET_IN => soft_reset,
-        DRAM_READY => dram_ready);
+        DRAM_READY => dram_ready,
+        DBG_ACTIVE => dbg_active);
 
     -- EFB instance
     EFB_INST : component efb
