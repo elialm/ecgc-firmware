@@ -31,14 +31,38 @@ end gameboy_tb;
 
 architecture behaviour of gameboy_tb is
 
-    signal gb_internal  : std_logic := '0';
+    signal gb_clk       : std_logic := '0';
+    signal gb_resetn    : std_logic;
     signal gb_addr      : std_logic_vector(15 downto 0) := "UUUUUUUUUUUUUUUU";
     signal gb_data      : std_logic_vector(7 downto 0) := "ZZZZZZZZ";
-    signal gb_clk       : std_logic := '0';
     signal gb_wrn       : std_logic := '1';
-    signal gb_csn       : std_logic := '1';
     signal gb_rdn       : std_logic := '1';
+    signal gb_csn       : std_logic := '1';
+    signal spi_clk      : std_logic;
+    signal spi_miso     : std_logic := '0';
+    signal spi_mosi     : std_logic;
+    signal spi_hard_csn : std_logic;
+    signal spi_sdc_csn  : std_logic;
+    signal dbg_clk      : std_logic := '0';
+    signal dbg_csn      : std_logic := '1';
+    signal dbg_mosi     : std_logic := '0';
+    signal dbg_miso     : std_logic;
+    signal dbg_enable   : std_logic := '0';
+    signal bta_oen      : std_logic;
+    signal btd_oen      : std_logic;
+    signal btd_dir      : std_logic;
+    signal dram_clk     : std_logic;
+    signal dram_cke     : std_logic;
+    signal dram_ba      : std_logic_vector(1 downto 0);
+    signal dram_a       : std_logic_vector(12 downto 0);
+    signal dram_csn     : std_logic;
+    signal dram_rasn    : std_logic;
+    signal dram_casn    : std_logic;
+    signal dram_wen     : std_logic;
+    signal dram_dqm     : std_logic;
+    signal dram_dq      : std_logic_vector(7 downto 0);
     signal user_rst     : std_logic := '0';
+    signal status_led   : std_logic_vector(7 downto 0);
 
 begin
 
@@ -47,11 +71,36 @@ begin
         SIMULATION => true)
     port map (
         GB_CLK => gb_clk,
+        GB_RESETN => gb_resetn,
         GB_ADDR => gb_addr,
         GB_DATA => gb_data,
         GB_RDN => gb_rdn,
         GB_CSN => gb_csn,
-        USER_RST => user_rst);
+        SPI_CLK => spi_clk,
+        SPI_MISO => spi_miso,
+        SPI_MOSI => spi_mosi,
+        SPI_HARD_CSN => spi_hard_csn,
+        SPI_SDC_CSN => spi_sdc_csn,
+        DBG_CLK => dbg_clk,
+        DBG_CSN => dbg_csn,
+        DBG_MOSI => dbg_mosi,
+        DBG_MISO => dbg_miso,
+        DBG_ENABLE => dbg_enable,
+        BTA_OEN => bta_oen,
+        BTD_OEN => btd_oen,
+        BTD_DIR => btd_dir,
+        DRAM_CLK => dram_clk,
+        DRAM_CKE => dram_cke,
+        DRAM_BA => dram_ba,
+        DRAM_A => dram_a,
+        DRAM_CSN => dram_csn,
+        DRAM_RASN => dram_rasn,
+        DRAM_CASN => dram_casn,
+        DRAM_WEN => dram_wen,
+        DRAM_DQM => dram_dqm,
+        DRAM_DQ => dram_dq,
+        USER_RST => user_rst,
+        STATUS_LED => status_led);
     
     -- GameBoy simulation	
     process
@@ -118,7 +167,6 @@ begin
                 -- wait for 125 ns;	-- Normal speed (DMG)
                 wait for 62500 ps;	-- Double speed (GBC)
 
-                gb_internal <= not(gb_internal);
                 if not(transaction_is_idle) then
                     case state is
                         when BS_CLK_UP_UP =>

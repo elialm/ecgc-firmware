@@ -4,9 +4,9 @@
   (keywordMap (keywordLevel 0))
   (status
     (written
-      (timestamp 2022 6 20 23 59 45)
+      (timestamp 2022 10 14 13 56 17)
       (program "SCUBA" (version "Diamond (64-bit) 3.12.0.240.2"))))
-      (comment "E:\Programs\lscc\diamond\3.12\ispfpga\bin\nt64\scuba.exe -w -n efb -lang vhdl -synth lse -bus_exp 7 -bb -type efb -arch se5c00 -freq 50 -spi -spi_mode Both -spi_freq 1 -spi_cs 1 -ufm0 -ufm0_ebr 0 -mem_size0 3582 -ufm0_0 -efb_ufm_boot INT_SINGLE_BOOT_CFG0 -wb -dev 9400 ")
+      (comment "E:\Programs\lscc\diamond\3.12\ispfpga\bin\nt64\scuba.exe -w -n efb -lang vhdl -synth lse -bus_exp 7 -bb -type efb -arch se5c00 -freq 50 -spi -spi_mode Both -spi_freq 1 -spi_cs 2 -ufm0 -ufm0_ebr 0 -mem_size0 3582 -ufm0_0 -efb_ufm_boot INT_SINGLE_BOOT_CFG0 -wb -dev 9400 ")
   (library ORCLIB
     (edifLevel 0)
     (technology
@@ -301,7 +301,7 @@
             (direction INOUT))
           (port spi_scsn
             (direction INPUT))
-          (port (array (rename spi_csn "spi_csn(0:0)") 1)
+          (port (array (rename spi_csn "spi_csn(1:0)") 2)
             (direction OUTPUT))
           (port ufm_sn
             (direction INPUT))
@@ -581,9 +581,13 @@
             (joined
               (portRef ufm_sn)
               (portRef UFMSN (instanceRef EFBInst_0))))
-          (net spi_csn0
+          (net spi_csn1
             (joined
               (portRef (member spi_csn 0))
+              (portRef SPIMCSN1 (instanceRef EFBInst_0))))
+          (net spi_csn0
+            (joined
+              (portRef (member spi_csn 1))
               (portRef SPIMCSN0 (instanceRef EFBInst_0))))
           (net spi_scsn
             (joined

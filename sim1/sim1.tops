@@ -1,3 +1,0 @@
-boot_rom,/,D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/boot_rom/boot_rom.vhd
-as4c32m8sa_controller,/,D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/as4c32m8sa_controller.vhd
-gameboy_tb,/,D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/gameboy_tb.vhd

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DiamondModule name="boot_ram" module="RAM_DQ" VendorName="Lattice Semiconductor Corporation" generator="IPexpress" date="2023 01 28 17:17:44.069" version="7.5" type="Module" synthesis="lse" source_format="VHDL">
+  <Package>
+		<File name="" type="" modified="2023 01 28 17:17:44.069"/>
+		<File name="boot_ram.lpc" type="lpc" modified="2023 01 28 17:17:39.241"/>
+		<File name="boot_ram.vhd" type="top_level_vhdl" modified="2023 01 28 17:17:39.353"/>
+		<File name="boot_ram_tmpl.vhd" type="template_vhdl" modified="2023 01 28 17:17:39.353"/>
+		<File name="d:/onedrive - office 365 fontys/self/tinyfpga/cartfirmware/mem/boot.mem" type="mem" modified="2022 07 19 23:59:37.519"/>
+		<File name="tb_boot_ram_tmpl.vhd" type="testbench_vhdl" modified="2023 01 28 17:17:39.364"/>
+  </Package>
+</DiamondModule>

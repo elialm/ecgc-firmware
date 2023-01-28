@@ -1,0 +1,107 @@
+m255
+K4
+z2
+!s11e vcom 2020.3 2020.10, Oct 14 2020
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 dD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/sim/sim_dma
+Edma_controller
+Z1 w1673964005
+Z2 DPx8 synopsys 10 attributes 0 22 dc>JdEHRM@6GGENe5bZ?D1
+Z3 DPx4 ieee 14 std_logic_misc 0 22 dN]HY6l5ohPcZ:TaC@B;53
+Z4 DPx4 ieee 11 numeric_std 0 22 aU^R8eGcicLcUFIaBQSL>3
+Z5 DPx3 std 6 textio 0 22 zE1`LPoLg^DX3Oz^4Fj1K3
+Z6 DPx4 ieee 14 std_logic_1164 0 22 cVAk:aDinOX8^VGI1ekP<3
+!i122 30
+R0
+Z7 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/dma_controller.vhd
+Z8 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/dma_controller.vhd
+l0
+Z9 L26 1
+V?fS_eZ01gA85g;X2>G4^A3
+!s100 fY>nZj6eU@dN^c4BhWo5o0
+Z10 OT;C;2020.3;71
+33
+Z11 !s110 1673964008
+!i10b 1
+Z12 !s108 1673964008.000000
+Z13 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/dma_controller.vhd|
+Z14 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/dma_controller.vhd|
+!i113 1
+Z15 o-work work -2008 -explicit -O0
+Z16 tExplicit 1 NoCoverage 1 CvgOpt 0
+Abehaviour
+R2
+R3
+R4
+R5
+R6
+Z17 DEx4 work 14 dma_controller 0 22 ?fS_eZ01gA85g;X2>G4^A3
+!i122 30
+l68
+L48 164
+VeHmMUjTEXY;m9>RbEa9G31
+!s100 ag?9KbhZ8341I<NU>mA:@2
+R10
+33
+R11
+!i10b 1
+R12
+R13
+R14
+!i113 1
+R15
+R16
+Edma_controller_tb
+Z18 w1673964208
+Z19 DPx4 ieee 9 math_real 0 22 gNk<PdFJ<XNPcfef`f?Z81
+R2
+R3
+R5
+R6
+!i122 31
+R0
+Z20 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/dma_controller_tb.vhd
+Z21 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/dma_controller_tb.vhd
+l0
+R9
+VT]hXM9J]lQG2o:TLMj96^0
+!s100 8_:nYm0kafCJeG8FJT_6D1
+R10
+33
+Z22 !s110 1673964213
+!i10b 1
+Z23 !s108 1673964213.000000
+Z24 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/dma_controller_tb.vhd|
+Z25 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/dma_controller_tb.vhd|
+!i113 1
+R15
+R16
+Abehaviour
+R4
+R17
+R19
+R2
+R3
+R5
+R6
+Z26 DEx4 work 17 dma_controller_tb 0 22 T]hXM9J]lQG2o:TLMj96^0
+!i122 31
+l65
+L29 157
+Vn@1;Z4BBD5CmjOAh6mMDm1
+!s100 iYV6M]KMzQEPgYcMd]CD`2
+R10
+33
+R22
+!i10b 1
+R23
+R24
+R25
+!i113 1
+R15
+R16

@@ -32,6 +32,7 @@ spi_clk  b
 spi_miso  b
 spi_mosi  b
 spi_scsn  i
+spi_csn[1]  o
 spi_csn[0]  o
 ufm_sn  i
 wbc_ufm_irq  o

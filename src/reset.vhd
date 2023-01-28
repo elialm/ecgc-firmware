@@ -39,6 +39,7 @@ entity reset is
         PLL_LOCK    : in std_logic;
         EXT_SOFT    : in std_logic;     -- Connected to reset button
         AUX_SOFT    : in std_logic;     -- Connected to hypervisor reset
+        DBG_ACTIVE  : in std_logic;     -- Indicates debug core active
 
         GB_RESETN   : out std_logic;    -- Connected to GB_RST pin
         SOFT_RESET  : out std_logic;    -- Connected to hypervisor reset
@@ -72,6 +73,9 @@ architecture behaviour of reset is
     signal soft_reset_s     : std_logic;
     signal ext_soft_sync    : std_logic;
     signal aux_extender     : std_logic_vector(AUX_FF-1 downto 0);
+
+    signal dbg_active_d     : std_logic;
+    signal aux_internal     : std_logic;
 
 begin
 
@@ -114,7 +118,7 @@ begin
     process (SYNC_CLK)
     begin
         if rising_edge(SYNC_CLK) then
-            if (ff_stages(ff_stages'high) or AUX_SOFT) = '1' then
+            if (ff_stages(ff_stages'high) or AUX_SOFT or aux_internal) = '1' then
                 aux_extender <= (aux_extender'high => '1', others => '0');
             else
                 if aux_extender(aux_extender'high) = '1' then
@@ -124,9 +128,22 @@ begin
         end if;
     end process;
 
+    -- Handle debug active
+    process (SYNC_CLK)
+    begin
+        if rising_edge(SYNC_CLK) then
+            if ff_stages(ff_stages'high) = '1' then
+                dbg_active_d <= '0';
+            else
+                dbg_active_d <= DBG_ACTIVE;
+                aux_internal <= DBG_ACTIVE xor dbg_active_d;
+            end if;
+        end if;
+    end process;
+
     soft_reset_s <= ext_soft_sync or aux_extender(aux_extender'high);
 
-    GB_RESETN <= not(soft_reset_s);
+    GB_RESETN <= not(soft_reset_s) and not(DBG_ACTIVE);
     SOFT_RESET <= soft_reset_s;
     HARD_RESET <= ff_stages(ff_stages'high);
     

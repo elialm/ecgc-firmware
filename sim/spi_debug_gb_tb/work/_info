@@ -1,0 +1,739 @@
+m255
+K4
+z2
+!s11e vcom 2020.3 2020.10, Oct 14 2020
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 dD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/sim/spi_debug_gb_tb
+Eas4c32m8sa_controller
+Z1 w1664285264
+Z2 DPx4 ieee 9 math_real 0 22 gNk<PdFJ<XNPcfef`f?Z81
+Z3 DPx8 synopsys 10 attributes 0 22 dc>JdEHRM@6GGENe5bZ?D1
+Z4 DPx4 ieee 14 std_logic_misc 0 22 dN]HY6l5ohPcZ:TaC@B;53
+Z5 DPx4 ieee 11 numeric_std 0 22 aU^R8eGcicLcUFIaBQSL>3
+Z6 DPx3 std 6 textio 0 22 zE1`LPoLg^DX3Oz^4Fj1K3
+Z7 DPx4 ieee 14 std_logic_1164 0 22 cVAk:aDinOX8^VGI1ekP<3
+!i122 17
+R0
+Z8 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/as4c32m8sa_controller.vhd
+Z9 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/as4c32m8sa_controller.vhd
+l0
+L22 1
+V^K`^JRRdHMaJGW>9keQZ53
+!s100 GQAD<Fb@g`<ViKjXA[T5`1
+Z10 OT;C;2020.3;71
+33
+Z11 !s110 1674826097
+!i10b 1
+Z12 !s108 1674826097.000000
+Z13 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/as4c32m8sa_controller.vhd|
+Z14 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/as4c32m8sa_controller.vhd|
+!i113 1
+Z15 o-work work -2008 -explicit -O0
+Z16 tExplicit 1 NoCoverage 1 CvgOpt 0
+Abehaviour
+R2
+R3
+R4
+R5
+R6
+R7
+Z17 DEx4 work 21 as4c32m8sa_controller 0 22 ^K`^JRRdHMaJGW>9keQZ53
+!i122 17
+l96
+L52 228
+Vmf8KWDCPPdI?3MRKh2`S11
+!s100 lJ2D5kz?QO3=7H1AZ^:<l2
+R10
+33
+R11
+!i10b 1
+R12
+R13
+R14
+!i113 1
+R15
+R16
+Eboot_rom
+Z18 w1658268122
+Z19 DPx4 ieee 15 std_logic_arith 0 22 [G314=:2zXJ`VORJe1J@Z1
+Z20 DPx8 machxo3d 10 components 0 22 ^4bRH^EzkBgkJf4nnX[2<1
+R6
+R7
+!i122 14
+R0
+Z21 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/boot_rom/boot_rom.vhd
+Z22 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/boot_rom/boot_rom.vhd
+l0
+Z23 L14 1
+V]Qci[k@23:bia7DgmTcha3
+!s100 KZ@jfK<YP;AeznA`PAE0O1
+R10
+33
+Z24 !s110 1674826096
+!i10b 1
+Z25 !s108 1674826096.000000
+Z26 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/boot_rom/boot_rom.vhd|
+Z27 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/boot_rom/boot_rom.vhd|
+!i113 1
+R15
+R16
+Astructure
+R19
+R20
+R6
+R7
+DEx4 work 8 boot_rom 0 22 ]Qci[k@23:bia7DgmTcha3
+!i122 14
+l110
+L23 348
+VS_Q1O65V_C2dmez:KE:=M3
+!s100 id_FClIcR6^NH[nM5JUa_1
+R10
+33
+R24
+!i10b 1
+R25
+R26
+R27
+!i113 1
+R15
+R16
+Ecart_tl
+Z28 w1674826093
+R5
+R6
+R7
+!i122 27
+R0
+Z29 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/cart_tl.vhd
+Z30 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/cart_tl.vhd
+l0
+L28 1
+VJElc[C:S<lKQK9T[0=Al@0
+!s100 R@5SBTegnK]EC7[kD@4]<3
+R10
+33
+Z31 !s110 1674826098
+!i10b 1
+Z32 !s108 1674826098.000000
+Z33 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/cart_tl.vhd|
+Z34 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/cart_tl.vhd|
+!i113 1
+R15
+R16
+Abehaviour
+R2
+R17
+Z35 DEx4 work 4 mbch 0 22 bQGLYnHhE:VbQZTf9fK^W1
+Z36 DEx4 work 19 wb_crossbar_central 0 22 7oJLN3k<L`hLj=5>B<j<k1
+Z37 DEx4 work 9 spi_debug 0 22 mTa0BATMfRdnHMnkhTZz40
+Z38 DEx4 work 14 dma_controller 0 22 8@b2QhN<>_flS2j2L^bgU1
+Z39 DEx4 work 19 wb_crossbar_decoder 0 22 ]QX4d:_fbH09fmPmT94g_1
+Z40 DEx4 work 10 gb_decoder 0 22 f]9gaV`EoC^@z1fMJdn`b0
+R3
+R4
+Z41 DEx4 work 5 reset 0 22 QDzZ=]hMVMIlXeCcD>7=^2
+R5
+R6
+R7
+Z42 DEx4 work 7 cart_tl 0 22 JElc[C:S<lKQK9T[0=Al@0
+!i122 27
+l210
+L78 459
+VM6>I58_NTdMDKDVfeLMnP0
+!s100 6CDfU?W[flF_Em[78;S>`1
+R10
+33
+R31
+!i10b 1
+R32
+R33
+R34
+!i113 1
+R15
+R16
+Edma_controller
+Z43 w1674667203
+R3
+R4
+R5
+R6
+R7
+!i122 22
+R0
+Z44 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/dma_controller.vhd
+Z45 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/dma_controller.vhd
+l0
+Z46 L26 1
+V8@b2QhN<>_flS2j2L^bgU1
+!s100 GcC11CP][c3aK?8?oo:;d1
+R10
+33
+R11
+!i10b 1
+R12
+Z47 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/dma_controller.vhd|
+Z48 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/dma_controller.vhd|
+!i113 1
+R15
+R16
+Abehaviour
+R3
+R4
+R5
+R6
+R7
+R38
+!i122 22
+l73
+L53 166
+VjJd21XdW2A@CRb9?jCQ:U2
+!s100 9OloU3<`SF[?XXezm8jH=1
+R10
+33
+R11
+!i10b 1
+R12
+R47
+R48
+!i113 1
+R15
+R16
+Eefb
+Z49 w1665748577
+R19
+R20
+R6
+R7
+!i122 18
+R0
+Z50 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/efb/efb.vhd
+Z51 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/efb/efb.vhd
+l0
+R23
+V0G@k3?0mInmEO>SCjcB=^3
+!s100 D98[V]^IR8BHFF@1m^gNL1
+R10
+33
+R11
+!i10b 1
+R12
+Z52 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/efb/efb.vhd|
+Z53 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/efb/efb.vhd|
+!i113 1
+R15
+R16
+Astructure
+R19
+R20
+R6
+R7
+DEx4 work 3 efb 0 22 0G@k3?0mInmEO>SCjcB=^3
+!i122 18
+l186
+L34 258
+VXPHEelA=coN^E01M[OP:42
+!s100 ghL0@M9j=H2HZB3czO`ZR3
+R10
+33
+R11
+!i10b 1
+R12
+R52
+R53
+!i113 1
+R15
+R16
+Egb_decoder
+Z54 w1664285274
+R3
+R4
+R5
+R6
+R7
+!i122 24
+R0
+Z55 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/gb_decoder.vhd
+Z56 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/gb_decoder.vhd
+l0
+L27 1
+Vf]9gaV`EoC^@z1fMJdn`b0
+!s100 I@8hDj3OU4<UzY6?oBTbK2
+R10
+33
+R11
+!i10b 1
+R12
+Z57 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/gb_decoder.vhd|
+Z58 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/gb_decoder.vhd|
+!i113 1
+R15
+R16
+Abehaviour
+R3
+R4
+R5
+R6
+R7
+R40
+!i122 24
+l89
+L52 150
+VknDHH]=LDFA76zemD5lPQ3
+!s100 N9L3MF;j<i8df;4Oh^D^Q1
+R10
+33
+R11
+!i10b 1
+R12
+R57
+R58
+!i113 1
+R15
+R16
+Embch
+Z59 w1674827718
+R3
+R4
+R6
+R7
+!i122 33
+R0
+Z60 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/mbch.vhd
+Z61 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/mbch.vhd
+l0
+L35 1
+VbQGLYnHhE:VbQZTf9fK^W1
+!s100 9aUjofg]1P]XMY>TU23a21
+R10
+33
+Z62 !s110 1674827815
+!i10b 1
+Z63 !s108 1674827815.000000
+Z64 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/mbch.vhd|
+Z65 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/mbch.vhd|
+!i113 1
+R15
+R16
+Abehaviour
+R3
+R4
+R6
+R7
+R35
+!i122 33
+l117
+L69 214
+Vaf6`z`BJ?CmRId7ZjYIBT2
+!s100 c8fW7700Bc]?d0Ed=UF_]0
+R10
+33
+R62
+!i10b 1
+R63
+R64
+R65
+!i113 1
+R15
+R16
+Epll
+Z66 w1656596955
+R19
+R20
+R6
+R7
+!i122 26
+R0
+Z67 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/pll/pll.vhd
+Z68 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/pll/pll.vhd
+l0
+R23
+VecPh83k`IBSA6:L^CjmU73
+!s100 ab;LJV5KmbPE5^iRC>I5Z3
+R10
+33
+R31
+!i10b 1
+R32
+Z69 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/pll/pll.vhd|
+Z70 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/pll/pll.vhd|
+!i113 1
+R15
+R16
+Astructure
+R19
+R20
+R6
+R7
+Z71 DEx4 work 3 pll 0 22 ecPh83k`IBSA6:L^CjmU73
+!i122 26
+l103
+L22 127
+VE;MOSFbSC]Gc[=egI_8mb2
+!s100 6Gi`HgVETPTM4B1HM`S373
+R10
+33
+R31
+!i10b 1
+R32
+R69
+R70
+!i113 1
+R15
+R16
+Ereset
+Z72 w1674670050
+R3
+R4
+R5
+R6
+R7
+!i122 25
+R0
+Z73 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/reset.vhd
+Z74 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/reset.vhd
+l0
+L32 1
+VQDzZ=]hMVMIlXeCcD>7=^2
+!s100 JI5Az8GR<IlD@@zT0BEX40
+R10
+33
+R11
+!i10b 1
+R12
+Z75 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/reset.vhd|
+Z76 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/reset.vhd|
+!i113 1
+R15
+R16
+Abehaviour
+R3
+R4
+R5
+R6
+R7
+R41
+!i122 25
+l80
+L49 102
+VdjN9UbK50LB[XYb>UejYL0
+!s100 83?l_gLYG_eU_il_eOK@U0
+R10
+33
+R11
+!i10b 1
+R12
+R75
+R76
+!i113 1
+R15
+R16
+Espi_debug
+Z77 w1674680103
+R3
+R4
+R5
+R6
+R7
+!i122 21
+R0
+Z78 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/spi_debug.vhd
+Z79 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/spi_debug.vhd
+l0
+R46
+VmTa0BATMfRdnHMnkhTZz40
+!s100 `QLU;WZZa1Q0IMH<PI;lX2
+R10
+33
+R11
+!i10b 1
+R12
+Z80 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/spi_debug.vhd|
+Z81 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/spi_debug.vhd|
+!i113 1
+R15
+R16
+Abehaviour
+R3
+R4
+R5
+R6
+R7
+R37
+!i122 21
+l88
+L49 265
+VI4^2>zRd5F2lB^h>mYg=30
+!s100 @jo@clgQL@_Xmm5k4f=<22
+R10
+33
+R11
+!i10b 1
+R12
+R80
+R81
+!i113 1
+R15
+R16
+Espi_debug_tb
+Z82 w1674828573
+R2
+R5
+R6
+R7
+!i122 35
+R0
+Z83 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/spi_debug_gb_tb.vhd
+Z84 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/spi_debug_gb_tb.vhd
+l0
+R46
+V64gKiTHc8WdbhN81^CFzn2
+!s100 RNZ4IB3cAQ59UUfOj2J@91
+R10
+33
+Z85 !s110 1674828581
+!i10b 1
+Z86 !s108 1674828581.000000
+Z87 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/spi_debug_gb_tb.vhd|
+Z88 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/spi_debug_gb_tb.vhd|
+!i113 1
+R15
+R16
+Abehaviour
+R42
+R2
+R5
+R6
+R7
+Z89 DEx4 work 12 spi_debug_tb 0 22 64gKiTHc8WdbhN81^CFzn2
+!i122 35
+l67
+Z90 L29 163
+VIJdZG@kfY^CDA]S=an[ge1
+!s100 IG`nJF?9k:3JTBVEaCZAf2
+R10
+33
+R85
+!i10b 1
+R86
+R87
+R88
+!i113 1
+R15
+R16
+Espi_slave
+Z91 w1674677273
+R3
+R4
+R5
+R6
+R7
+!i122 16
+R0
+Z92 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/spi_slave.vhd
+Z93 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/spi_slave.vhd
+l0
+R46
+VnE3CVjbcHlR?4Ud<nOQVb0
+!s100 :Ek`R?B24<PHllHiPmKHA1
+R10
+33
+R24
+!i10b 1
+R25
+Z94 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/spi_slave.vhd|
+Z95 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/spi_slave.vhd|
+!i113 1
+R15
+R16
+Abehaviour
+R3
+R4
+R5
+R6
+R7
+DEx4 work 9 spi_slave 0 22 nE3CVjbcHlR?4Ud<nOQVb0
+!i122 16
+l79
+L51 109
+VG2KlcSehPzz1@gb[R]0B60
+!s100 cNQH>EcA7J3nz^<Imf7`A0
+R10
+33
+R24
+!i10b 1
+R25
+R94
+R95
+!i113 1
+R15
+R16
+Cstructure_con
+epll
+aStructure
+DPx4 ieee 16 vital_primitives 0 22 G>kiXP8Q9dRClKfK1Zn7j1
+DPx4 ieee 18 std_logic_unsigned 0 22 ;eZjO2D4ZDz<]0>8AL<ne1
+DEx8 machxo3d 7 ehxpllj 0 22 PBV@4YRjBg7<6eT`;1ld03
+DPx4 ieee 12 vital_timing 0 22 J>EBealN09f8GzldA[z2>3
+DEx8 machxo3d 3 vlo 0 22 LPXhg6ciERNeEY2`Zj6CD0
+DAx4 work 3 pll 9 structure 22 E;MOSFbSC]Gc[=egI_8mb2
+R19
+R20
+R6
+R7
+R71
+!i122 26
+R66
+R0
+R67
+R68
+l0
+L152 1
+Vhek29c6Nd^cm]LMme`mEJ1
+!s100 S4z6jUS^;6O3QcO>mjOjM3
+R10
+33
+R31
+!i10b 1
+R32
+R69
+R70
+!i113 1
+R15
+R16
+Esynchroniser
+Z96 w1664285290
+R6
+R7
+!i122 15
+R0
+Z97 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/synchroniser.vhd
+Z98 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/synchroniser.vhd
+l0
+Z99 L25 1
+V4E`g[:b`V1eT9GANQ>65F3
+!s100 n8Aco^TQjc<^78jbKQ:Y92
+R10
+33
+R24
+!i10b 1
+R25
+Z100 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/synchroniser.vhd|
+Z101 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/synchroniser.vhd|
+!i113 1
+R15
+R16
+Abehaviour
+R6
+R7
+DEx4 work 12 synchroniser 0 22 4E`g[:b`V1eT9GANQ>65F3
+!i122 15
+l53
+L46 31
+VV5YkT6hMCo^NdJRk^DZ8B0
+!s100 >^Eaz9GWY3o127a=XDKfI0
+R10
+33
+R24
+!i10b 1
+R25
+R100
+R101
+!i113 1
+R15
+R16
+Ewb_crossbar_central
+Z102 w1674665660
+R3
+R4
+R6
+R7
+!i122 20
+R0
+Z103 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/wb_crossbar_central.vhd
+Z104 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/wb_crossbar_central.vhd
+l0
+R99
+V7oJLN3k<L`hLj=5>B<j<k1
+!s100 Qe8MV[m0zePIePQoF?:Pe0
+R10
+33
+R11
+!i10b 1
+R12
+Z105 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/wb_crossbar_central.vhd|
+Z106 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/wb_crossbar_central.vhd|
+!i113 1
+R15
+R16
+Abehaviour
+R3
+R4
+R6
+R7
+R36
+!i122 20
+l77
+L67 39
+VQggN6Bb?z>WDWMV8jP:`K1
+!s100 kKC_z^[o<JAHYES`f4Fmh1
+R10
+33
+R11
+!i10b 1
+R12
+R105
+R106
+!i113 1
+R15
+R16
+Ewb_crossbar_decoder
+Z107 w1674668125
+R3
+R4
+R6
+R7
+!i122 23
+R0
+Z108 8D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/wb_crossbar_decoder.vhd
+Z109 FD:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/wb_crossbar_decoder.vhd
+l0
+R99
+V]QX4d:_fbH09fmPmT94g_1
+!s100 R1^NSCXVP_f4dXIkAYHgb1
+R10
+33
+R11
+!i10b 1
+R12
+Z110 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/wb_crossbar_decoder.vhd|
+Z111 !s107 D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/wb_crossbar_decoder.vhd|
+!i113 1
+R15
+R16
+Abehaviour
+R3
+R4
+R6
+R7
+R39
+!i122 23
+l66
+L60 36
+VHI9;DV@7HbPi^g3Doai6l3
+!s100 H[h3^fYW6cHklH?zQOXo63
+R10
+33
+R11
+!i10b 1
+R12
+R110
+R111
+!i113 1
+R15
+R16
