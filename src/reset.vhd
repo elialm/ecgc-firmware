@@ -14,14 +14,25 @@
 -- a couple of cycles. This generates a reset pulse to be transmitted to the
 -- entire system at startup.
 --
--- It also handles the soft reset triggered by the button on the cart or
--- by a write to the reset bit. The following happens during a soft reset:
+-- It also handles the soft reset. This reset will only reset a select number
+-- of components. This used in many cases e.g. when switching active MBCs or
+-- enabling/disabling the debug core. This enables part of the system to always
+-- remain operational (e.g. the MBCH which needs to be able to keep track of
+-- when the Gameboy resets for the bootloader to function properly).
+--
+-- The following happens during a soft reset:
 --      - GB_RSTN is asserted low, putting the Gameboy in reset
 --      - The active MBC is switched with the selected MBC written to MBCH_CFG0
 --      - If the boot rom cut-off bit was set to '1', the following also happens
 --          - MBCH will disallow access to boot rom
 --          - Bank 0 will be used to access DRAM
 --      - GB_RSTN is asserted high, allowing the Gameboy to boot
+--
+-- Signals capable of generating a soft reset are:
+--      - MBCH using the RST bit in the MBCH_CTRL register, which pulses AUX_SOFT 
+--      - Pressing the reset button, pulsing the USER_RESET signal
+--      - Activating the debug core, asserting DBG_ACTIVE
+--      - Deactivating the debug core, dissasserting DBG_ACTIVE
 ----------------------------------------------------------------------------------
 
 library ieee;

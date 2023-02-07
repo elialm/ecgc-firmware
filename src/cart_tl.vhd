@@ -1,29 +1,25 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
+-- Engineer: Elijah Almeida Coimbra
 -- 
 -- Create Date: 03/31/2022 02:16:43 PM
--- Design Name: 
+-- Design Name: Cartridge toplevel
 -- Module Name: toplevel - behaviour
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
--- 
--- Dependencies: 
--- 
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
 -- 
 ----------------------------------------------------------------------------------
 
-library IEEE;
-use IEEE.STD_LOGIC_1164.all;
-use IEEE.NUMERIC_STD.all;
+----------------------------------------------------------------------------------
+-- Documentation
+--
+-- This is the cartridge's toplevel VHDL file. It contains the instances of all
+-- the necessary cores for implementing the cartridge functions.
+----------------------------------------------------------------------------------
 
-library MACHXO3D;
-use MACHXO3D.all;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+library MachXO3D;
+use MachXO3D.all;
 
 entity cart_tl is
     generic (
@@ -451,7 +447,7 @@ begin
         CLK_FREQ => 53.20)
     port map (
         CLK_I => pll_clk_op,
-        RST_I => soft_reset,
+        RST_I => soft_reset,    -- TODO: will probably give issues with DRAM not being ready on time on boot
         CYC_I => wb_cyc,
         STB_I => wb_dram_stb,
         WE_I => wb_we,

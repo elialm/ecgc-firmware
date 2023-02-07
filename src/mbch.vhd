@@ -15,6 +15,10 @@
 -- access to the boot ROM, which initialised the system using this hypervisor level
 -- access.
 --
+-- The MBCH is also used to access the MBCH control registers. These include functions
+-- such as DRAM banking and soft reset control. The control registers are further
+-- documented in /doc/register.md. 
+--
 -- It also uses the SELECT_MBC to override itself and switch to a different MBC
 -- implementation. After switching to a different MBC, it is only possible to
 -- switch back after a reset.

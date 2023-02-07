@@ -1,21 +1,23 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
+-- Engineer: Elijah Almeida Coimbra
 -- 
 -- Create Date: 01/16/2023 03:07:43 PM
--- Design Name: 
+-- Design Name: DMA controller
 -- Module Name: dma_controller - behaviour
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
 -- 
--- Dependencies: 
--- 
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
--- 
+----------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------
+-- Documentation
+--
+-- Cartridge's DMA controller for copying data from and to cartridge memory.
+-- Used when it is needed to copy large amounts of data around the cartridge.
+-- An example use case is when copying a game to DRAM, where the Gameboy's bus
+-- only running at 1MHz might be a bottleneck.
+--
+-- The DMA also provides a Wishbone slave interface for configuration. The core
+-- can then be controlled via this interface. The control registers are further
+-- documented in /doc/register.md.
 ----------------------------------------------------------------------------------
 
 library ieee;
@@ -47,7 +49,7 @@ entity dma_controller is
         CFG_DAT_I   : in std_logic_vector(7 downto 0);
         
         -- Status signals
-        STATUS_BUSY : out std_logic);
+        STATUS_BUSY : out std_logic);   -- Indicates that the DMA is busy copying data
 end dma_controller;
 
 architecture behaviour of dma_controller is

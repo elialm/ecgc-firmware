@@ -10,8 +10,15 @@
 ----------------------------------------------------------------------------------
 -- Documentation
 --
+-- AS4C32M8SA DRAM controller. The core provides translation between Wishbone
+-- transactions and DRAM commands. For example when reading, the core will
+-- figure out which DRAM commands it should send in what order.
 --
+-- The Wishbone interface has an additional TGA_I bit vector, which is used to
+-- select the DRAM bank (the AS4C32M8SA has 4 8MB banks, hence 2 bits).
 ----------------------------------------------------------------------------------
+
+-- TODO: wrote this a long time ago, review it at a later date
 
 library ieee;
 use ieee.std_logic_1164.all;

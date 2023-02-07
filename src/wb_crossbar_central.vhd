@@ -1,21 +1,36 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
+-- Engineer: Elijah Almeida Coimbra
 -- 
 -- Create Date: 01/25/2023 15:15:12 PM
--- Design Name: 
+-- Design Name: Central Wishbone crossbar
 -- Module Name: wb_crossbar_central - behaviour
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
 -- 
--- Dependencies: 
+----------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------
+-- Documentation
+--
+-- This is the central Wishbone crossbar. It multiplexes the 3 bus masters
+-- in the cartridge to the main Wishbone bus containing the MBCs.
+--
+-- The multiplexers are cascaded in such a way to always give priority to
+-- certain masters, which is hardcoded behaviour.
+--
+-- The priorities are as such (from high to low):
+--      1. SPI debugger master (signals prefixed with DBG_)
+--      2. DMA master (signals prefixed with DMA_)
+--      3. Gameboy bus decoder master (signals prefixed with GBD_)
 -- 
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
--- 
+-- The multiplexers do NOT keep track of bus cycles, meaning that if a
+-- transaction is being done by a lower priority master and a higher priority
+-- "steals" the bus, the multiplexers WILL switch to the higher priority master.
+--
+-- This is done intentionally, since only 1 master should be active at any time.
+-- The only exception is the DMA and Gameboy masters. The way these are handled,
+-- is that while the DMA is active mastering the bus, the GBD_ slave will ignore
+-- writes and alyways return x"00" when reading. The DMA registers are still able
+-- to be accessed, since these are accessed from a different bus (see 
+-- wb_crossbar_decoder.vhd).
 ----------------------------------------------------------------------------------
 
 library ieee;

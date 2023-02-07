@@ -1,21 +1,23 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
+-- Engineer: Elijah Almeida Coimbra
 -- 
 -- Create Date: 01/25/2023 16:43:12 PM
--- Design Name: 
+-- Design Name: Gameboy bus Wishbone crossbar
 -- Module Name: wb_crossbar_decoder - behaviour
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
 -- 
--- Dependencies: 
--- 
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
--- 
+----------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------
+-- Documentation
+--
+-- This is the Gameboy bus Wishbone decoder. It multiplexes the Wishbone master
+-- from the Gameboy bus decoder to its 2 slaves:
+--      1. DMA configuration slave (signals prefixed with DMA_)
+--      2. Central crossbar slave (signals prefixed with CCB_)
+--
+-- The crossbar decodes the address (ADR_I) to figure out if a transaction is
+-- meant to access the DMA slave or the central crossbar (which is routed
+-- further through the cartridge).
 ----------------------------------------------------------------------------------
 
 library ieee;

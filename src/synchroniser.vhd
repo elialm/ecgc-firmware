@@ -1,26 +1,15 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
+-- Engineer: Elijah Almeida Coimbra
 -- 
 -- Create Date: 03/31/2022 03:12:42 PM
--- Design Name: 
--- Module Name: multi_bit_synchroniser - behaviour
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
--- 
--- Dependencies: 
--- 
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
+-- Design Name: Synchroniser
+-- Module Name: synchroniser - behaviour
 -- 
 ----------------------------------------------------------------------------------
 
 
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
+library ieee;
+use ieee.std_logic_1164.all;
 
 entity synchroniser is
     generic (

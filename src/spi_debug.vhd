@@ -1,21 +1,28 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
+-- Engineer: Elijah Almeida Coimbra
 -- 
 -- Create Date: 01/23/2023 13:26:12 PM
--- Design Name: 
+-- Design Name: Cartridge SPI-controlled debug core
 -- Module Name: spi_debug - behaviour
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
 -- 
--- Dependencies: 
+----------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------
+-- Documentation
+--
+-- SPI controller debugging core. This core enables one to interface with the
+-- main bus via an external SPI master. This is very useful to debug certain
+-- features, without having to write an assembly program on the Gameboy for it.
 -- 
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
--- 
+-- It also allows one to write a program to the boot ROM. The boot ROM is
+-- implemented using block RAM, so a write to is is volatile. However, this is
+-- very useful for quickly writing a program for testing.
+--
+-- The debug core will activate upon assertion of the DBG_ENABLE signal. This
+-- will assert DBG_ACTIVE, which suppresses certain cores and resets the
+-- cartridge. While the core is active, commands can be sent oer SPI.
+--
+-- The SPI command packages are documented in detail in /doc/spi_debug.md.
 ----------------------------------------------------------------------------------
 
 library ieee;

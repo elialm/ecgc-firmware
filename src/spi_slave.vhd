@@ -1,21 +1,24 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
+-- Engineer: Elijah Almeida Coimbra
 -- 
 -- Create Date: 01/16/2023 10:35:12 PM
--- Design Name: 
+-- Design Name: SPI slave
 -- Module Name: spi_slave - behaviour
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
 -- 
--- Dependencies: 
+----------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------
+-- Documentation
+--
+-- Generic SPI slave. The core implements the SPI protocol using the SPI_
+-- signals. 
+--
+-- It uses a Wishbone-like interface to interact with the SPI shift register.
+-- A Wishbone read transaction will read from this register and a write
+-- transaction writes to this register.
 -- 
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
--- 
+-- Care should be taken to only read from/write to the register when the
+-- appropriate status signals are asserted. 
 ----------------------------------------------------------------------------------
 
 library ieee;
@@ -23,10 +26,12 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_misc.all;
 
+-- TODO: make the generic parameters actually do something
 entity spi_slave is
     generic (
-        CONFIG_SPI_CPOL : std_logic := '0';
-        CONFIG_SPI_CPHA : std_logic := '0');
+        CONFIG_SPI_CPOL : boolean := false;
+        CONFIG_SPI_CPHA : boolean := false;
+        CONFIG_SPI_MSBF : boolean := false);
     port (
         -- SPI pins
         SPI_CLK     : in std_logic;
@@ -43,9 +48,9 @@ entity spi_slave is
         DAT_O   : out std_logic_vector(7 downto 0);
 
         -- Status signals
-        STATUS_RXRDY    : out std_logic;
-        STATUS_TXRDY    : out std_logic;
-        STATUS_OVERRUN  : out std_logic);
+        STATUS_RXRDY    : out std_logic;    -- Indicates that a byte has been received
+        STATUS_TXRDY    : out std_logic;    -- Indicates that a byte can be transmitted
+        STATUS_OVERRUN  : out std_logic);   -- Indicates that a byte has been received without reading the previous one
 end spi_slave;
 
 architecture behaviour of spi_slave is

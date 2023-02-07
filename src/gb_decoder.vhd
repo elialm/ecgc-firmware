@@ -1,23 +1,11 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
+-- Engineer: Elijah Almeida Coimbra
 -- 
 -- Create Date: 03/31/2022 04:10:42 PM
--- Design Name: 
+-- Design Name: Gameboy bus decoder
 -- Module Name: gb_decoder - behaviour
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
--- 
--- Dependencies: 
--- 
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
 -- 
 ----------------------------------------------------------------------------------
-
 
 library ieee;
 use ieee.std_logic_1164.all;
