@@ -102,39 +102,39 @@ begin
         USER_RST => user_rst,
         STATUS_LED => status_led);
     
-    -- GameBoy simulation	
+    -- GameBoy simulation
     process
     
          --Each element is a bitfield
-            --0-7		: data (if write)
-            --8-23	: address
-            --24		: 0 = read, 1 = write
-            --25		: 1 = perform cart access, 0 = perform internal access
+            --0-7       : data (if write)
+            --8-23      : address
+            --24        : 0 = read, 1 = write
+            --25        : 1 = perform cart access, 0 = perform internal access
         type gb_bus_transactions is array (integer range <>) of std_logic_vector(25 downto 0);
         variable test_bus_transactions : gb_bus_transactions(0 to 22) := (
-            b"10_0000_0001_0000_0000_0000_0000",	-- NOP
-            b"10_0000_0001_0000_0001_0000_0000",	-- JP $0150
+            b"10_0000_0001_0000_0000_0000_0000",    -- NOP
+            b"10_0000_0001_0000_0001_0000_0000",    -- JP $0150
             b"10_0000_0001_0000_0010_0000_0000",
             b"10_0000_0001_0000_0011_0000_0000",
-            b"00_0000_0000_0000_0000_0000_0000",	-- idle bus...
-            b"10_0000_0001_0101_0000_0000_0000",	-- DI 
-            b"10_0000_0001_0101_0001_0000_0000",	-- LD SP, $FFFE
+            b"00_0000_0000_0000_0000_0000_0000",    -- idle bus...
+            b"10_0000_0001_0101_0000_0000_0000",    -- DI 
+            b"10_0000_0001_0101_0001_0000_0000",    -- LD SP, $FFFE
             b"10_0000_0001_0101_0010_0000_0000",
             b"10_0000_0001_0101_0011_0000_0000",
-            b"10_0000_0001_0101_0100_0000_0000",	-- LD HL, $FF40
+            b"10_0000_0001_0101_0100_0000_0000",    -- LD HL, $FF40
             b"10_0000_0001_0101_0101_0000_0000",
             b"10_0000_0001_0101_0110_0000_0000",
-            b"10_0000_0001_0101_0111_0000_0000",	-- RES 7, [HL]
+            b"10_0000_0001_0101_0111_0000_0000",    -- RES 7, [HL]
             b"10_0000_0001_0101_1000_0000_0000",
-            b"00_0000_0000_0000_0000_0000_0000",	-- idle bus...
-            b"00_0000_0000_0000_0000_0000_0000",	-- idle bus...
-            b"11_0000_0001_0000_0000_1010_0101",	-- not an instruction, just to test if cart correctly ignores writes to ROM
-            b"10_0100_0000_0000_0000_0000_0000",	-- Read from DRAM
-            b"11_0100_0000_0000_0000_1010_0101",	-- Write to DRAM
-            b"10_1010_0000_0101_0100_0000_0000",	-- Read from cart RAM (or cart IO space, who knows)
-            b"10_1010_0001_0000_0000_0000_0000",	-- Read from cart RAM (or cart IO space, who knows)
-            b"11_1010_0000_0101_0101_1000_0000",	-- Write to cart RAM (or cart IO space, who knows)
-            b"10_0000_0001_0000_0000_0000_0000");	-- followed by a read to see if the cart recovers
+            b"00_0000_0000_0000_0000_0000_0000",    -- idle bus...
+            b"00_0000_0000_0000_0000_0000_0000",    -- idle bus...
+            b"11_0000_0001_0000_0000_1010_0101",    -- not an instruction, just to test if cart correctly ignores writes to ROM
+            b"10_0100_0000_0000_0000_0000_0000",    -- Read from DRAM
+            b"11_0100_0000_0000_0000_1010_0101",    -- Write to DRAM
+            b"10_1010_0000_0101_0100_0000_0000",    -- Read from cart RAM (or cart IO space, who knows)
+            b"10_1010_0001_0000_0000_0000_0000",    -- Read from cart RAM (or cart IO space, who knows)
+            b"11_1010_0000_0101_0101_1000_0000",    -- Write to cart RAM (or cart IO space, who knows)
+            b"10_0000_0001_0000_0000_0000_0000");   -- followed by a read to see if the cart recovers
             
         type bus_state is (BS_CLK_UP_UP, BS_CLK_UP_DOWN, BS_CLK_HIGH_UP, BS_CLK_HIGH_DOWN, BS_CLK_DOWN_UP, BS_CLK_DOWN_DOWN, BS_CLK_LOW_UP, BS_CLK_LOW_DOWN);
     
@@ -148,8 +148,8 @@ begin
         -- Not assuming reset to be pressed
         -- user_rst <= '1';
         -- for i in 0 to 1 loop
-        -- 	wait for 500 ns;
-        -- 	gb_clk <= not(gb_clk);
+        -- wait for 500 ns;
+        -- gb_clk <= not(gb_clk);
         -- end loop;
         -- user_rst <= '0';
         -- wait for 500 ns;
@@ -164,8 +164,8 @@ begin
             transaction_is_read := current_transaction(24) = '0';
             
             for state in bus_state loop
-                -- wait for 125 ns;	-- Normal speed (DMG)
-                wait for 62500 ps;	-- Double speed (GBC)
+                -- wait for 125 ns; -- Normal speed (DMG)
+                wait for 62500 ps;  -- Double speed (GBC)
 
                 if not(transaction_is_idle) then
                     case state is

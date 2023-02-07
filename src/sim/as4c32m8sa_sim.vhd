@@ -19,12 +19,12 @@
 ----------------------------------------------------------------------------------
 
 -- TODO:
---		- add waiting mechanism for commands with certain timings
---			- eg. there is waiting period of at least 18-21 ns between a precharge and refresh
---			- mechanism should be aware which commands are and aren't allowed
---			- when a timing violation has been made, report
---		- add mechanism for setting mode register
---		- add actual memory
+--      - add waiting mechanism for commands with certain timings
+--          - eg. there is waiting period of at least 18-21 ns between a precharge and refresh
+--          - mechanism should be aware which commands are and aren't allowed
+--          - when a timing violation has been made, report
+--      - add mechanism for setting mode register
+--      - add actual memory
 
 library IEEE;
 use IEEE.std_logic_1164.all;
@@ -36,16 +36,16 @@ use STD.textio.all;
 
 entity as4c32m8sa_sim is
     port (
-        CLK		: in std_logic;
-        CKE		: in std_logic;
-        BA		: in std_logic_vector(1 downto 0);
-        A		: in std_logic_vector(12 downto 0);
-        CSN		: in std_logic;
-        RASN	: in std_logic;
-        CASN	: in std_logic;
-        WEN		: in std_logic;
-        DQM		: in std_logic;
-        DQ		: inout std_logic_vector(7 downto 0));
+        CLK     : in std_logic;
+        CKE     : in std_logic;
+        BA      : in std_logic_vector(1 downto 0);
+        A       : in std_logic_vector(12 downto 0);
+        CSN     : in std_logic;
+        RASN    : in std_logic;
+        CASN    : in std_logic;
+        WEN     : in std_logic;
+        DQM     : in std_logic;
+        DQ      : inout std_logic_vector(7 downto 0));
 end as4c32m8sa_sim;
 
 architecture behaviour of as4c32m8sa_sim is
@@ -65,26 +65,26 @@ architecture behaviour of as4c32m8sa_sim is
         
     type BANK_STATUS_GROUP_TYPE is (BSG_IDLE, BSG_ACTIVE, BSG_ANY);
     type DRAM_CMD_ENCODING_TYPE is record
-        previous_cke		: std_logic;
-        current_cke			: std_logic;
-        dqm					: std_logic;
-        ba					: std_logic_vector(1 downto 0);
-        a					: std_logic_vector(12 downto 0);
-        csn					: std_logic;
-        rasn				: std_logic;
-        casn				: std_logic;
-        wen					: std_logic;
-        necessary_state 	: BANK_STATUS_GROUP_TYPE;
-        dram_cmd			: DRAM_CMD;
+        previous_cke        : std_logic;
+        current_cke         : std_logic;
+        dqm                 : std_logic;
+        ba                  : std_logic_vector(1 downto 0);
+        a                   : std_logic_vector(12 downto 0);
+        csn                 : std_logic;
+        rasn                : std_logic;
+        casn                : std_logic;
+        wen                 : std_logic;
+        necessary_state     : BANK_STATUS_GROUP_TYPE;
+        dram_cmd            : DRAM_CMD;
     end record DRAM_CMD_ENCODING_TYPE;
     type DRAM_CMD_ENCODING_ARRAY_TYPE is array (0 to 23) of DRAM_CMD_ENCODING_TYPE;
 
     type DRAM_AC_CHARACTERISTICS_TYPE is record
-        t_rc	: time;
+        t_rc    : time;
         -- missing...
-        t_rp	: time;
+        t_rp    : time;
         -- missing...
-        t_mrd	: time;
+        t_mrd   : time;
         -- missing...
     end record DRAM_AC_CHARACTERISTICS_TYPE;
 
@@ -99,31 +99,31 @@ architecture behaviour of as4c32m8sa_sim is
     
     -- DRAM commands encodings lookup table
     constant DRAM_CMD_ENCODINGS : DRAM_CMD_ENCODING_ARRAY_TYPE := (
-    --  CKE-1 	CKE  	DQM 	BA(1:0)    	  A(12:0)    CS# 	RAS#	CAS#	WE#		State		Command
-        ('1',	'-',	'-',	"--",	"-------------", '0',	'0', 	'1', 	'1', 	BSG_IDLE, 	CMD_BANK_ACTIVATE),
-        ('1',	'-',	'-',	"--",	"--0----------", '0',	'0',	'1',	'0',	BSG_ANY,	CMD_BANK_PRECHARGE),
-        ('1',	'-',	'-',	"--",	"--1----------", '0',	'0',	'1',	'0',	BSG_ANY,	CMD_PRECHARGE_ALL),
-        ('1',	'-',	'-',	"--",	"--0----------", '0',	'1',	'0',	'0',	BSG_ACTIVE,	CMD_WRITE),
-        ('1',	'-',	'-',	"--",	"--1----------", '0',	'1',	'0',	'0',	BSG_ACTIVE,	CMD_WRITE_AUTO_PRECHARGE),
-        ('1',	'-',	'-',	"--",	"--0----------", '0',	'1',	'0',	'1',	BSG_ACTIVE,	CMD_READ),
-        ('1',	'-',	'-',	"--",	"--1----------", '0',	'1',	'0',	'1',	BSG_ACTIVE,	CMD_READ_AUTO_PRECHARGE),
-        ('1',	'-',	'-',	"00",	"000-0001-----", '0',	'0',	'0',	'0',	BSG_IDLE,	CMD_MODE_REGISTER_SET),
-        ('1',	'-',	'-',	"--",	"-------------", '0',	'1',	'1',	'1',	BSG_ANY,	CMD_NOP),
-        ('1',	'-',	'-',	"--",	"-------------", '0',	'1',	'1',	'0',	BSG_ACTIVE,	CMD_BURST_STOP),
-        ('1',	'-',	'-',	"--",	"-------------", '1',	'-',	'-',	'-',	BSG_ANY,	CMD_DEVICE_DESELECT),
-        ('1',	'1',	'-',	"--",	"-------------", '0',	'0',	'0',	'1',	BSG_IDLE,	CMD_AUTO_REFRESH),
-        ('1',	'0',	'-',	"--",	"-------------", '0',	'0',	'0',	'1',	BSG_IDLE,	CMD_SELF_REFRESH_ENTRY),
-        ('0',	'1',	'-',	"--",	"-------------", '1',	'-',	'-',	'-',	BSG_IDLE,	CMD_SELF_REFRESH_EXIT),
-        ('0',	'1',	'-',	"--",	"-------------", '0',	'1',	'1',	'1',	BSG_IDLE,	CMD_SELF_REFRESH_EXIT),
-        ('1',	'0',	'-',	"--",	"-------------", '1',	'-',	'-',	'-',	BSG_ACTIVE,	CMD_CLOCK_SUSPEND_MODE_ENTRY),
-        ('1',	'0',	'-',	"--",	"-------------", '0',	'-',	'-',	'-',	BSG_ACTIVE,	CMD_CLOCK_SUSPEND_MODE_ENTRY),
-        ('1',	'0',	'-',	"--",	"-------------", '1',	'-',	'-',	'-',	BSG_ANY,	CMD_POWER_DOWN_MODE_ENTRY),
-        ('1',	'0',	'-',	"--",	"-------------", '0',	'1',	'1',	'1',	BSG_ANY,	CMD_POWER_DOWN_MODE_ENTRY),	
-        ('0',	'1',	'-',	"--",	"-------------", '-',	'-',	'-',	'-',	BSG_ACTIVE,	CMD_CLOCK_SUSPEND_MODE_ENTRY),
-        ('0',	'1',	'-',	"--",	"-------------", '1',	'-',	'-',	'-',	BSG_ANY,	CMD_POWER_DOWN_MODE_EXIT),
-        ('0',	'1',	'-',	"--",	"-------------", '0',	'1',	'1',	'1',	BSG_ANY,	CMD_POWER_DOWN_MODE_EXIT),	
-        ('1',	'-',	'0',	"--",	"-------------", '-',	'-',	'-',	'-',	BSG_ACTIVE,	CMD_OUTPUT_ENABLE),
-        ('1',	'-',	'1',	"--",	"-------------", '-',	'-',	'-',	'-',	BSG_ACTIVE,	CMD_OUTPUT_DISABLE)
+    --  CKE-1   CKE     DQM     BA(1:0)       A(12:0)    CS#    RAS#    CAS#    WE#     State       Command
+        ('1',   '-',    '-',    "--",   "-------------", '0',   '0',    '1',    '1',    BSG_IDLE,   CMD_BANK_ACTIVATE),
+        ('1',   '-',    '-',    "--",   "--0----------", '0',   '0',    '1',    '0',    BSG_ANY,    CMD_BANK_PRECHARGE),
+        ('1',   '-',    '-',    "--",   "--1----------", '0',   '0',    '1',    '0',    BSG_ANY,    CMD_PRECHARGE_ALL),
+        ('1',   '-',    '-',    "--",   "--0----------", '0',   '1',    '0',    '0',    BSG_ACTIVE, CMD_WRITE),
+        ('1',   '-',    '-',    "--",   "--1----------", '0',   '1',    '0',    '0',    BSG_ACTIVE, CMD_WRITE_AUTO_PRECHARGE),
+        ('1',   '-',    '-',    "--",   "--0----------", '0',   '1',    '0',    '1',    BSG_ACTIVE, CMD_READ),
+        ('1',   '-',    '-',    "--",   "--1----------", '0',   '1',    '0',    '1',    BSG_ACTIVE, CMD_READ_AUTO_PRECHARGE),
+        ('1',   '-',    '-',    "00",   "000-0001-----", '0',   '0',    '0',    '0',    BSG_IDLE,   CMD_MODE_REGISTER_SET),
+        ('1',   '-',    '-',    "--",   "-------------", '0',   '1',    '1',    '1',    BSG_ANY,    CMD_NOP),
+        ('1',   '-',    '-',    "--",   "-------------", '0',   '1',    '1',    '0',    BSG_ACTIVE, CMD_BURST_STOP),
+        ('1',   '-',    '-',    "--",   "-------------", '1',   '-',    '-',    '-',    BSG_ANY,    CMD_DEVICE_DESELECT),
+        ('1',   '1',    '-',    "--",   "-------------", '0',   '0',    '0',    '1',    BSG_IDLE,   CMD_AUTO_REFRESH),
+        ('1',   '0',    '-',    "--",   "-------------", '0',   '0',    '0',    '1',    BSG_IDLE,   CMD_SELF_REFRESH_ENTRY),
+        ('0',   '1',    '-',    "--",   "-------------", '1',   '-',    '-',    '-',    BSG_IDLE,   CMD_SELF_REFRESH_EXIT),
+        ('0',   '1',    '-',    "--",   "-------------", '0',   '1',    '1',    '1',    BSG_IDLE,   CMD_SELF_REFRESH_EXIT),
+        ('1',   '0',    '-',    "--",   "-------------", '1',   '-',    '-',    '-',    BSG_ACTIVE, CMD_CLOCK_SUSPEND_MODE_ENTRY),
+        ('1',   '0',    '-',    "--",   "-------------", '0',   '-',    '-',    '-',    BSG_ACTIVE, CMD_CLOCK_SUSPEND_MODE_ENTRY),
+        ('1',   '0',    '-',    "--",   "-------------", '1',   '-',    '-',    '-',    BSG_ANY,    CMD_POWER_DOWN_MODE_ENTRY),
+        ('1',   '0',    '-',    "--",   "-------------", '0',   '1',    '1',    '1',    BSG_ANY,    CMD_POWER_DOWN_MODE_ENTRY),
+        ('0',   '1',    '-',    "--",   "-------------", '-',   '-',    '-',    '-',    BSG_ACTIVE, CMD_CLOCK_SUSPEND_MODE_ENTRY),
+        ('0',   '1',    '-',    "--",   "-------------", '1',   '-',    '-',    '-',    BSG_ANY,    CMD_POWER_DOWN_MODE_EXIT),
+        ('0',   '1',    '-',    "--",   "-------------", '0',   '1',    '1',    '1',    BSG_ANY,    CMD_POWER_DOWN_MODE_EXIT),
+        ('1',   '-',    '0',    "--",   "-------------", '-',   '-',    '-',    '-',    BSG_ACTIVE, CMD_OUTPUT_ENABLE),
+        ('1',   '-',    '1',    "--",   "-------------", '-',   '-',    '-',    '-',    BSG_ACTIVE, CMD_OUTPUT_DISABLE)
     );
 
     constant DRAM_AC_CHARACTERISTICS_7TCN : DRAM_AC_CHARACTERISTICS_TYPE := (
@@ -145,9 +145,9 @@ architecture behaviour of as4c32m8sa_sim is
     signal bank_is_refreshed : std_logic_vector(3 downto 0) := "0000";
 
     -- Mode register
-    signal mode_burst_length : natural := 1;		-- (1 to 1024)
+    signal mode_burst_length : natural := 1;        -- (1 to 1024)
     signal mode_burst_type : MODE_BURST_TYPE_TYPE := MODE_BT_SEQ;
-    signal mode_cas_latency : natural := 2;			-- (2 to 3)
+    signal mode_cas_latency : natural := 2;         -- (2 to 3)
     signal mode_write_burst_length : MODE_WRITE_BURST_TYPE := MODE_WBT_SINGLE;
 
     -- Debug signals
@@ -232,7 +232,7 @@ architecture behaviour of as4c32m8sa_sim is
         for i in DRAM_CMD_ENCODINGS'range loop
             if compare_entity(DRAM_CMD_ENCODINGS(i)) then
                 -- if DRAM_CMD_ENCODINGS(i).dram_cmd = CMD_BANK_PRECHARGE then
-                -- 	dump_entity("Decoded CMD_BANK_PRECHARGE");
+                -- dump_entity("Decoded CMD_BANK_PRECHARGE");
                 -- end if;
                 
                 return DRAM_CMD_ENCODINGS(i).dram_cmd;

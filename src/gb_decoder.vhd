@@ -26,7 +26,7 @@ use ieee.std_logic_misc.all;
 
 entity gb_decoder is
     generic (
-        ENABLE_TIMEOUT_DETECTION	: boolean := false);
+        ENABLE_TIMEOUT_DETECTION    : boolean := false);
     port (
         GB_CLK      : in std_logic;
         GB_ADDR     : in std_logic_vector(15 downto 0);
@@ -35,18 +35,18 @@ entity gb_decoder is
         GB_RDN      : in std_logic;
         GB_CSN      : in std_logic;
         
-        CLK_I 		: in std_logic;
-        RST_I 		: in std_logic;
-        CYC_O 		: out std_logic;
-        WE_O  		: out std_logic;
-        ADR_O 		: out std_logic_vector(15 downto 0);
-        DAT_I 		: in std_logic_vector(7 downto 0);
-        DAT_O 		: out std_logic_vector(7 downto 0);
-        ACK_I 		: in std_logic;
+        CLK_I       : in std_logic;
+        RST_I       : in std_logic;
+        CYC_O       : out std_logic;
+        WE_O        : out std_logic;
+        ADR_O       : out std_logic_vector(15 downto 0);
+        DAT_I       : in std_logic_vector(7 downto 0);
+        DAT_O       : out std_logic_vector(7 downto 0);
+        ACK_I       : in std_logic;
         
-        ACCESS_ROM	: out std_logic;
-        ACCESS_RAM	: out std_logic;
-        WB_TIMEOUT	: out std_logic);
+        ACCESS_ROM  : out std_logic;
+        ACCESS_RAM  : out std_logic;
+        WB_TIMEOUT  : out std_logic);
 end gb_decoder;
 
 architecture behaviour of gb_decoder is
@@ -71,14 +71,14 @@ architecture behaviour of gb_decoder is
     signal gb_addr_sync : std_logic_vector(2 downto 0);
     
     -- Access signals (comnbinatorial)
-    signal gb_access_rom 	: std_logic;
-    signal gb_access_ram 	: std_logic;
-    signal gb_access_cart	: std_logic;
+    signal gb_access_rom    : std_logic;
+    signal gb_access_ram    : std_logic;
+    signal gb_access_cart   : std_logic;
 
     signal gb_bus_state     : GAMEBOY_BUS_STATE_TYPE;
 
-    signal cyc_counter	: std_logic_vector(3 downto 0);
-    signal cyc_timeout	: std_logic;
+    signal cyc_counter  : std_logic_vector(3 downto 0);
+    signal cyc_timeout  : std_logic;
 
 begin
 

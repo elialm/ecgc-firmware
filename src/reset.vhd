@@ -35,7 +35,7 @@ entity reset is
         AUX_FF      : positive := 9;
         SIMULATION  : boolean := false);
     port (
-        SYNC_CLK 	: in std_logic;
+        SYNC_CLK    : in std_logic;
         PLL_LOCK    : in std_logic;
         EXT_SOFT    : in std_logic;     -- Connected to reset button
         AUX_SOFT    : in std_logic;     -- Connected to hypervisor reset

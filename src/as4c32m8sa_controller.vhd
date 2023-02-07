@@ -23,16 +23,16 @@ entity as4c32m8sa_controller is
     generic (
         CLK_FREQ    : real := 53.20);
     port (
-        CLK_I 		: in std_logic;     -- WishBone clock, same as the DRAM CLK
-        RST_I 		: in std_logic;
-        CYC_I 		: in std_logic;
-        STB_I 		: in std_logic;
-        WE_I  		: in std_logic;
-        ADR_I 		: in std_logic_vector(22 downto 0); -- 8 MB of addressable memory 
+        CLK_I       : in std_logic;     -- WishBone clock, same as the DRAM CLK
+        RST_I       : in std_logic;
+        CYC_I       : in std_logic;
+        STB_I       : in std_logic;
+        WE_I        : in std_logic;
+        ADR_I       : in std_logic_vector(22 downto 0); -- 8 MB of addressable memory 
         TGA_I       : in std_logic_vector(1 downto 0);  -- Used to select bank
-        DAT_I 		: in std_logic_vector(7 downto 0);
-        DAT_O 		: out std_logic_vector(7 downto 0);
-        ACK_O 		: out std_logic;
+        DAT_I       : in std_logic_vector(7 downto 0);
+        DAT_O       : out std_logic_vector(7 downto 0);
+        ACK_O       : out std_logic;
         ERR_O       : out std_logic;
 
         READY       : out std_logic;    -- Signal that controller is initialised and ready to accept transactions

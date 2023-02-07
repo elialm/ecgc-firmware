@@ -27,8 +27,8 @@ entity wb_crossbar_decoder is
         -- Global signals
         CLK_I           : in std_logic;
         RST_I           : in std_logic;
-        ACCESS_RAM		: in std_logic;
-        SELECT_MBC  	: out std_logic_vector(2 downto 0);
+        ACCESS_RAM      : in std_logic;
+        SELECT_MBC      : out std_logic_vector(2 downto 0);
 
         -- GB decoder master connection
         CYC_I   : in std_logic;

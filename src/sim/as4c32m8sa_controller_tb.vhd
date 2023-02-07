@@ -32,46 +32,46 @@ architecture behaviour of as4c32m8sa_controller_tb is
         CMD_CLOCK_SUSPEND_MODE_EXIT, CMD_POWER_DOWN_MODE_EXIT, CMD_OUTPUT_ENABLE,
         CMD_OUTPUT_DISABLE, CMD_UNKNOWN);
     type DRAM_CMD_ENCODING_TYPE is record
-        previous_cke		: std_logic;
-        current_cke			: std_logic;
-        dqm					: std_logic;
-        ba					: std_logic_vector(1 downto 0);
-        a					: std_logic_vector(12 downto 0);
-        csn					: std_logic;
-        rasn				: std_logic;
-        casn				: std_logic;
-        wen					: std_logic;
-        dram_cmd			: DRAM_CMD;
+        previous_cke        : std_logic;
+        current_cke         : std_logic;
+        dqm                 : std_logic;
+        ba                  : std_logic_vector(1 downto 0);
+        a                   : std_logic_vector(12 downto 0);
+        csn                 : std_logic;
+        rasn                : std_logic;
+        casn                : std_logic;
+        wen                 : std_logic;
+        dram_cmd            : DRAM_CMD;
     end record DRAM_CMD_ENCODING_TYPE;
     type DRAM_CMD_ENCODING_ARRAY_TYPE is array (0 to 23) of DRAM_CMD_ENCODING_TYPE;
 
     -- DRAM commands encodings lookup table
     constant DRAM_CMD_ENCODINGS : DRAM_CMD_ENCODING_ARRAY_TYPE := (
-    --  CKE-1 	CKE  	DQM 	BA(1:0)    	  A(12:0)    CS# 	RAS#	CAS#	WE#		Command
-        ('1',	'-',	'-',	"--",	"-------------", '0',	'0', 	'1', 	'1', 	CMD_BANK_ACTIVATE),
-        ('1',	'-',	'-',	"--",	"--0----------", '0',	'0',	'1',	'0',	CMD_BANK_PRECHARGE),
-        ('1',	'-',	'-',	"--",	"--1----------", '0',	'0',	'1',	'0',	CMD_PRECHARGE_ALL),
-        ('1',	'-',	'-',	"--",	"--0----------", '0',	'1',	'0',	'0',	CMD_WRITE),
-        ('1',	'-',	'-',	"--",	"--1----------", '0',	'1',	'0',	'0',	CMD_WRITE_AUTO_PRECHARGE),
-        ('1',	'-',	'-',	"--",	"--0----------", '0',	'1',	'0',	'1',	CMD_READ),
-        ('1',	'-',	'-',	"--",	"--1----------", '0',	'1',	'0',	'1',	CMD_READ_AUTO_PRECHARGE),
-        ('1',	'-',	'-',	"00",	"000-0001-----", '0',	'0',	'0',	'0',	CMD_MODE_REGISTER_SET),
-        ('1',	'-',	'-',	"--",	"-------------", '0',	'1',	'1',	'1',	CMD_NOP),
-        ('1',	'-',	'-',	"--",	"-------------", '0',	'1',	'1',	'0',	CMD_BURST_STOP),
-        ('1',	'-',	'-',	"--",	"-------------", '1',	'-',	'-',	'-',	CMD_DEVICE_DESELECT),
-        ('1',	'1',	'-',	"--",	"-------------", '0',	'0',	'0',	'1',	CMD_AUTO_REFRESH),
-        ('1',	'0',	'-',	"--",	"-------------", '0',	'0',	'0',	'1',	CMD_SELF_REFRESH_ENTRY),
-        ('0',	'1',	'-',	"--",	"-------------", '1',	'-',	'-',	'-',	CMD_SELF_REFRESH_EXIT),
-        ('0',	'1',	'-',	"--",	"-------------", '0',	'1',	'1',	'1',	CMD_SELF_REFRESH_EXIT),
-        ('1',	'0',	'-',	"--",	"-------------", '1',	'-',	'-',	'-',	CMD_CLOCK_SUSPEND_MODE_ENTRY),
-        ('1',	'0',	'-',	"--",	"-------------", '0',	'-',	'-',	'-',	CMD_CLOCK_SUSPEND_MODE_ENTRY),
-        ('1',	'0',	'-',	"--",	"-------------", '1',	'-',	'-',	'-',	CMD_POWER_DOWN_MODE_ENTRY),
-        ('1',	'0',	'-',	"--",	"-------------", '0',	'1',	'1',	'1',	CMD_POWER_DOWN_MODE_ENTRY),	
-        ('0',	'1',	'-',	"--",	"-------------", '-',	'-',	'-',	'-',	CMD_CLOCK_SUSPEND_MODE_ENTRY),
-        ('0',	'1',	'-',	"--",	"-------------", '1',	'-',	'-',	'-',	CMD_POWER_DOWN_MODE_EXIT),
-        ('0',	'1',	'-',	"--",	"-------------", '0',	'1',	'1',	'1',	CMD_POWER_DOWN_MODE_EXIT),	
-        ('1',	'-',	'0',	"--",	"-------------", '-',	'-',	'-',	'-',	CMD_OUTPUT_ENABLE),
-        ('1',	'-',	'1',	"--",	"-------------", '-',	'-',	'-',	'-',	CMD_OUTPUT_DISABLE)
+    --  CKE-1   CKE     DQM     BA(1:0)       A(12:0)    CS#    RAS#    CAS#    WE#	    Command
+        ('1',   '-',    '-',    "--",   "-------------", '0',   '0',    '1',    '1',    CMD_BANK_ACTIVATE),
+        ('1',   '-',    '-',    "--",   "--0----------", '0',   '0',    '1',    '0',    CMD_BANK_PRECHARGE),
+        ('1',   '-',    '-',    "--",   "--1----------", '0',   '0',    '1',    '0',    CMD_PRECHARGE_ALL),
+        ('1',   '-',    '-',    "--",   "--0----------", '0',   '1',    '0',    '0',    CMD_WRITE),
+        ('1',   '-',    '-',    "--",   "--1----------", '0',   '1',    '0',    '0',    CMD_WRITE_AUTO_PRECHARGE),
+        ('1',   '-',    '-',    "--",   "--0----------", '0',   '1',    '0',    '1',    CMD_READ),
+        ('1',   '-',    '-',    "--",   "--1----------", '0',   '1',    '0',    '1',    CMD_READ_AUTO_PRECHARGE),
+        ('1',   '-',    '-',    "00",   "000-0001-----", '0',   '0',    '0',    '0',    CMD_MODE_REGISTER_SET),
+        ('1',   '-',    '-',    "--",   "-------------", '0',   '1',    '1',    '1',    CMD_NOP),
+        ('1',   '-',    '-',    "--",   "-------------", '0',   '1',    '1',    '0',    CMD_BURST_STOP),
+        ('1',   '-',    '-',    "--",   "-------------", '1',   '-',    '-',    '-',    CMD_DEVICE_DESELECT),
+        ('1',   '1',    '-',    "--",   "-------------", '0',   '0',    '0',    '1',    CMD_AUTO_REFRESH),
+        ('1',   '0',    '-',    "--",   "-------------", '0',   '0',    '0',    '1',    CMD_SELF_REFRESH_ENTRY),
+        ('0',   '1',    '-',    "--",   "-------------", '1',   '-',    '-',    '-',    CMD_SELF_REFRESH_EXIT),
+        ('0',   '1',    '-',    "--",   "-------------", '0',   '1',    '1',    '1',    CMD_SELF_REFRESH_EXIT),
+        ('1',   '0',    '-',    "--",   "-------------", '1',   '-',    '-',    '-',    CMD_CLOCK_SUSPEND_MODE_ENTRY),
+        ('1',   '0',    '-',    "--",   "-------------", '0',   '-',    '-',    '-',    CMD_CLOCK_SUSPEND_MODE_ENTRY),
+        ('1',   '0',    '-',    "--",   "-------------", '1',   '-',    '-',    '-',    CMD_POWER_DOWN_MODE_ENTRY),
+        ('1',   '0',    '-',    "--",   "-------------", '0',   '1',    '1',    '1',    CMD_POWER_DOWN_MODE_ENTRY),
+        ('0',   '1',    '-',    "--",   "-------------", '-',   '-',    '-',    '-',    CMD_CLOCK_SUSPEND_MODE_ENTRY),
+        ('0',   '1',    '-',    "--",   "-------------", '1',   '-',    '-',    '-',    CMD_POWER_DOWN_MODE_EXIT),
+        ('0',   '1',    '-',    "--",   "-------------", '0',   '1',    '1',    '1',    CMD_POWER_DOWN_MODE_EXIT),
+        ('1',   '-',    '0',    "--",   "-------------", '-',   '-',    '-',    '-',    CMD_OUTPUT_ENABLE),
+        ('1',   '-',    '1',    "--",   "-------------", '-',   '-',    '-',    '-',    CMD_OUTPUT_DISABLE)
     );
 
     signal dram_clk_i   : std_logic := '0';

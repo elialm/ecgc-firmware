@@ -34,34 +34,34 @@ use ieee.std_logic_misc.all;
 
 entity mbch is
     port (
-        CLK_I 	: in std_logic;
-        RST_I	: in std_logic;
-        STB_I	: in std_logic;
-        CYC_I	: in std_logic;
-        WE_I  	: in std_logic;
-        ACK_O	: out std_logic;
-        ADR_I	: in std_logic_vector(15 downto 0);
-        DAT_I	: in std_logic_vector(7 downto 0);
-        DAT_O	: out std_logic_vector(7 downto 0);
+        CLK_I   : in std_logic;
+        RST_I   : in std_logic;
+        STB_I   : in std_logic;
+        CYC_I   : in std_logic;
+        WE_I    : in std_logic;
+        ACK_O   : out std_logic;
+        ADR_I   : in std_logic_vector(15 downto 0);
+        DAT_I   : in std_logic_vector(7 downto 0);
+        DAT_O   : out std_logic_vector(7 downto 0);
 
-        EFB_STB_O	: out std_logic;
-        EFB_DAT_I	: in std_logic_vector(7 downto 0);
-        EFB_ACK_I	: in std_logic;
+        EFB_STB_O   : out std_logic;
+        EFB_DAT_I   : in std_logic_vector(7 downto 0);
+        EFB_ACK_I   : in std_logic;
 
-        DRAM_STB_O	: out std_logic;
-        DRAM_ADR_O	: out std_logic_vector(8 downto 0);
-        DRAM_TGA_O	: out std_logic_vector(1 downto 0);
-        DRAM_DAT_I	: in std_logic_vector(7 downto 0);
-        DRAM_ACK_I	: in std_logic;
-        DRAM_ERR_I	: in std_logic;
+        DRAM_STB_O  : out std_logic;
+        DRAM_ADR_O  : out std_logic_vector(8 downto 0);
+        DRAM_TGA_O  : out std_logic_vector(1 downto 0);
+        DRAM_DAT_I  : in std_logic_vector(7 downto 0);
+        DRAM_ACK_I  : in std_logic;
+        DRAM_ERR_I  : in std_logic;
 
         GPIO_IN     : in std_logic_vector(3 downto 0);
         GPIO_OUT    : out std_logic_vector(3 downto 0);
 
-        SELECT_MBC  	: out std_logic_vector(2 downto 0);
+        SELECT_MBC      : out std_logic_vector(2 downto 0);
         SOFT_RESET_OUT  : out std_logic;
         SOFT_RESET_IN   : in std_logic;
-        DRAM_READY		: in std_logic;
+        DRAM_READY      : in std_logic;
         DBG_ACTIVE      : in std_logic);
 end mbch;
 
@@ -71,13 +71,13 @@ architecture behaviour of mbch is
 
     component boot_ram is
     port (
-        Clock	    : in std_logic; 
-        ClockEn	    : in std_logic; 
-        Reset		: in std_logic; 
+        Clock       : in std_logic; 
+        ClockEn     : in std_logic; 
+        Reset       : in std_logic; 
         WE          : in std_logic;
-        Address		: in std_logic_vector(11 downto 0); 
-        Data		: in std_logic_vector(7 downto 0); 
-        Q			: out std_logic_vector(7 downto 0));
+        Address     : in std_logic_vector(11 downto 0); 
+        Data        : in std_logic_vector(7 downto 0); 
+        Q           : out std_logic_vector(7 downto 0));
     end component;
 
     component synchroniser is
@@ -92,29 +92,29 @@ architecture behaviour of mbch is
         DAT_OUT : out std_logic_vector(DATA_WIDTH-1 downto 0));
     end component;
 
-    signal wb_cart_access 	: std_logic;
-    signal wb_ack 			: std_logic;
+    signal wb_cart_access   : std_logic;
+    signal wb_ack           : std_logic;
 
-    signal boot_rom_enabled 		: std_logic;
-    signal boot_rom_accessible 		: std_logic;
-    signal boot_rom_accessible_reg 	: std_logic;
-    signal boot_rom_data 			: std_logic_vector(7 downto 0);
+    signal boot_rom_enabled         : std_logic;
+    signal boot_rom_accessible      : std_logic;
+    signal boot_rom_accessible_reg  : std_logic;
+    signal boot_rom_data            : std_logic_vector(7 downto 0);
     signal boot_rom_we              : std_logic;
 
-    signal dram_bank_mbc			: std_logic_vector(8 downto 0);		-- MBC bank selector register
-    signal dram_bank				: std_logic_vector(1 downto 0);		-- DRAM bank selector register
-    signal dram_bank_select_zero	: std_logic;						-- Set if MBC & DRAM banks 0 is selected (zero bank)
-    signal dram_bank_passthrough	: std_logic;						-- Set if selector registers should be used to select bank, otherwise will force bank 1 
-    signal dram_bank_force_zero		: std_logic;						-- Set to force zero bank to be selected
+    signal dram_bank_mbc            : std_logic_vector(8 downto 0);     -- MBC bank selector register
+    signal dram_bank                : std_logic_vector(1 downto 0);     -- DRAM bank selector register
+    signal dram_bank_select_zero    : std_logic;                        -- Set if MBC & DRAM banks 0 is selected (zero bank)
+    signal dram_bank_passthrough    : std_logic;                        -- Set if selector registers should be used to select bank, otherwise will force bank 1 
+    signal dram_bank_force_zero     : std_logic;                        -- Set to force zero bank to be selected
 
     signal gpio_out_reg         : std_logic_vector(3 downto 0);
     signal gpio_in_sync         : std_logic_vector(3 downto 0);
     
-    signal register_data 		: std_logic_vector(7 downto 0);
-    signal register_ack 		: std_logic;
-    signal reg_selected_mbc 	: std_logic_vector(2 downto 0);
-    signal bus_selector 		: bus_selection_t;
-    signal soft_reset_rising	: std_logic;
+    signal register_data        : std_logic_vector(7 downto 0);
+    signal register_ack         : std_logic;
+    signal reg_selected_mbc     : std_logic_vector(2 downto 0);
+    signal bus_selector         : bus_selection_t;
+    signal soft_reset_rising    : std_logic;
 
 begin
 
