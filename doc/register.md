@@ -56,7 +56,7 @@ also undefined behaviour.
         <td>BRAGET</td>
         <td>DRAMR</td>
         <td>(Reserved)</td>
-        <td colspan="3">MBCSEL[2..0]</td>
+        <td class="center" colspan="3">MBCSEL[2..0]</td>
     </tr>
     <tr>
         <td>Default</td>
@@ -166,5 +166,9 @@ Using other values shall result in undefined behaviour.
     min-width: 3rem;
     border-left: 1px solid grey;
     border-right: 1px solid grey;
+}
+
+.center {
+    text-align: center;
 }
 </style>
