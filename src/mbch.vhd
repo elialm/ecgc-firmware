@@ -71,7 +71,7 @@ end mbch;
 
 architecture behaviour of mbch is
 
-    type bus_selection_t is (BS_REGISTER, BS_BOOT_ROM, BS_EFB, BS_DRAM);
+    type bus_selection_t is (BS_REGISTER, BS_BOOT_ROM, BS_CART_RAM, BS_EFB, BS_DRAM);
 
     component boot_ram is
     port (
@@ -80,6 +80,17 @@ architecture behaviour of mbch is
         Reset       : in std_logic; 
         WE          : in std_logic;
         Address     : in std_logic_vector(11 downto 0); 
+        Data        : in std_logic_vector(7 downto 0); 
+        Q           : out std_logic_vector(7 downto 0));
+    end component;
+
+    component cart_ram
+    port (
+        Clock       : in std_logic;
+        ClockEn     : in std_logic; 
+        Reset       : in std_logic;
+        WE          : in std_logic; 
+        Address     : in std_logic_vector(9 downto 0); 
         Data        : in std_logic_vector(7 downto 0); 
         Q           : out std_logic_vector(7 downto 0));
     end component;
@@ -104,6 +115,7 @@ architecture behaviour of mbch is
     signal boot_rom_accessible_reg  : std_logic;
     signal boot_rom_data            : std_logic_vector(7 downto 0);
     signal boot_rom_we              : std_logic;
+    signal cart_ram_data            : std_logic_vector(7 downto 0);
 
     signal dram_bank_mbc            : std_logic_vector(8 downto 0);     -- MBC bank selector register
     signal dram_bank                : std_logic_vector(1 downto 0);     -- DRAM bank selector register
@@ -136,6 +148,17 @@ begin
     wb_cart_access <= STB_I and CYC_I;
     boot_rom_enabled <= boot_rom_accessible and wb_cart_access;
     boot_rom_we <= WE_I and DBG_ACTIVE;
+
+    -- Cart RAM instance, for DMA buffering and reset management
+    CARTRIDGE_RAM : component cart_ram
+    port map (
+        Clock => CLK_I,
+        ClockEn => wb_cart_access,
+        Reset => RST_I,
+        WE => WE_I,
+        Address => ADR_I(9 downto 0),
+        Data => DAT_I,
+        Q => cart_ram_data);
         
     -- GPIO input synchroniser
     GPIO_IN_SYNCHRONISER : component synchroniser
@@ -237,6 +260,11 @@ begin
                             register_data <= x"00";
                             register_ack <= '1';
 
+                        -- Cart RAM
+                        when b"1011_00--_----_----" =>
+                            bus_selector <= BS_CART_RAM;
+                            register_ack <= '1';
+
                         -- Other regions will always read as 0x00 and ignore writes
                         when others =>
                             register_data <= x"00";
@@ -276,6 +304,7 @@ begin
     -- Bus selection data
     with bus_selector select DAT_O <=
         boot_rom_data   when BS_BOOT_ROM,
+        cart_ram_data   when BS_CART_RAM,
         EFB_DAT_I       when BS_EFB,
         DRAM_DAT_I      when BS_DRAM,
         register_data   when others;
