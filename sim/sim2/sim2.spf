@@ -1,8 +1,0 @@
-<BaliSimProject version="1.3" path="." stage="0" language="-1" name="sim2" simType="ModelSim">
-    <Source worklib="work" path="src/as4c32m8sa_sim.vhd" type="VHDL" include="none"/>
-    <Source worklib="work" path="src/as4c32m8sa_tb.vhd" type="VHDL" include="none"/>
-    <SimLib value="pmi_work ovi_machxo3d"/>
-    <GlbInc value=""/>
-    <Macro value=""/>
-    <TopModule instance="" language="VHDL" name="as4c32m8sa_tb"/>
-</BaliSimProject>

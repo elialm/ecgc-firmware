@@ -1,3 +1,4 @@
+# Lattice Diamond
 *.html
 impl*/
 *.xml
@@ -16,3 +17,6 @@ impl*/
 transcript
 */work
 */*.mti
+
+# Simulation files
+sim

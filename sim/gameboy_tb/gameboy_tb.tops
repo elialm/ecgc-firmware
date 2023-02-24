@@ -1,4 +1,0 @@
-gameboy_tb,/,C:/Users/Eliat/Desktop/ecgc-firmware/src/sim/gameboy_tb.vhd
-spi_slave,/,C:/Users/Eliat/Desktop/ecgc-firmware/src/spi_slave.vhd
-boot_ram,/,C:/Users/Eliat/Desktop/ecgc-firmware/src/ips/boot_ram/boot_ram.vhd
-Structure_CON,/,C:/Users/Eliat/Desktop/ecgc-firmware/src/ips/cart_ram/cart_ram.vhd
