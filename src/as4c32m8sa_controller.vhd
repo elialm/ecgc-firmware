@@ -56,6 +56,7 @@ architecture behaviour of as4c32m8sa_controller is
 
     type DRAM_STATE_T is (
         DS_AWAIT_STABLE_INIT,
+        DS_ISSUE_PRECHARGE_ALL,
         DS_AWAIT_PRECHARGE_ALL,
         DS_AWAIT_MODE_SET,
         DS_AWAIT_AUTO_REFRESH,
@@ -140,19 +141,19 @@ begin
                 case dram_state is
                     when DS_AWAIT_STABLE_INIT =>
                         if init_elapsed = '1' then
-                            dram_state <= DS_AWAIT_PRECHARGE_ALL;
-                            generic_counter <= T_COMP_RP;
-                            
-                            -- Might need an inbetween state to give
-                            -- CKE time to rise
+                            dram_state <= DS_ISSUE_PRECHARGE_ALL;
                             CKE <= '1';
-
-                            -- Issue precharge all command
-                            CSN <= '0';
-                            RASN <= '0';
-                            WEN <= '0';
-                            A(10) <= '1';
                         end if;
+
+                    when DS_ISSUE_PRECHARGE_ALL =>
+                        dram_state <= DS_AWAIT_PRECHARGE_ALL;
+                        generic_counter <= T_COMP_RP;
+
+                        -- Issue precharge all command
+                        CSN <= '0';
+                        RASN <= '0';
+                        WEN <= '0';
+                        A(10) <= '1';
 
                     when DS_AWAIT_PRECHARGE_ALL =>
                         if generic_elapsed = '1' then
