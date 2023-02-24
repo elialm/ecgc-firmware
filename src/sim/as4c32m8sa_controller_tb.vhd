@@ -83,12 +83,10 @@ architecture behaviour of as4c32m8sa_controller_tb is
     signal dram_tga_i   : std_logic_vector(1 downto 0) := (others => '0');
     signal dram_dat_i   : std_logic_vector(7 downto 0) := (others => '0');
     signal dram_dat_o   : std_logic_vector(7 downto 0);
-    signal dram_err_o   : std_logic;
     signal dram_ack_o   : std_logic;
 
     signal dram_ready   : std_logic;
     
-    signal dram_clk_sh  : std_logic := '1';
     signal dram_cke_pre : std_logic;
     signal dram_cke     : std_logic;
     signal dram_ba      : std_logic_vector(1 downto 0);
@@ -151,12 +149,10 @@ begin
         TGA_I => dram_tga_i,
         DAT_I => dram_dat_i,
         DAT_O => dram_dat_o,
-        ERR_O => dram_err_o,
         ACK_O => dram_ack_o,
 
         READY => dram_ready,
 
-        CLK_SM => dram_clk_sh,
         CKE => dram_cke,
         BA => dram_ba,
         A => dram_a,
@@ -173,7 +169,6 @@ begin
         -- wait for 18.79699248 ns;
         wait for 9.398496241 ns;
         dram_clk_i <= not(dram_clk_i);
-        dram_clk_sh <= not(dram_clk_sh);
     end process;
 
     -- Reset generator
@@ -189,13 +184,18 @@ begin
         end if;
     end process;
 
-    -- Assign previous CKE and decode command currently on the bus
+    -- Assign previous CKE
     process (dram_clk_i)
     begin
         if rising_edge(dram_clk_i) then
             dram_cke_pre <= dram_cke;
-            decoded_cmd <= decode_command;
         end if;
+    end process;
+
+    -- Decode command currently on the bus
+    process (dram_cke_pre, dram_cke, dram_dqm, dram_ba, dram_a, dram_csn, dram_rasn, dram_casn, dram_wen)
+    begin
+        decoded_cmd <= decode_command;
     end process;
 
     -- DRAM access test

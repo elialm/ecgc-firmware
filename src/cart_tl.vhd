@@ -447,7 +447,7 @@ begin
         CLK_FREQ => 53.20)
     port map (
         CLK_I => pll_clk_op,
-        RST_I => soft_reset,    -- TODO: will probably give issues with DRAM not being ready on time on boot
+        RST_I => hard_reset,
         CYC_I => wb_cyc,
         STB_I => wb_dram_stb,
         WE_I => wb_we,
@@ -456,9 +456,7 @@ begin
         DAT_I => wb_data_incoming,
         DAT_O => wb_dram_rdat,
         ACK_O => wb_dram_ack,
-        ERR_O => open,
         READY => dram_ready,
-        CLK_SM => pll_clk_os,
         CKE => DRAM_CKE,
         BA => DRAM_BA,
         A => DRAM_A,

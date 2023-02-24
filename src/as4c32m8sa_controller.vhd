@@ -18,8 +18,6 @@
 -- select the DRAM bank (the AS4C32M8SA has 4 8MB banks, hence 2 bits).
 ----------------------------------------------------------------------------------
 
--- TODO: wrote this a long time ago, review it at a later date
-
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -30,7 +28,7 @@ entity as4c32m8sa_controller is
     generic (
         CLK_FREQ    : real := 53.20);
     port (
-        CLK_I       : in std_logic;     -- WishBone clock, same as the DRAM CLK
+        CLK_I       : in std_logic;
         RST_I       : in std_logic;
         CYC_I       : in std_logic;
         STB_I       : in std_logic;
@@ -40,11 +38,9 @@ entity as4c32m8sa_controller is
         DAT_I       : in std_logic_vector(7 downto 0);
         DAT_O       : out std_logic_vector(7 downto 0);
         ACK_O       : out std_logic;
-        ERR_O       : out std_logic;
 
         READY       : out std_logic;    -- Signal that controller is initialised and ready to accept transactions
 
-        CLK_SM      : in std_logic;     -- CLK_I but 180 degrees phase shifted, used by state machine logic
         CKE         : out std_logic;
         BA          : out std_logic_vector(1 downto 0);
         A           : out std_logic_vector(12 downto 0);
@@ -58,125 +54,116 @@ end as4c32m8sa_controller;
 
 architecture behaviour of as4c32m8sa_controller is
 
-    type DRAM_STATE_T is (DS_AWAIT_INIT, DS_CKE_DELAY, DS_PRECHARGE_ALL, DS_MODE_SET, DS_IDLE, DS_AWAIT_TRC, DS_ACTIVATE_BANK, DS_AWAIT_CAS);
+    type DRAM_STATE_T is (
+        DS_AWAIT_STABLE_INIT,
+        DS_AWAIT_PRECHARGE_ALL,
+        DS_AWAIT_MODE_SET,
+        DS_AWAIT_AUTO_REFRESH,
+        DS_ISSUE_SECOND_AUTO_REFRESH,
+        DS_IDLE,
+        DS_AWAIT_BANK_ACTIVATE,
+        DS_AWAIT_CAS_DELAY);
 
-    -- TODO: grab largest value
-    constant GLOBAL_COUNTER_BITS    : positive := positive(ceil(log2(200.00 * CLK_FREQ)));
+    -- Number of bits in counter based on maximum counter value needed (noted behind each value)
+    constant INIT_COUNTER_BITS      : positive := positive(ceil(log2(200.00 * CLK_FREQ)));  -- stable inputs at startup
+    constant GENERIC_COUNTER_BITS   : positive := positive(ceil(log2(0.061 * CLK_FREQ)));   -- longest delay on a command
+    constant REFRESH_COUNTER_BITS   : positive := positive(ceil(log2(7.8125 * CLK_FREQ)));  -- maximum time between auto refreshes
 
-    -- Take time in us and convert to value to be stored in global_comp
-    function to_tcomp_us(tus : real)
+    -- Take time in us and convert to value to be used in a timer
+    function to_tcomp_us(tus : real; bc : positive)
         return std_logic_vector is
     begin
-        return std_logic_vector(to_unsigned(natural(ceil(tus * CLK_FREQ)), GLOBAL_COUNTER_BITS));
+        return std_logic_vector(to_unsigned(natural(ceil(tus * CLK_FREQ)), bc));
     end to_tcomp_us;
 
-    -- Take time in ns and convert to value to be stored in global_comp
-    function to_tcomp_ns(tns : real)
+    -- Take time in ns and convert to value to be used in a timer
+    function to_tcomp_ns(tns : real; bc : positive)
         return std_logic_vector is
     begin
-        return std_logic_vector(to_unsigned(natural(ceil(tns * CLK_FREQ / 1000.00)), GLOBAL_COUNTER_BITS));
+        return std_logic_vector(to_unsigned(natural(ceil(tns * CLK_FREQ / 1000.00)), bc));
     end to_tcomp_ns;
 
     constant T_CLK          : real := 1000.00 / CLK_FREQ;   -- Clock period in ns
-    constant T_COMP_INIT    : std_logic_vector(GLOBAL_COUNTER_BITS-1 downto 0) := to_tcomp_us(200.00);
-    constant T_COMP_RP      : std_logic_vector(GLOBAL_COUNTER_BITS-1 downto 0) := to_tcomp_ns(21.00);
-    constant T_COMP_MRD     : std_logic_vector(GLOBAL_COUNTER_BITS-1 downto 0) := to_tcomp_ns(14.00);
-    constant T_COMP_RC      : std_logic_vector(GLOBAL_COUNTER_BITS-1 downto 0) := to_tcomp_ns(61.00);
+    constant T_COMP_INIT    : std_logic_vector(INIT_COUNTER_BITS-1 downto 0) := to_tcomp_us(200.00, INIT_COUNTER_BITS);
+    constant T_COMP_RP      : std_logic_vector(GENERIC_COUNTER_BITS-1 downto 0) := to_tcomp_ns(21.00, GENERIC_COUNTER_BITS);
+    constant T_COMP_MRD     : std_logic_vector(GENERIC_COUNTER_BITS-1 downto 0) := to_tcomp_ns(14.00, GENERIC_COUNTER_BITS);
+    constant T_COMP_RC      : std_logic_vector(GENERIC_COUNTER_BITS-1 downto 0) := to_tcomp_ns(61.00, GENERIC_COUNTER_BITS);
+    constant T_COMP_RCD     : std_logic_vector(GENERIC_COUNTER_BITS-1 downto 0) := to_tcomp_ns(21.00, GENERIC_COUNTER_BITS);
+    constant T_COMP_CAS     : std_logic_vector(GENERIC_COUNTER_BITS-1 downto 0) := std_logic_vector(to_unsigned(2, GENERIC_COUNTER_BITS));
 
     -- Time inbetween auto refresh
     -- Compensate delay after refresh (Trc min.) and with duration of 1 read transaction (read takes longer than write)
-    constant T_COMP_REFI    : std_logic_vector(GLOBAL_COUNTER_BITS-1 downto 0) := to_tcomp_ns(7800.00 - ceil(61.00 / T_CLK) - (6.00 * T_CLK));
+    -- Auto refresh must occur 8192 times each 64 ms
+    constant T_COMP_REFI    : std_logic_vector(REFRESH_COUNTER_BITS-1 downto 0) := to_tcomp_ns(7812.50 - 61.00 - (6.00 * T_CLK), REFRESH_COUNTER_BITS);
 
     signal dram_state       : DRAM_STATE_T;
-    signal state_delay      : std_logic;
-    signal idle_delay       : std_logic;
-    signal drive_dq         : std_logic;
-    signal data_register    : std_logic_vector(7 downto 0);
-    
-    signal global_counter   : std_logic_vector(GLOBAL_COUNTER_BITS-1 downto 0);
-    signal global_comp      : std_logic_vector(GLOBAL_COUNTER_BITS-1 downto 0);
-    signal timer_elapsed    : std_logic;
-
-    signal wb_ack           : std_logic;
+    signal dram_state_aar   : DRAM_STATE_T;
     signal dram_ack         : std_logic;
+    
+    signal init_counter     : std_logic_vector(INIT_COUNTER_BITS-1 downto 0);
+    signal generic_counter  : std_logic_vector(GENERIC_COUNTER_BITS-1 downto 0);
+    signal refresh_counter  : std_logic_vector(REFRESH_COUNTER_BITS-1 downto 0);
+    signal init_elapsed     : std_logic;
+    signal generic_elapsed  : std_logic;
+    signal refresh_elapsed  : std_logic;
+
+    signal dq_data_out  : std_logic_vector(7 downto 0);
+    signal dq_driven    : std_logic;
+
 
 begin
 
-    -- Wishbone state machine
     process (CLK_I)
     begin
         if rising_edge(CLK_I) then
-            wb_ack <= dram_ack;
-
-            if RST_I = '1' then
-                ERR_O <= '0';
-            else
-                null;
-            end if;
-        end if;
-    end process;
-
-    ACK_O <= wb_ack;
-    DAT_O <= DQ;
-
-    -- DRAM state machine
-    process (CLK_SM)
-    begin
-        if rising_edge(CLK_SM) then
-            CSN <= '1';
-            DQM <= '1';
-            drive_dq <= '0';
             dram_ack <= '0';
+            dq_driven <= '0';
+            CSN <= '1';
+            RASN <= '1';
+            CASN <= '1';
+            WEN <= '1';
 
             if RST_I = '1' then
-                dram_state <= DS_AWAIT_INIT;
-                state_delay <= '0';
-                idle_delay <= '1';
-                data_register <= (others => '0');
-                global_counter <= (others => '0');
-                global_comp <= T_COMP_INIT;
+                dram_state <= DS_AWAIT_STABLE_INIT;
+                dram_state_aar <= DS_AWAIT_STABLE_INIT;
+                init_counter <= T_COMP_INIT;
+                generic_counter <= (others => '0');
+                refresh_counter <= (others => '0');
+                dq_data_out <= (others => '0');
 
                 READY <= '0';
-
                 CKE <= '0';
                 BA <= "00";
                 A <= (others => '0');
-                RASN <= '1';
-                CASN <= '1';
-                WEN <= '1';
-                -- DQ <= (others => 'Z');
+                DQM <= '1';
             else
                 case dram_state is
-                    when DS_AWAIT_INIT =>
-                        if timer_elapsed = '1' then
-                            dram_state <= DS_CKE_DELAY;
+                    when DS_AWAIT_STABLE_INIT =>
+                        if init_elapsed = '1' then
+                            dram_state <= DS_AWAIT_PRECHARGE_ALL;
+                            generic_counter <= T_COMP_RP;
+                            
+                            -- Might need an inbetween state to give
+                            -- CKE time to rise
                             CKE <= '1';
+
+                            -- Issue precharge all command
+                            CSN <= '0';
+                            RASN <= '0';
+                            WEN <= '0';
+                            A(10) <= '1';
                         end if;
 
-                    when DS_CKE_DELAY =>
-                        dram_state <= DS_PRECHARGE_ALL;
-                        global_counter <= (others => '0');
-                        global_comp <= T_COMP_RP;
+                    when DS_AWAIT_PRECHARGE_ALL =>
+                        if generic_elapsed = '1' then
+                            dram_state <= DS_AWAIT_MODE_SET;
+                            generic_counter <= T_COMP_MRD;
 
-                        -- Initiate Precharge All command
-                        
-                        CSN <= '0';
-                        RASN <= '0';
-                        WEN <= '0';
-                        A(10) <= '1';
-                    
-                    when DS_PRECHARGE_ALL =>
-                        if timer_elapsed = '1' then
-                            dram_state <= DS_MODE_SET;
-                            global_counter <= (others => '0');
-                            global_comp <= T_COMP_MRD;
-
-                            -- Initiate Mode Register Set command
+                            -- Issue mode set command
                             CSN <= '0';
-                            -- RASN <= '0';
+                            RASN <= '0';
                             CASN <= '0';
-                            -- WEN <= '0';
-                            BA <= "00";                 -- Reserved
+                            WEN <= '0';
                             A(12 downto 10) <= "000";   -- Reserved
                             A(9) <= '1';                -- Burst-Read-Single-Write
                             A(8 downto 7) <= "00";      -- Normal mode
@@ -185,102 +172,108 @@ begin
                             A(2 downto 0) <= "000";     -- Burst length of 1
                         end if;
 
-                    when DS_MODE_SET =>
-                        if timer_elapsed = '1' then
-                            dram_state <= DS_AWAIT_TRC;
-                            global_counter <= (others => '0');
-                            global_comp <= T_COMP_RC;
+                    when DS_AWAIT_MODE_SET =>
+                        if generic_elapsed = '1' then
+                            dram_state <= DS_AWAIT_AUTO_REFRESH;
+                            dram_state_aar <= DS_ISSUE_SECOND_AUTO_REFRESH;
+                            generic_counter <= T_COMP_RC;
 
-                            -- Initiate Auto Refresh
+                            -- Issue auto refresh command
                             CSN <= '0';
                             RASN <= '0';
                             CASN <= '0';
-                            WEN <= '1';
                         end if;
+
+                    when DS_AWAIT_AUTO_REFRESH =>
+                        if generic_elapsed = '1' then
+                            dram_state <= dram_state_aar;
+                            refresh_counter <= T_COMP_REFI;
+                        end if;
+
+                    when DS_ISSUE_SECOND_AUTO_REFRESH =>
+                        dram_state <= DS_AWAIT_AUTO_REFRESH;
+                        dram_state_aar <= DS_IDLE;
+                        generic_counter <= T_COMP_RC;
+
+                        -- Issue auto refresh command
+                        CSN <= '0';
+                        RASN <= '0';
+                        CASN <= '0';
 
                     when DS_IDLE =>
-                        idle_delay <= '1';
                         READY <= '1';
-                        
-                        if (CYC_I and STB_I and idle_delay) = '1' then
-                            dram_state <= DS_ACTIVATE_BANK;
-                            state_delay <= '0';
-                            idle_delay <= '0';
+                        DQM <= '0';
 
-                            -- Initiate Activate Bank
+                        if (CYC_I and STB_I and not(dram_ack)) = '1' then
+                            dram_state <= DS_AWAIT_BANK_ACTIVATE;
+                            generic_counter <= T_COMP_RCD;
+
+                            -- Issue bank activate command
                             CSN <= '0';
                             RASN <= '0';
-                            CASN <= '1';
-                            WEN <= '1';
                             BA <= TGA_I;
-                            A <= ADR_I(22 downto 10);   -- Row address
-                        elsif timer_elapsed = '1' then
-                            dram_state <= DS_AWAIT_TRC;
-                            global_counter <= (others => '0');
-                            global_comp <= T_COMP_RC;
+                            A(12 downto 0) <= ADR_I(22 downto 10);
 
-                            -- Initiate Auto Refresh
+                        elsif refresh_elapsed = '1' then
+                            -- Auto refresh timer expired, must issue another refresh
+                            dram_state <= DS_AWAIT_AUTO_REFRESH;
+                            dram_state_aar <= DS_IDLE;
+                            generic_counter <= T_COMP_RC;
+
+                            -- Issue auto refresh
                             CSN <= '0';
                             RASN <= '0';
                             CASN <= '0';
-                            WEN <= '1';
                         end if;
 
-                    when DS_AWAIT_TRC =>
-                        -- Send NOP
-                        CSN <= '0';
-                        RASN <= '1';
-                        CASN <= '1';
-                        WEN <= '1';
+                    when DS_AWAIT_BANK_ACTIVATE =>
+                        if generic_elapsed = '1' then
+                            dram_state <= DS_AWAIT_CAS_DELAY;
+                            generic_counter <= T_COMP_CAS;
 
-                        if timer_elapsed = '1' then
-                            dram_state <= DS_IDLE;
-                            global_counter <= (others => '0');
-                            global_comp <= T_COMP_REFI;
-                        end if;
-
-                    when DS_ACTIVATE_BANK =>
-                        if state_delay = '0' then
-                            state_delay <= '1';
-                        else
-                            state_delay <= '0';
-
-                            if WE_I = '0' then
-                                -- Initiate Read and Auto Precharge
-                                dram_state <= DS_AWAIT_CAS;
-                                WEN <= '1';
-                            else
-                                -- Initiate Write and Auto Precharge
-                                dram_state <= DS_IDLE;
-                                data_register <= DAT_I;
-                                drive_dq <= '1';
-                                WEN <= '0';
-                                dram_ack <= '1';
-                            end if;
-
-                            -- Assignments common to read and write
+                            -- Issue read/write and auto precharge
                             CSN <= '0';
-                            RASN <= '1';
                             CASN <= '0';
-                            DQM <= '0';
-                            A(10) <= '1';                       -- Enable auto precharge
-                            A(9 downto 0) <= ADR_I(9 downto 0); -- Column address
+                            WEN <= not(WE_I);   -- Write enable signal
+                            A(10) <= '1';
+                            A(9 downto 0) <= ADR_I(9 downto 0);
+
+                            -- Drive DQ with data on write
+                            dq_driven <= WE_I;
+                            dq_data_out <= DAT_I;
                         end if;
 
-                    when DS_AWAIT_CAS =>
-                        dram_state <= DS_IDLE;
-                        dram_ack <= '1';
-                end case;
+                    when DS_AWAIT_CAS_DELAY =>
+                        if generic_elapsed = '1' then
+                            dram_state <= DS_IDLE;
+                            dram_ack <= '1';
+                        end if;
 
-                if timer_elapsed = '0' then
-                    global_counter <= std_logic_vector(unsigned(global_counter) + 1);
-                end if;
+                    when others =>
+                        -- TODO: make fallback work
+                        dram_state <= DS_IDLE;
+                end case;
+            end if;
+
+            if init_elapsed = '0' then
+                init_counter <= std_logic_vector(unsigned(init_counter) - 1);
+            end if;
+
+            if generic_elapsed = '0' then
+                generic_counter <= std_logic_vector(unsigned(generic_counter) - 1);
+            end if;
+
+            if refresh_elapsed = '0' then
+                refresh_counter <= std_logic_vector(unsigned(refresh_counter) - 1);
             end if;
         end if;
     end process;
 
-    timer_elapsed <= '1' when global_counter = global_comp else '0';
-
-    DQ <= data_register when drive_dq = '1' else (others => 'Z');
+    init_elapsed <= nor_reduce(init_counter);
+    generic_elapsed <= nor_reduce(generic_counter);
+    refresh_elapsed <= nor_reduce(refresh_counter);
+    DQ <= dq_data_out when dq_driven = '1' else (others => 'Z');
+    ACK_O <= dram_ack;
+    DAT_O <= DQ;
     
 end behaviour;
