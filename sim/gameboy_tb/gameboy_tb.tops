@@ -1,3 +1,4 @@
-boot_rom,/,D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/boot_rom/boot_rom.vhd
-gameboy_tb,/,D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/gameboy_tb.vhd
-spi_slave,/,D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/spi_slave.vhd
+gameboy_tb,/,C:/Users/Eliat/Desktop/ecgc-firmware/src/sim/gameboy_tb.vhd
+spi_slave,/,C:/Users/Eliat/Desktop/ecgc-firmware/src/spi_slave.vhd
+boot_ram,/,C:/Users/Eliat/Desktop/ecgc-firmware/src/ips/boot_ram/boot_ram.vhd
+Structure_CON,/,C:/Users/Eliat/Desktop/ecgc-firmware/src/ips/cart_ram/cart_ram.vhd

@@ -6,6 +6,28 @@ Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oc
 -- Compiling entity synchroniser
 -- Compiling architecture behaviour of synchroniser
 
+} {} {}} C:/Users/Eliat/Desktop/ecgc-firmware/src/reset.vhd {2 {vcom -work work -2008 -explicit -stats=none C:/Users/Eliat/Desktop/ecgc-firmware/src/reset.vhd
+Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
+-- Loading package STANDARD
+-- Loading package TEXTIO
+-- Loading package std_logic_1164
+-- Loading package NUMERIC_STD
+-- Loading package ATTRIBUTES
+-- Loading package std_logic_misc
+-- Compiling entity reset
+-- Compiling architecture behaviour of reset
+** Warning: C:/Users/Eliat/Desktop/ecgc-firmware/src/reset.vhd(133): (vcom-1048) Non-locally static choice (association #1, choice #1) is allowed only if it is the only choice of the only association.
+
+} {} {}} C:/Users/Eliat/Desktop/ecgc-firmware/src/ips/efb/efb.vhd {1 {vcom -work work -2008 -explicit -stats=none C:/Users/Eliat/Desktop/ecgc-firmware/src/ips/efb/efb.vhd
+Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
+-- Loading package STANDARD
+-- Loading package TEXTIO
+-- Loading package std_logic_1164
+-- Loading package std_logic_arith
+-- Loading package components
+-- Compiling entity efb
+-- Compiling architecture Structure of efb
+
 } {} {}} {D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/gameboy_tb.vhd} {1 {vcom -work work -2008 -explicit -stats=none {D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/sim/gameboy_tb.vhd}
 Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
 -- Loading package STANDARD
@@ -48,6 +70,17 @@ Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oc
 -- Compiling entity mbch
 -- Compiling architecture behaviour of mbch
 
+} {} {}} C:/Users/Eliat/Desktop/ecgc-firmware/src/gb_decoder.vhd {1 {vcom -work work -2008 -explicit -stats=none C:/Users/Eliat/Desktop/ecgc-firmware/src/gb_decoder.vhd
+Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
+-- Loading package STANDARD
+-- Loading package TEXTIO
+-- Loading package std_logic_1164
+-- Loading package NUMERIC_STD
+-- Loading package ATTRIBUTES
+-- Loading package std_logic_misc
+-- Compiling entity gb_decoder
+-- Compiling architecture behaviour of gb_decoder
+
 } {} {}} {D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/reset.vhd} {2 {vcom -work work -2008 -explicit -stats=none {D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/reset.vhd}
 Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
 -- Loading package STANDARD
@@ -59,6 +92,24 @@ Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oc
 -- Compiling entity reset
 -- Compiling architecture behaviour of reset
 ** Warning: D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/reset.vhd(122): (vcom-1048) Non-locally static choice (association #1, choice #1) is allowed only if it is the only choice of the only association.
+
+} {} {}} C:/Users/Eliat/Desktop/ecgc-firmware/src/synchroniser.vhd {1 {vcom -work work -2008 -explicit -stats=none C:/Users/Eliat/Desktop/ecgc-firmware/src/synchroniser.vhd
+Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
+-- Loading package STANDARD
+-- Loading package TEXTIO
+-- Loading package std_logic_1164
+-- Compiling entity synchroniser
+-- Compiling architecture behaviour of synchroniser
+
+} {} {}} C:/Users/Eliat/Desktop/ecgc-firmware/src/wb_crossbar_central.vhd {1 {vcom -work work -2008 -explicit -stats=none C:/Users/Eliat/Desktop/ecgc-firmware/src/wb_crossbar_central.vhd
+Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
+-- Loading package STANDARD
+-- Loading package TEXTIO
+-- Loading package std_logic_1164
+-- Loading package ATTRIBUTES
+-- Loading package std_logic_misc
+-- Compiling entity wb_crossbar_central
+-- Compiling architecture behaviour of wb_crossbar_central
 
 } {} {}} {D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/as4c32m8sa_controller.vhd} {1 {vcom -work work -2008 -explicit -stats=none {D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/as4c32m8sa_controller.vhd}
 Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
@@ -93,6 +144,70 @@ Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oc
 -- Compiling entity dma_controller
 -- Compiling architecture behaviour of dma_controller
 
+} {} {}} C:/Users/Eliat/Desktop/ecgc-firmware/src/sim/as4c32m8sa_sim.vhd {2 {vcom -work work -2008 -explicit -stats=none C:/Users/Eliat/Desktop/ecgc-firmware/src/sim/as4c32m8sa_sim.vhd
+Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
+-- Loading package STANDARD
+-- Loading package TEXTIO
+-- Loading package std_logic_1164
+-- Loading package NUMERIC_STD
+-- Loading package std_logic_textio
+-- Compiling entity as4c32m8sa_sim
+-- Compiling architecture behaviour of as4c32m8sa_sim
+** Warning: C:/Users/Eliat/Desktop/ecgc-firmware/src/sim/as4c32m8sa_sim.vhd(161): (vcom-1236) Shared variables must be of a protected type.
+** Warning: C:/Users/Eliat/Desktop/ecgc-firmware/src/sim/as4c32m8sa_sim.vhd(162): (vcom-1236) Shared variables must be of a protected type.
+** Warning: C:/Users/Eliat/Desktop/ecgc-firmware/src/sim/as4c32m8sa_sim.vhd(163): (vcom-1236) Shared variables must be of a protected type.
+
+} {} {}} C:/Users/Eliat/Desktop/ecgc-firmware/src/sim/gameboy_tb.vhd {1 {vcom -work work -2008 -explicit -stats=none C:/Users/Eliat/Desktop/ecgc-firmware/src/sim/gameboy_tb.vhd
+Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
+-- Loading package STANDARD
+-- Loading package TEXTIO
+-- Loading package std_logic_1164
+-- Loading package NUMERIC_STD
+-- Loading package std_logic_arith
+-- Loading package components
+-- Compiling entity gameboy_tb
+-- Compiling architecture behaviour of gameboy_tb
+-- Loading entity cart_tl
+
+} {} {}} C:/Users/Eliat/Desktop/ecgc-firmware/src/mbch.vhd {1 {vcom -work work -2008 -explicit -stats=none C:/Users/Eliat/Desktop/ecgc-firmware/src/mbch.vhd
+Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
+-- Loading package STANDARD
+-- Loading package TEXTIO
+-- Loading package std_logic_1164
+-- Loading package ATTRIBUTES
+-- Loading package std_logic_misc
+-- Compiling entity mbch
+-- Compiling architecture behaviour of mbch
+
+} {} {}} C:/Users/Eliat/Desktop/ecgc-firmware/src/ips/pll/pll.vhd {1 {vcom -work work -2008 -explicit -stats=none C:/Users/Eliat/Desktop/ecgc-firmware/src/ips/pll/pll.vhd
+Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
+-- Loading package STANDARD
+-- Loading package TEXTIO
+-- Loading package std_logic_1164
+-- Loading package std_logic_arith
+-- Loading package components
+-- Compiling entity pll
+-- Compiling architecture Structure of pll
+-- Compiling configuration Structure_CON
+-- Loading entity pll
+-- Loading architecture Structure of pll
+-- Loading package VITAL_Timing
+-- Loading entity vlo
+-- Loading package STD_LOGIC_UNSIGNED
+-- Loading package VITAL_Primitives
+-- Loading entity ehxpllj
+
+} {} {}} C:/Users/Eliat/Desktop/ecgc-firmware/src/spi_debug.vhd {1 {vcom -work work -2008 -explicit -stats=none C:/Users/Eliat/Desktop/ecgc-firmware/src/spi_debug.vhd
+Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
+-- Loading package STANDARD
+-- Loading package TEXTIO
+-- Loading package std_logic_1164
+-- Loading package NUMERIC_STD
+-- Loading package ATTRIBUTES
+-- Loading package std_logic_misc
+-- Compiling entity spi_debug
+-- Compiling architecture behaviour of spi_debug
+
 } {} {}} {D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/wb_crossbar_central.vhd} {1 {vcom -work work -2008 -explicit -stats=none {D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/wb_crossbar_central.vhd}
 Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
 -- Loading package STANDARD
@@ -102,6 +217,48 @@ Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oc
 -- Loading package std_logic_misc
 -- Compiling entity wb_crossbar_central
 -- Compiling architecture behaviour of wb_crossbar_central
+
+} {} {}} C:/Users/Eliat/Desktop/ecgc-firmware/src/ips/cart_ram/cart_ram.vhd {1 {vcom -work work -2008 -explicit -stats=none C:/Users/Eliat/Desktop/ecgc-firmware/src/ips/cart_ram/cart_ram.vhd
+Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
+-- Loading package STANDARD
+-- Loading package TEXTIO
+-- Loading package std_logic_1164
+-- Loading package std_logic_arith
+-- Loading package components
+-- Compiling entity cart_ram
+-- Compiling architecture Structure of cart_ram
+-- Compiling configuration Structure_CON
+-- Loading entity cart_ram
+-- Loading architecture Structure of cart_ram
+-- Loading package VITAL_Timing
+-- Loading entity vhi
+-- Loading entity vlo
+-- Loading package VITAL_Primitives
+-- Loading package STD_LOGIC_UNSIGNED
+-- Loading package global
+-- Loading package mem3
+-- Loading entity dp8kc
+
+} {} {}} C:/Users/Eliat/Desktop/ecgc-firmware/src/wb_crossbar_decoder.vhd {1 {vcom -work work -2008 -explicit -stats=none C:/Users/Eliat/Desktop/ecgc-firmware/src/wb_crossbar_decoder.vhd
+Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
+-- Loading package STANDARD
+-- Loading package TEXTIO
+-- Loading package std_logic_1164
+-- Loading package ATTRIBUTES
+-- Loading package std_logic_misc
+-- Compiling entity wb_crossbar_decoder
+-- Compiling architecture behaviour of wb_crossbar_decoder
+
+} {} {}} C:/Users/Eliat/Desktop/ecgc-firmware/src/dma_controller.vhd {1 {vcom -work work -2008 -explicit -stats=none C:/Users/Eliat/Desktop/ecgc-firmware/src/dma_controller.vhd
+Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
+-- Loading package STANDARD
+-- Loading package TEXTIO
+-- Loading package std_logic_1164
+-- Loading package NUMERIC_STD
+-- Loading package ATTRIBUTES
+-- Loading package std_logic_misc
+-- Compiling entity dma_controller
+-- Compiling architecture behaviour of dma_controller
 
 } {} {}} {D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/spi_debug.vhd} {1 {vcom -work work -2008 -explicit -stats=none {D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/spi_debug.vhd}
 Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
@@ -131,6 +288,17 @@ Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oc
 -- Loading package STD_LOGIC_UNSIGNED
 -- Loading package VITAL_Primitives
 -- Loading entity ehxpllj
+
+} {} {}} C:/Users/Eliat/Desktop/ecgc-firmware/src/spi_slave.vhd {1 {vcom -work work -2008 -explicit -stats=none C:/Users/Eliat/Desktop/ecgc-firmware/src/spi_slave.vhd
+Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
+-- Loading package STANDARD
+-- Loading package TEXTIO
+-- Loading package std_logic_1164
+-- Loading package NUMERIC_STD
+-- Loading package ATTRIBUTES
+-- Loading package std_logic_misc
+-- Compiling entity spi_slave
+-- Compiling architecture behaviour of spi_slave
 
 } {} {}} {D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/boot_rom/boot_rom.vhd} {1 {vcom -work work -2008 -explicit -stats=none {D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/ips/boot_rom/boot_rom.vhd}
 Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
@@ -162,6 +330,47 @@ Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oc
 -- Loading package std_logic_misc
 -- Compiling entity wb_crossbar_decoder
 -- Compiling architecture behaviour of wb_crossbar_decoder
+
+} {} {}} C:/Users/Eliat/Desktop/ecgc-firmware/src/ips/boot_ram/boot_ram.vhd {1 {vcom -work work -2008 -explicit -stats=none C:/Users/Eliat/Desktop/ecgc-firmware/src/ips/boot_ram/boot_ram.vhd
+Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
+-- Loading package STANDARD
+-- Loading package TEXTIO
+-- Loading package std_logic_1164
+-- Loading package std_logic_arith
+-- Loading package components
+-- Compiling entity boot_ram
+-- Compiling architecture Structure of boot_ram
+-- Compiling configuration Structure_CON
+-- Loading entity boot_ram
+-- Loading architecture Structure of boot_ram
+-- Loading package VITAL_Timing
+-- Loading package VITAL_Primitives
+-- Loading package STD_LOGIC_UNSIGNED
+-- Loading package global
+-- Loading package mem3
+-- Loading entity dp8kc
+-- Loading entity vhi
+-- Loading entity vlo
+
+} {} {}} C:/Users/Eliat/Desktop/ecgc-firmware/src/cart_tl.vhd {1 {vcom -work work -2008 -explicit -stats=none C:/Users/Eliat/Desktop/ecgc-firmware/src/cart_tl.vhd
+Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020
+-- Loading package STANDARD
+-- Loading package TEXTIO
+-- Loading package std_logic_1164
+-- Loading package NUMERIC_STD
+-- Compiling entity cart_tl
+-- Compiling architecture behaviour of cart_tl
+-- Loading package ATTRIBUTES
+-- Loading package std_logic_misc
+-- Loading entity reset
+-- Loading entity gb_decoder
+-- Loading entity wb_crossbar_decoder
+-- Loading entity dma_controller
+-- Loading entity spi_debug
+-- Loading entity wb_crossbar_central
+-- Loading entity mbch
+-- Loading package MATH_REAL
+-- Loading entity as4c32m8sa_controller
 
 } {} {}} {D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/gb_decoder.vhd} {1 {vcom -work work -2008 -explicit -stats=none {D:/OneDrive - Office 365 Fontys/Self/TinyFPGA/CartFirmware/src/gb_decoder.vhd}
 Model Technology ModelSim - Lattice FPGA Edition vcom 2020.3 Compiler 2020.10 Oct 14 2020

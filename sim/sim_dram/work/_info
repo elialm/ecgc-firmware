@@ -10,30 +10,30 @@ z2
 cModel Technology
 Z0 dC:/Users/Eliat/Desktop/ecgc-firmware/sim/sim_dram
 Eas4c32m8sa_controller
-Z1 w1675783386
+Z1 w1677274093
 Z2 DPx4 ieee 9 math_real 0 22 gNk<PdFJ<XNPcfef`f?Z81
 Z3 DPx8 synopsys 10 attributes 0 22 dc>JdEHRM@6GGENe5bZ?D1
 Z4 DPx4 ieee 14 std_logic_misc 0 22 dN]HY6l5ohPcZ:TaC@B;53
 Z5 DPx4 ieee 11 numeric_std 0 22 aU^R8eGcicLcUFIaBQSL>3
 Z6 DPx3 std 6 textio 0 22 zE1`LPoLg^DX3Oz^4Fj1K3
 Z7 DPx4 ieee 14 std_logic_1164 0 22 cVAk:aDinOX8^VGI1ekP<3
-!i122 0
+!i122 31
 R0
 Z8 8C:/Users/Eliat/Desktop/ecgc-firmware/src/as4c32m8sa_controller.vhd
 Z9 FC:/Users/Eliat/Desktop/ecgc-firmware/src/as4c32m8sa_controller.vhd
 l0
-L29 1
-Vl:YMUc26Fm@M3VGAGDh_S1
-!s100 MoWg4B4JW3__X0o03TP7:0
+L27 1
+VL^ehTN2mljO:@KjKUM6Tz1
+!s100 ^?D0fho=NjCMAU6_YC@aZ3
 Z10 OT;C;2020.3;71
 33
-Z11 !s110 1676976711
+Z11 !s110 1677274107
 !i10b 1
-Z12 !s108 1676976711.000000
-Z13 !s90 -reportprogress|300|-work|work|C:/Users/Eliat/Desktop/ecgc-firmware/src/as4c32m8sa_controller.vhd|
+Z12 !s108 1677274107.000000
+Z13 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|C:/Users/Eliat/Desktop/ecgc-firmware/src/as4c32m8sa_controller.vhd|
 Z14 !s107 C:/Users/Eliat/Desktop/ecgc-firmware/src/as4c32m8sa_controller.vhd|
 !i113 1
-Z15 o-work work -O0
+Z15 o-work work -2008 -explicit -O0
 Z16 tExplicit 1 NoCoverage 1 CvgOpt 0
 Abehaviour
 R2
@@ -42,12 +42,12 @@ R4
 R5
 R6
 R7
-Z17 DEx4 work 21 as4c32m8sa_controller 0 22 l:YMUc26Fm@M3VGAGDh_S1
-!i122 0
-l103
-L59 228
-VSl4keG6c?@YiZElE0Z`2R2
-!s100 RFfi8MC:YbZ4h7iH:1>IZ2
+Z17 DEx4 work 21 as4c32m8sa_controller 0 22 L^ehTN2mljO:@KjKUM6Tz1
+!i122 31
+l114
+Z18 L55 225
+V?aaZZ2[nc440ICJeKIMRa3
+!s100 MdhcCO<^KYFi_l3Sffn@63
 R10
 33
 R11
@@ -59,27 +59,27 @@ R14
 R15
 R16
 Eas4c32m8sa_controller_tb
-R1
+Z19 w1677273067
 R3
 R4
 R5
 R6
 R7
-!i122 1
+!i122 28
 R0
-Z18 8C:/Users/Eliat/Desktop/ecgc-firmware/src/sim/as4c32m8sa_controller_tb.vhd
-Z19 FC:/Users/Eliat/Desktop/ecgc-firmware/src/sim/as4c32m8sa_controller_tb.vhd
+Z20 8C:/Users/Eliat/Desktop/ecgc-firmware/src/sim/as4c32m8sa_controller_tb.vhd
+Z21 FC:/Users/Eliat/Desktop/ecgc-firmware/src/sim/as4c32m8sa_controller_tb.vhd
 l0
 L21 1
-VmORVVb69i9l?HZbFgLAPR2
+VHcaeSozV`NRzhfM6RDg6L3
 !s100 im_WOohZ@O@S?kmOCLKOP2
 R10
 33
-R11
+Z22 !s110 1677273073
 !i10b 1
-R12
-Z20 !s90 -reportprogress|300|-work|work|C:/Users/Eliat/Desktop/ecgc-firmware/src/sim/as4c32m8sa_controller_tb.vhd|
-!s107 C:/Users/Eliat/Desktop/ecgc-firmware/src/sim/as4c32m8sa_controller_tb.vhd|
+Z23 !s108 1677273073.000000
+Z24 !s90 -reportprogress|300|-work|work|-2008|-explicit|-stats=none|C:/Users/Eliat/Desktop/ecgc-firmware/src/sim/as4c32m8sa_controller_tb.vhd|
+Z25 !s107 C:/Users/Eliat/Desktop/ecgc-firmware/src/sim/as4c32m8sa_controller_tb.vhd|
 !i113 1
 R15
 R16
@@ -91,19 +91,19 @@ R4
 R5
 R6
 R7
-DEx4 work 24 as4c32m8sa_controller_tb 0 22 mORVVb69i9l?HZbFgLAPR2
-!i122 1
-l141
+DEx4 work 24 as4c32m8sa_controller_tb 0 22 HcaeSozV`NRzhfM6RDg6L3
+!i122 28
+l139
 L24 218
-Vc8;;S?Wf6OVV8:AT[U`<G1
-!s100 EiGLi9mT7EnSlJ=kz51:l0
+V9?]B`]6[nNN]Q6FVDPA_F2
+!s100 GD;iHUGcXmABH>hEPgL<e2
 R10
 33
-R11
+R22
 !i10b 1
-R12
-R20
-Z21 !s107 C:/Users/Eliat/Desktop/ecgc-firmware/src/sim/as4c32m8sa_controller_tb.vhd|
+R23
+R24
+R25
 !i113 1
 R15
 R16

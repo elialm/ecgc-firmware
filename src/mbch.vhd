@@ -38,6 +38,7 @@ use ieee.std_logic_misc.all;
 
 entity mbch is
     port (
+        -- Main slave interface
         CLK_I   : in std_logic;
         RST_I   : in std_logic;
         STB_I   : in std_logic;
@@ -48,10 +49,12 @@ entity mbch is
         DAT_I   : in std_logic_vector(7 downto 0);
         DAT_O   : out std_logic_vector(7 downto 0);
 
+        -- Master interface to EFB
         EFB_STB_O   : out std_logic;
         EFB_DAT_I   : in std_logic_vector(7 downto 0);
         EFB_ACK_I   : in std_logic;
 
+        -- Master interface to DRAM controller
         DRAM_STB_O  : out std_logic;
         DRAM_ADR_O  : out std_logic_vector(8 downto 0);
         DRAM_TGA_O  : out std_logic_vector(1 downto 0);

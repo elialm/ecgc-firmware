@@ -31,6 +31,20 @@ end gameboy_tb;
 
 architecture behaviour of gameboy_tb is
 
+    component as4c32m8sa_sim is
+    port (
+        CLK     : in std_logic;
+        CKE     : in std_logic;
+        BA      : in std_logic_vector(1 downto 0);
+        A       : in std_logic_vector(12 downto 0);
+        CSN     : in std_logic;
+        RASN    : in std_logic;
+        CASN    : in std_logic;
+        WEN     : in std_logic;
+        DQM     : in std_logic;
+        DQ      : inout std_logic_vector(7 downto 0));
+    end component;
+
     signal gb_clk       : std_logic := '0';
     signal gb_resetn    : std_logic;
     signal gb_addr      : std_logic_vector(15 downto 0) := "UUUUUUUUUUUUUUUU";
@@ -101,6 +115,19 @@ begin
         DRAM_DQ => dram_dq,
         USER_RST => user_rst,
         STATUS_LED => status_led);
+
+    DRAM_INST : component as4c32m8sa_sim
+    port map (
+        CLK => dram_clk,
+        CKE => dram_cke,
+        BA => dram_ba,
+        A => dram_a,
+        CSN => dram_csn,
+        RASN => dram_rasn,
+        CASN => dram_casn,
+        WEN => dram_wen,
+        DQM => dram_dqm,
+        DQ => dram_dq);
     
     -- GameBoy simulation
     process
