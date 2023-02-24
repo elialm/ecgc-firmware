@@ -41,6 +41,9 @@ architecture behaviour of gb_decoder is
 
     type GAMEBOY_BUS_STATE_TYPE is (GBBS_AWAIT_ACCESS_FINISHED, GBBS_IDLE, GBBS_READ_AWAIT_ACK, GBBS_WRITE_AWAIT_FALLING_EDGE, GBBS_WRITE_AWAIT_ACK);
 
+    constant CYC_COUNTER_READ   : std_logic_vector(3 downto 0) := "1000";   -- 9 cycles
+    constant CYC_COUNTER_WRITE  : std_logic_vector(3 downto 0) := "1000";   -- 9 cycles (I think)
+
     component synchroniser is
     generic (
         FF_COUNT : natural := 2;
@@ -67,6 +70,7 @@ architecture behaviour of gb_decoder is
 
     signal cyc_counter  : std_logic_vector(3 downto 0);
     signal cyc_timeout  : std_logic;
+    signal wb_cyc_o     : std_logic;
 
 begin
 
@@ -103,6 +107,8 @@ begin
 
     ACCESS_ROM <= gb_access_rom;
     ACCESS_RAM <= gb_access_ram;
+
+    CYC_O <= wb_cyc_o;
     
     -- Control Wishbone cycles
     process (CLK_I)
@@ -110,14 +116,19 @@ begin
         if rising_edge(CLK_I) then
             if RST_I = '1' then
                 gb_bus_state <= GBBS_AWAIT_ACCESS_FINISHED;
-
-                CYC_O <= '0';
+                cyc_counter <= (others => '1');
+                wb_cyc_o <= '0';
+                
                 WE_O <= '0';
                 ADR_O <= (others => '0');
                 DAT_O <= (others => '0');
                 GB_DATA_OUT <= (others => '0');
                 WB_TIMEOUT <= '0';
             else
+                if (cyc_timeout and wb_cyc_o) = '1' then
+                    WB_TIMEOUT <= '1';
+                end if;
+
                 case gb_bus_state is
                     when GBBS_AWAIT_ACCESS_FINISHED =>
                         if gb_access_cart = '0' then
@@ -128,8 +139,9 @@ begin
                             if GB_RDN = '0' then
                                 -- Initiate read from cart
                                 gb_bus_state <= GBBS_READ_AWAIT_ACK;
-                                CYC_O <= '1';
+                                wb_cyc_o <= '1';
                                 WE_O <= '0';
+                                cyc_counter <= CYC_COUNTER_READ;
                             else
                                 -- Initiate write to cart
                                 gb_bus_state <= GBBS_WRITE_AWAIT_FALLING_EDGE;
@@ -140,24 +152,25 @@ begin
                     when GBBS_READ_AWAIT_ACK =>
                         if ACK_I = '1' then
                             gb_bus_state <= GBBS_AWAIT_ACCESS_FINISHED;
-                            CYC_O <= '0';
+                            wb_cyc_o <= '0';
                             GB_DATA_OUT <= DAT_I;
                         end if;
                     when GBBS_WRITE_AWAIT_FALLING_EDGE =>
                         if gb_clk_sync = '0' then
                             gb_bus_state <= GBBS_WRITE_AWAIT_ACK;
-                            CYC_O <= '1';
+                            wb_cyc_o <= '1';
                             WE_O <= '1';
                             DAT_O <= GB_DATA_IN;
+                            cyc_counter <= CYC_COUNTER_WRITE;
                         end if;
                     when GBBS_WRITE_AWAIT_ACK =>
                         if ACK_I = '1' then
                             gb_bus_state <= GBBS_AWAIT_ACCESS_FINISHED;
-                            CYC_O <= '0';
+                            wb_cyc_o <= '0';
                         end if;
                     when others =>
                         gb_bus_state <= GBBS_AWAIT_ACCESS_FINISHED;
-                        CYC_O <= '0';
+                        wb_cyc_o <= '0';
                 end case;
             end if;
 
