@@ -90,7 +90,7 @@ architecture behaviour of as4c32m8sa_controller is
     constant T_COMP_MRD     : std_logic_vector(GENERIC_COUNTER_BITS-1 downto 0) := to_tcomp_ns(14.00, GENERIC_COUNTER_BITS);
     constant T_COMP_RC      : std_logic_vector(GENERIC_COUNTER_BITS-1 downto 0) := to_tcomp_ns(61.00, GENERIC_COUNTER_BITS);
     constant T_COMP_RCD     : std_logic_vector(GENERIC_COUNTER_BITS-1 downto 0) := to_tcomp_ns(21.00, GENERIC_COUNTER_BITS);
-    constant T_COMP_CAS     : std_logic_vector(GENERIC_COUNTER_BITS-1 downto 0) := std_logic_vector(to_unsigned(2, GENERIC_COUNTER_BITS));
+    constant T_COMP_CAS     : std_logic_vector(GENERIC_COUNTER_BITS-1 downto 0) := std_logic_vector(to_unsigned(1, GENERIC_COUNTER_BITS));
 
     -- Time inbetween auto refresh
     -- Compensate delay after refresh (Trc min.) and with duration of 1 read transaction (read takes longer than write)
