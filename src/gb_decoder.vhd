@@ -34,7 +34,8 @@ entity gb_decoder is
         
         ACCESS_ROM  : out std_logic;
         ACCESS_RAM  : out std_logic;
-        WB_TIMEOUT  : out std_logic);
+        WR_TIMEOUT  : out std_logic;
+        RD_TIMEOUT  : out std_logic);
 end gb_decoder;
 
 architecture behaviour of gb_decoder is
@@ -123,7 +124,8 @@ begin
                 ADR_O <= (others => '0');
                 DAT_O <= (others => '0');
                 GB_DATA_OUT <= (others => '0');
-                WB_TIMEOUT <= '0';
+                RD_TIMEOUT <= '0';
+                WR_TIMEOUT <= '0';
             else
                 case gb_bus_state is
                     when GBBS_AWAIT_ACCESS_FINISHED =>
@@ -155,7 +157,7 @@ begin
                         end if;
 
                         if cyc_timeout = '1' then
-                            WB_TIMEOUT <= '1';
+                            RD_TIMEOUT <= '1';
                         end if;
 
                     when GBBS_WRITE_AWAIT_FALLING_EDGE =>
@@ -174,7 +176,7 @@ begin
                         end if;
 
                         if cyc_timeout = '1' then
-                            WB_TIMEOUT <= '1';
+                            WR_TIMEOUT <= '1';
                         end if;
 
                     when others =>

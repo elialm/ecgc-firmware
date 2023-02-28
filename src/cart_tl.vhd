@@ -190,7 +190,8 @@ architecture behaviour of cart_tl is
 
     signal dram_ready       : std_logic;
     signal gb_access_ram    : std_logic;
-    signal gb_timeout       : std_logic;
+    signal gb_timeout_rd    : std_logic;
+    signal gb_timeout_wr    : std_logic;
 
     attribute NOM_FREQ : string;
     attribute NOM_FREQ of INTERNAL_OSCILLATOR : label is "53.20";
@@ -257,7 +258,8 @@ begin
         
         ACCESS_ROM => open,
         ACCESS_RAM => gb_access_ram,
-        WB_TIMEOUT => gb_timeout);
+        RD_TIMEOUT => gb_timeout_rd,
+        WR_TIMEOUT => gb_timeout_wr);
 
     GB_DATA <= gb_data_outgoing when (GB_CLK nor GB_RDN) = '1' else "ZZZZZZZZ";
     gb_data_incoming <= GB_DATA;
@@ -500,11 +502,14 @@ begin
     -- LED indicator for reset state [TEMP]
     STATUS_LED(5) <= not(soft_reset);
 
-    -- LED indicator for gb_decoder timeout [TEMP]
-    STATUS_LED(4) <= not(gb_timeout);
+    -- LED indicator for gb_decoder write timeout [TEMP]
+    STATUS_LED(4) <= not(gb_timeout_wr);
+
+    -- LED indicator for gb_decoder read timeout [TEMP]
+    STATUS_LED(3) <= not(gb_timeout_rd);
 
     -- Other leds off [TEMP]
-    STATUS_LED(3 downto 0) <= (others => '1');
+    STATUS_LED(2 downto 0) <= (others => '1');
     
     -- Bus tranceiver control [TEMP: will assume only reads from cart]
     BTA_OEN <= hard_reset;
