@@ -125,15 +125,12 @@ begin
                 GB_DATA_OUT <= (others => '0');
                 WB_TIMEOUT <= '0';
             else
-                if (cyc_timeout and wb_cyc_o) = '1' then
-                    WB_TIMEOUT <= '1';
-                end if;
-
                 case gb_bus_state is
                     when GBBS_AWAIT_ACCESS_FINISHED =>
                         if gb_access_cart = '0' then
                             gb_bus_state <= GBBS_IDLE;
                         end if;
+
                     when GBBS_IDLE =>
                         if gb_access_cart = '1' then
                             if GB_RDN = '0' then
@@ -149,12 +146,18 @@ begin
 
                             ADR_O <= GB_ADDR;
                         end if;
+
                     when GBBS_READ_AWAIT_ACK =>
                         if ACK_I = '1' then
                             gb_bus_state <= GBBS_AWAIT_ACCESS_FINISHED;
                             wb_cyc_o <= '0';
                             GB_DATA_OUT <= DAT_I;
                         end if;
+
+                        if cyc_timeout = '1' then
+                            WB_TIMEOUT <= '1';
+                        end if;
+
                     when GBBS_WRITE_AWAIT_FALLING_EDGE =>
                         if gb_clk_sync = '0' then
                             gb_bus_state <= GBBS_WRITE_AWAIT_ACK;
@@ -163,11 +166,17 @@ begin
                             DAT_O <= GB_DATA_IN;
                             cyc_counter <= CYC_COUNTER_WRITE;
                         end if;
+
                     when GBBS_WRITE_AWAIT_ACK =>
                         if ACK_I = '1' then
                             gb_bus_state <= GBBS_AWAIT_ACCESS_FINISHED;
                             wb_cyc_o <= '0';
                         end if;
+
+                        if cyc_timeout = '1' then
+                            WB_TIMEOUT <= '1';
+                        end if;
+
                     when others =>
                         gb_bus_state <= GBBS_AWAIT_ACCESS_FINISHED;
                         wb_cyc_o <= '0';
