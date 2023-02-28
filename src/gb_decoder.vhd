@@ -42,8 +42,8 @@ architecture behaviour of gb_decoder is
 
     type GAMEBOY_BUS_STATE_TYPE is (GBBS_AWAIT_ACCESS_FINISHED, GBBS_IDLE, GBBS_READ_AWAIT_ACK, GBBS_WRITE_AWAIT_FALLING_EDGE, GBBS_WRITE_AWAIT_ACK);
 
-    constant CYC_COUNTER_READ   : std_logic_vector(3 downto 0) := "1000";   -- 9 cycles
-    constant CYC_COUNTER_WRITE  : std_logic_vector(3 downto 0) := "1000";   -- 9 cycles (I think)
+    constant CYC_COUNTER_READ   : std_logic_vector(3 downto 0) := "1001";   -- 10 cycles
+    constant CYC_COUNTER_WRITE  : std_logic_vector(3 downto 0) := "1001";   -- 10 cycles (I think)
 
     component synchroniser is
     generic (
