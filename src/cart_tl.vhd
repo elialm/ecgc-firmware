@@ -189,6 +189,7 @@ architecture behaviour of cart_tl is
     signal aux_reset        : std_logic;
 
     signal dram_ready       : std_logic;
+    signal dram_rblock      : std_logic;
     signal gb_access_ram    : std_logic;
     signal gb_timeout_rd    : std_logic;
     signal gb_timeout_wr    : std_logic;
@@ -258,6 +259,7 @@ begin
         
         ACCESS_ROM => open,
         ACCESS_RAM => gb_access_ram,
+        REFRESH_BLOCK => dram_rblock,
         RD_TIMEOUT => gb_timeout_rd,
         WR_TIMEOUT => gb_timeout_wr);
 
@@ -459,6 +461,7 @@ begin
         DAT_O => wb_dram_rdat,
         ACK_O => wb_dram_ack,
         READY => dram_ready,
+        REFRESH_BLOCK => dram_rblock,
         CKE => DRAM_CKE,
         BA => DRAM_BA,
         A => DRAM_A,

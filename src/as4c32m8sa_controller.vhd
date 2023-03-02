@@ -39,7 +39,8 @@ entity as4c32m8sa_controller is
         DAT_O       : out std_logic_vector(7 downto 0);
         ACK_O       : out std_logic;
 
-        READY       : out std_logic;    -- Signal that controller is initialised and ready to accept transactions
+        READY           : out std_logic;    -- Signal that controller is initialised and ready to accept transactions
+        REFRESH_BLOCK   : in std_logic;     -- Disallows controller from doing an auto refresh.
 
         CKE         : out std_logic;
         BA          : out std_logic_vector(1 downto 0);
@@ -215,7 +216,7 @@ begin
                             BA <= TGA_I;
                             A(12 downto 0) <= ADR_I(22 downto 10);
 
-                        elsif refresh_elapsed = '1' then
+                        elsif (refresh_elapsed and not(REFRESH_BLOCK)) = '1' then
                             -- Auto refresh timer expired, must issue another refresh
                             dram_state <= DS_AWAIT_AUTO_REFRESH;
                             dram_state_aar <= DS_IDLE;
