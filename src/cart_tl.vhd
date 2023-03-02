@@ -65,12 +65,8 @@ entity cart_tl is
         DRAM_DQ     : inout std_logic_vector(7 downto 0);
 
         -- Temporary for testing
-        USER_RST        : in std_logic;
-        TIMEOUT_RD      : out std_logic;
-        DECODER_IDLE    : out std_logic;
-        DECODER_WAIT    : out std_logic;
-        DECODER_A15     : out std_logic;
-        STATUS_LED      : out std_logic_vector(7 downto 0));
+        USER_RST    : in std_logic;
+        STATUS_LED  : out std_logic_vector(7 downto 0));
 end cart_tl;
 
 architecture behaviour of cart_tl is
@@ -194,10 +190,6 @@ architecture behaviour of cart_tl is
 
     signal dram_ready       : std_logic;
     signal gb_access_ram    : std_logic;
-    signal gb_decoder_idle  : std_logic;
-    signal gb_decoder_wait  : std_logic;
-    signal gb_decoder_fsme  : std_logic;
-    signal gb_decoder_a15   : std_logic;
     signal gb_timeout_rd    : std_logic;
     signal gb_timeout_wr    : std_logic;
 
@@ -266,10 +258,6 @@ begin
         
         ACCESS_ROM => open,
         ACCESS_RAM => gb_access_ram,
-        STATUS_IDLE => gb_decoder_idle,
-        STATUS_WAIT => gb_decoder_wait,
-        STATUS_FSME => gb_decoder_fsme,
-        SYNC_A15 => gb_decoder_a15,
         RD_TIMEOUT => gb_timeout_rd,
         WR_TIMEOUT => gb_timeout_wr);
 
@@ -520,23 +508,12 @@ begin
     -- LED indicator for gb_decoder read timeout [TEMP]
     STATUS_LED(3) <= not(gb_timeout_rd);
 
-    -- LED indicator for gb_decoder state error [TEMP]
-    STATUS_LED(2) <= not(gb_decoder_fsme);
-
     -- Other leds off [TEMP]
-    STATUS_LED(1 downto 0) <= (others => '1');
+    STATUS_LED(2 downto 0) <= (others => '1');
     
     -- Bus tranceiver control [TEMP: will assume only reads from cart]
     BTA_OEN <= hard_reset;
     BTD_OEN <= GB_CLK or hard_reset;
     BTD_DIR <= GB_RDN;
-
-    -- Probe point for timeout read signal [TEMP]
-    TIMEOUT_RD <= gb_timeout_rd;
-
-    -- Probe point for checking if the decoder is idling [TEMP]
-    DECODER_IDLE <= gb_decoder_idle;
-    DECODER_WAIT <= gb_decoder_wait;
-    DECODER_A15 <= gb_decoder_a15;
 
 end behaviour;

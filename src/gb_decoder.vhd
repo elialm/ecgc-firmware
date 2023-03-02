@@ -34,10 +34,6 @@ entity gb_decoder is
         
         ACCESS_ROM  : out std_logic;
         ACCESS_RAM  : out std_logic;
-        STATUS_IDLE : out std_logic;
-        STATUS_WAIT : out std_logic;
-        STATUS_FSME : out std_logic;
-        SYNC_A15    : out std_logic;
         WR_TIMEOUT  : out std_logic;
         RD_TIMEOUT  : out std_logic);
 end gb_decoder;
@@ -46,8 +42,8 @@ architecture behaviour of gb_decoder is
 
     type GAMEBOY_BUS_STATE_TYPE is (GBBS_AWAIT_ACCESS_FINISHED, GBBS_IDLE, GBBS_READ_AWAIT_ACK, GBBS_WRITE_AWAIT_FALLING_EDGE, GBBS_WRITE_AWAIT_ACK);
 
-    constant CYC_COUNTER_READ   : std_logic_vector(3 downto 0) := "1000";   -- 10 cycles
-    constant CYC_COUNTER_WRITE  : std_logic_vector(3 downto 0) := "1000";   -- 10 cycles (I think)
+    constant CYC_COUNTER_READ   : std_logic_vector(3 downto 0) := "1000";   -- 9 cycles
+    constant CYC_COUNTER_WRITE  : std_logic_vector(3 downto 0) := "1000";   -- 9 cycles (I think)
 
     component synchroniser is
     generic (
@@ -114,16 +110,11 @@ begin
     ACCESS_RAM <= gb_access_ram;
 
     CYC_O <= wb_cyc_o;
-
-    SYNC_A15 <= gb_addr_sync(2);
     
     -- Control Wishbone cycles
     process (CLK_I)
     begin
         if rising_edge(CLK_I) then
-            STATUS_IDLE <= '0';
-            STATUS_WAIT <= '0';
-
             if RST_I = '1' then
                 gb_bus_state <= GBBS_AWAIT_ACCESS_FINISHED;
                 cyc_counter <= (others => '1');
@@ -133,21 +124,16 @@ begin
                 ADR_O <= (others => '0');
                 DAT_O <= (others => '0');
                 GB_DATA_OUT <= (others => '0');
-                STATUS_FSME <= '0';
                 RD_TIMEOUT <= '0';
                 WR_TIMEOUT <= '0';
             else
                 case gb_bus_state is
                     when GBBS_AWAIT_ACCESS_FINISHED =>
-                        STATUS_WAIT <= '1';
-
                         if gb_access_cart = '0' then
                             gb_bus_state <= GBBS_IDLE;
                         end if;
 
                     when GBBS_IDLE =>
-                        STATUS_IDLE <= '1';
-                        
                         if gb_access_cart = '1' then
                             if GB_RDN = '0' then
                                 -- Initiate read from cart
@@ -196,7 +182,6 @@ begin
                     when others =>
                         gb_bus_state <= GBBS_AWAIT_ACCESS_FINISHED;
                         wb_cyc_o <= '0';
-                        STATUS_FSME <= '1';
                 end case;
             end if;
 
