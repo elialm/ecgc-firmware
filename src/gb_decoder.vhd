@@ -37,6 +37,7 @@ entity gb_decoder is
         STATUS_IDLE : out std_logic;
         STATUS_WAIT : out std_logic;
         STATUS_FSME : out std_logic;
+        SYNC_A15    : out std_logic;
         WR_TIMEOUT  : out std_logic;
         RD_TIMEOUT  : out std_logic);
 end gb_decoder;
@@ -113,6 +114,8 @@ begin
     ACCESS_RAM <= gb_access_ram;
 
     CYC_O <= wb_cyc_o;
+
+    SYNC_A15 <= gb_addr_sync(2);
     
     -- Control Wishbone cycles
     process (CLK_I)

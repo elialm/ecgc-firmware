@@ -69,6 +69,7 @@ entity cart_tl is
         TIMEOUT_RD      : out std_logic;
         DECODER_IDLE    : out std_logic;
         DECODER_WAIT    : out std_logic;
+        DECODER_A15     : out std_logic;
         STATUS_LED      : out std_logic_vector(7 downto 0));
 end cart_tl;
 
@@ -196,6 +197,7 @@ architecture behaviour of cart_tl is
     signal gb_decoder_idle  : std_logic;
     signal gb_decoder_wait  : std_logic;
     signal gb_decoder_fsme  : std_logic;
+    signal gb_decoder_a15   : std_logic;
     signal gb_timeout_rd    : std_logic;
     signal gb_timeout_wr    : std_logic;
 
@@ -267,6 +269,7 @@ begin
         STATUS_IDLE => gb_decoder_idle,
         STATUS_WAIT => gb_decoder_wait,
         STATUS_FSME => gb_decoder_fsme,
+        SYNC_A15 => gb_decoder_a15,
         RD_TIMEOUT => gb_timeout_rd,
         WR_TIMEOUT => gb_timeout_wr);
 
@@ -534,5 +537,6 @@ begin
     -- Probe point for checking if the decoder is idling [TEMP]
     DECODER_IDLE <= gb_decoder_idle;
     DECODER_WAIT <= gb_decoder_wait;
+    DECODER_A15 <= gb_decoder_a15;
 
 end behaviour;
