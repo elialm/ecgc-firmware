@@ -19,4 +19,4 @@ transcript
 */*.mti
 
 # Simulation files
-sim
+/sim
