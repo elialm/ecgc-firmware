@@ -138,7 +138,7 @@ begin
             --24        : 0 = read, 1 = write
             --25        : 1 = perform cart access, 0 = perform internal access
         type gb_bus_transactions is array (integer range <>) of std_logic_vector(25 downto 0);
-        variable test_bus_transactions : gb_bus_transactions(0 to 22) := (
+        variable test_bus_transactions : gb_bus_transactions(0 to 24) := (
             b"10_0000_0001_0000_0000_0000_0000",    -- NOP
             b"10_0000_0001_0000_0001_0000_0000",    -- JP $0150
             b"10_0000_0001_0000_0010_0000_0000",
@@ -158,6 +158,8 @@ begin
             b"11_0000_0001_0000_0000_1010_0101",    -- not an instruction, just to test if cart correctly ignores writes to ROM
             b"10_0100_0000_0000_0000_0000_0000",    -- Read from DRAM
             b"11_0100_0000_0000_0000_1010_0101",    -- Write to DRAM
+            b"10_1011_0000_0000_0000_0000_0000",    -- Read from cart RAM
+            b"11_1011_0000_0000_0000_0011_1111",    -- Write to cart RAM
             b"10_1010_0000_0101_0100_0000_0000",    -- Read from cart RAM (or cart IO space, who knows)
             b"10_1010_0001_0000_0000_0000_0000",    -- Read from cart RAM (or cart IO space, who knows)
             b"11_1010_0000_0101_0101_1000_0000",    -- Write to cart RAM (or cart IO space, who knows)
