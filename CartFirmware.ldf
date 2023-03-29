@@ -71,10 +71,19 @@
         <Source name="src/ips/cart_ram/cart_ram.vhd" type="VHDL" type_short="VHDL">
             <Options/>
         </Source>
+        <Source name="src/audio_controller.vhd" type="VHDL" type_short="VHDL">
+            <Options/>
+        </Source>
+        <Source name="src/sim/audio_controller_tb.vhd" type="VHDL" type_short="VHDL" syn_sim="SimOnly">
+            <Options/>
+        </Source>
         <Source name="CartFirmware.lpf" type="Logic Preference" type_short="LPF">
             <Options/>
         </Source>
         <Source name="impl1/impl1.xcf" type="Programming Project File" type_short="Programming">
+            <Options/>
+        </Source>
+        <Source name="sim/audio_controller/audio_controller.spf" type="Simulation Project File" type_short="SPF">
             <Options/>
         </Source>
         <Source name="sim/gameboy_tb/gameboy_tb.spf" type="Simulation Project File" type_short="SPF">
