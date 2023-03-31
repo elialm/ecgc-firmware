@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DiamondModule name="sin_table" module="sin_table" VendorName="Lattice Semiconductor Corporation" generator="IPexpress" date="2023 03 29 13:02:01.134" version="5.4" type="Module" synthesis="lse" source_format="VHDL">
+  <Package>
+		<File name="" type="" modified="2023 03 29 13:02:00.815"/>
+		<File name="c:/users/eliat/desktop/ecgc-firmware/mem/sin_samples.mem" type="mem" modified="2023 03 29 12:59:36.065"/>
+		<File name="sin_table.lpc" type="lpc" modified="2023 03 29 13:01:59.401"/>
+		<File name="sin_table.vhd" type="top_level_vhdl" modified="2023 03 29 13:01:59.449"/>
+		<File name="sin_table_tmpl.vhd" type="template_vhdl" modified="2023 03 29 13:01:59.449"/>
+		<File name="tb_sin_table_tmpl.vhd" type="testbench_vhdl" modified="2023 03 29 13:01:59.451"/>
+  </Package>
+</DiamondModule>

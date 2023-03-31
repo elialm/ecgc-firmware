@@ -44,7 +44,8 @@ begin
     process
     begin
         loop
-            wait for 18.796992 ns;
+            -- wait for 18.796992 ns;
+            wait for 9.398496 ns;
             clk <= not(clk);
         end loop;
     end process;
@@ -63,6 +64,14 @@ begin
                 when 2 =>
                     null;
                 when 3 =>
+                    null;
+                when 4 =>
+                    null;
+                when 5 =>
+                    null;
+                when 6 =>
+                    null;
+                when 7 =>
                     rst <= '0';
                 when others =>
                     transaction_id <= transaction_id;
