@@ -35,7 +35,7 @@ architecture behaviour of audio_controller_tb is
 
 begin
 
-    DRAM_INST : entity work.audio_controller
+    AUDIO_CTRL_INST : entity work.audio_controller
     port map (
         CLK_I => clk,
         RST_I => rst);

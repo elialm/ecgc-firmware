@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<DiamondModule name="pll" module="PLL" VendorName="Lattice Semiconductor Corporation" generator="IPexpress" date="2022 06 30 15:49:20.505" version="5.8" type="Module" synthesis="lse" source_format="VHDL">
+<DiamondModule name="pll" module="pll" VendorName="Lattice Semiconductor Corporation" generator="IPexpress" date="2023 03 31 15:12:22.401" version="5.8" type="Module" synthesis="lse" source_format="VHDL">
   <Package>
-		<File name="pll.lpc" type="lpc" modified="2022 06 30 15:49:15.079"/>
-		<File name="pll.vhd" type="top_level_vhdl" modified="2022 06 30 15:49:15.183"/>
-		<File name="pll_tmpl.vhd" type="template_vhdl" modified="2022 06 30 15:49:16.812"/>
+		<File name="pll.lpc" type="lpc" modified="2023 03 31 15:12:18.247"/>
+		<File name="pll.vhd" type="top_level_vhdl" modified="2023 03 31 15:12:18.362"/>
+		<File name="pll_tmpl.vhd" type="template_vhdl" modified="2023 03 31 15:12:18.364"/>
   </Package>
 </DiamondModule>

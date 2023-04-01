@@ -64,6 +64,9 @@ entity cart_tl is
         DRAM_DQM    : out std_logic;
         DRAM_DQ     : inout std_logic_vector(7 downto 0);
 
+        -- Audio related
+        AUDIO_OUT   : out std_logic;
+
         -- Temporary for testing
         USER_RST    : in std_logic;
         STATUS_LED  : out std_logic_vector(7 downto 0));
@@ -514,9 +517,18 @@ begin
     -- Other leds off [TEMP]
     STATUS_LED(2 downto 0) <= (others => '1');
     
-    -- Bus tranceiver control [TEMP: will assume only reads from cart]
+    -- Bus tranceiver control
     BTA_OEN <= hard_reset;
     BTD_OEN <= GB_CLK or hard_reset;
     BTD_DIR <= GB_RDN;
+
+    -- Audio controller [TEMP]
+    AUDIO_CTRL_INST : entity work.audio_controller
+    port map (
+        CLK_I => pll_clk_os,
+        RST_I => USER_RST,
+        AUDIO_OUT => AUDIO_OUT);
+
+    -- AUDIO_OUT <= '0';
 
 end behaviour;

@@ -40,7 +40,7 @@ architecture behaviour of audio_controller is
     constant TRIANGLE_BOTTOM    : std_logic_vector(8 downto 0) := "000000101";
     constant TRIANGLE_TOP       : std_logic_vector(8 downto 0) := "100011101";
     -- constant SAMPLE_PRESCALER   : std_logic_vector(9 downto 0) := "1001011010"; -- f_sample = 44.115 kHz
-    constant SAMPLE_PRESCALER   : std_logic_vector(9 downto 0) := "0001101000"; -- f_sample = 511.538 kHz for sine table ~2kHz tone
+    constant SAMPLE_PRESCALER   : std_logic_vector(9 downto 0) := "0001101000"; -- f_sample = 511.538 kHz for sine table ~1kHz tone
 
     signal triangle_counter     : std_logic_vector(8 downto 0);
     signal triangle_upcounting  : std_logic;

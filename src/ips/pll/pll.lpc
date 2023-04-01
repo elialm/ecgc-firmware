@@ -16,8 +16,8 @@ CoreRevision=5.8
 ModuleName=pll
 SourceFormat=VHDL
 ParameterFileVersion=1.0
-Date=06/30/2022
-Time=15:49:15
+Date=03/31/2023
+Time=15:12:18
 
 [Parameters]
 Verilog=0
@@ -63,7 +63,7 @@ CLKOS_DIV=4
 FREQ_PIN_CLKOS=100
 OS_Tol=0.0
 CLKOS_AFREQ=53.200000
-CLKOS_PHASEADJ=180
+CLKOS_PHASEADJ=0
 CLKOS_TRIM_POL=Rising
 CLKOS_TRIM_DELAY=0
 EnCLKOS2=0
@@ -84,4 +84,4 @@ CLKOS3_AFREQ=
 CLKOS3_PHASEADJ=0
 
 [Command]
-cmd_line= -w -n pll -lang vhdl -synth lse -arch se5c00 -type pll -fin 53.2 -mdiv 1 -ndiv 1 -trimp 0 -phasep 0 -trimp_r -adiv 4 -trims 0 -phases 180 -trims_r -bdiv 4 -phase_cntl STATIC -fb_mode 1 -lock
+cmd_line= -w -n pll -lang vhdl -synth lse -arch se5c00 -type pll -fin 53.2 -mdiv 1 -ndiv 1 -trimp 0 -phasep 0 -trimp_r -adiv 4 -trims 0 -phases 0 -trims_r -bdiv 4 -phase_cntl STATIC -fb_mode 1 -lock
