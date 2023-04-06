@@ -4,9 +4,9 @@
   (keywordMap (keywordLevel 0))
   (status
     (written
-      (timestamp 2023 3 31 15 12 18)
+      (timestamp 2023 4 6 13 31 4)
       (program "SCUBA" (version "Diamond (64-bit) 3.12.1.454"))))
-      (comment "E:\Programs\lscc\diamond\3.12\ispfpga\bin\nt64\scuba.exe -w -n pll -lang vhdl -synth lse -arch se5c00 -type pll -fin 53.2 -mdiv 1 -ndiv 1 -trimp 0 -phasep 0 -trimp_r -adiv 4 -trims 0 -phases 0 -trims_r -bdiv 4 -phase_cntl STATIC -fb_mode 1 -lock ")
+      (comment "E:\Programs\lscc\diamond\3.12\ispfpga\bin\nt64\scuba.exe -w -n pll -lang vhdl -synth lse -arch se5c00 -type pll -fin 53.2 -mdiv 1 -ndiv 1 -trimp 0 -phasep 0 -trimp_r -adiv 4 -trims 0 -phases 0 -trims_r -bdiv 7 -phase_cntl STATIC -fb_mode 1 -lock ")
   (library ORCLIB
     (edifLevel 0)
     (technology
@@ -175,7 +175,7 @@
             (property CLKOS_FPHASE
               (string "0"))
             (property CLKOS_CPHASE
-              (string "3"))
+              (string "6"))
             (property CLKOP_FPHASE
               (string "0"))
             (property CLKOP_CPHASE
@@ -211,7 +211,7 @@
             (property CLKOS2_ENABLE
               (string "DISABLED"))
             (property FREQUENCY_PIN_CLKOS
-              (string "53.200000"))
+              (string "30.400000"))
             (property OUTDIVIDER_MUXB2
               (string "DIVB"))
             (property PREDIVIDER_MUXB1
@@ -241,7 +241,7 @@
             (property CLKOS2_DIV
               (string "1"))
             (property CLKOS_DIV
-              (string "4"))
+              (string "7"))
             (property CLKOP_DIV
               (string "4"))
             (property CLKFB_DIV

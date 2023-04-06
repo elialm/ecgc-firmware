@@ -525,8 +525,9 @@ begin
     -- Audio controller [TEMP]
     AUDIO_CTRL_INST : entity work.audio_controller
     port map (
-        CLK_I => pll_clk_os,
+        CLK_I => pll_clk_op,
         RST_I => USER_RST,
+        CLK_S => pll_clk_os,
         AUDIO_OUT => AUDIO_OUT);
 
     -- AUDIO_OUT <= '0';

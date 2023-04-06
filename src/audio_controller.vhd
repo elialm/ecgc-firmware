@@ -22,6 +22,8 @@ entity audio_controller is
     port (
         CLK_I       : in std_logic;
         RST_I       : in std_logic;
+
+        CLK_S       : in std_logic;
         AUDIO_OUT   : out std_logic);
 end audio_controller;
 
@@ -39,8 +41,9 @@ architecture behaviour of audio_controller is
     constant TRIANGLE_INIT      : std_logic_vector(8 downto 0) := "000000001";
     constant TRIANGLE_BOTTOM    : std_logic_vector(8 downto 0) := "000000101";
     constant TRIANGLE_TOP       : std_logic_vector(8 downto 0) := "100011101";
-    -- constant SAMPLE_PRESCALER   : std_logic_vector(9 downto 0) := "1001011010"; -- f_sample = 44.115 kHz
-    constant SAMPLE_PRESCALER   : std_logic_vector(9 downto 0) := "0001101000"; -- f_sample = 511.538 kHz for sine table ~1kHz tone
+    -- constant SAMPLE_PRESCALER   : std_logic_vector(10 downto 0) := "00100101001"; -- f_audio ~= 200Hz
+    constant SAMPLE_PRESCALER   : std_logic_vector(10 downto 0) := "00000011110"; -- f_audio ~= 2kHz
+    -- constant SAMPLE_PRESCALER   : std_logic_vector(10 downto 0) := "00000000011"; -- f_audio ~= 20kHz
 
     signal triangle_counter     : std_logic_vector(8 downto 0);
     signal triangle_upcounting  : std_logic;
@@ -48,7 +51,7 @@ architecture behaviour of audio_controller is
     signal triangle_is_bottom   : std_logic;
 
     signal sample_counter       : std_logic_vector(7 downto 0);
-    signal sample_divider       : std_logic_vector(9 downto 0);
+    signal sample_divider       : std_logic_vector(10 downto 0);
     signal sample_clk           : std_logic;
     signal sample_current       : std_logic_vector(7 downto 0);
     signal sample_offset        : std_logic_vector(8 downto 0);
@@ -69,17 +72,7 @@ begin
             if RST_I = '1' then
                 triangle_counter <= TRIANGLE_INIT;
                 triangle_upcounting <= '1';
-
-                sample_divider <= (others => '0');
-                sample_clk <= '0';
             else
-                -- Sample clock divider
-                sample_divider <= std_logic_vector(unsigned(sample_divider) + 1);
-                if sample_divider = SAMPLE_PRESCALER then
-                    sample_clk <= not(sample_clk);
-                    sample_divider <= (others => '0');
-                end if;
-
                 -- Increment/decrement triangle wave counter
                 if triangle_upcounting = '1' then
                     triangle_counter <= std_logic_vector(unsigned(triangle_counter) + 4);
@@ -93,6 +86,23 @@ begin
 
                 if triangle_is_top = '1' then
                     triangle_upcounting <= '0';
+                end if;
+            end if;
+        end if;
+    end process;
+
+    process (CLK_S)
+    begin
+        if rising_edge(CLK_S) then
+            if RST_I = '1' then
+                sample_divider <= (others => '0');
+                sample_clk <= '0';
+            else
+                -- Sample clock divider
+                sample_divider <= std_logic_vector(unsigned(sample_divider) + 1);
+                if sample_divider = SAMPLE_PRESCALER then
+                    sample_clk <= not(sample_clk);
+                    sample_divider <= (others => '0');
                 end if;
             end if;
         end if;
