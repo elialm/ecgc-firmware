@@ -184,6 +184,10 @@ architecture behaviour of cart_tl is
     signal wb_dram_rdat : std_logic_vector(7 downto 0);
     signal wb_dram_ack  : std_logic;
 
+    signal wb_audio_stb     : std_logic;
+    signal wb_audio_rdat    : std_logic_vector(7 downto 0);
+    signal wb_audio_ack     : std_logic;
+
     signal led_gb_clk_divider   : std_logic_vector(18 downto 0);
     signal led_wb_clk_divider   : std_logic_vector(24 downto 0);
 
@@ -415,6 +419,10 @@ begin
         DRAM_ACK_I => wb_dram_ack,
         DRAM_ERR_I => '0',
 
+        AUDIO_STB_O => wb_audio_stb,
+        AUDIO_DAT_I => wb_audio_rdat,
+        AUDIO_ACK_I => wb_audio_ack,
+
         GPIO_IN(0) => '0',
         GPIO_IN(1) => '0',
         GPIO_IN(2) => '0',
@@ -477,6 +485,21 @@ begin
 
     DRAM_CLK <= pll_clk_op;
 
+    -- Audio controller [TEMP]
+    AUDIO_CTRL_INST : entity work.audio_controller
+    port map (
+        CLK_I => pll_clk_op,
+        RST_I => soft_reset,
+        CYC_I => wb_cyc,
+        STB_I => wb_audio_stb,
+        ACK_O => wb_audio_ack,
+        WE_I => wb_we,
+        ADR_I => wb_adr(3 downto 0),
+        DAT_O => wb_audio_rdat,
+        DAT_I => wb_data_incoming,
+        CLK_S => pll_clk_os,
+        AUDIO_OUT => AUDIO_OUT);
+
     -- GB clock indicator LED
     process (GB_CLK)
     begin
@@ -521,15 +544,5 @@ begin
     BTA_OEN <= hard_reset;
     BTD_OEN <= GB_CLK or hard_reset;
     BTD_DIR <= GB_RDN;
-
-    -- Audio controller [TEMP]
-    AUDIO_CTRL_INST : entity work.audio_controller
-    port map (
-        CLK_I => pll_clk_op,
-        RST_I => soft_reset,
-        CLK_S => pll_clk_os,
-        AUDIO_OUT => AUDIO_OUT);
-
-    -- AUDIO_OUT <= '0';
 
 end behaviour;

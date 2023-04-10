@@ -62,6 +62,11 @@ entity mbch is
         DRAM_ACK_I  : in std_logic;
         DRAM_ERR_I  : in std_logic;
 
+        -- Master interface to audio controller
+        AUDIO_STB_O : out std_logic;
+        AUDIO_DAT_I : in std_logic_vector(7 downto 0);
+        AUDIO_ACK_I : in std_logic;
+
         GPIO_IN     : in std_logic_vector(3 downto 0);
         GPIO_OUT    : out std_logic_vector(3 downto 0);
 
@@ -74,7 +79,7 @@ end mbch;
 
 architecture behaviour of mbch is
 
-    type bus_selection_t is (BS_REGISTER, BS_BOOT_ROM, BS_CART_RAM, BS_EFB, BS_DRAM);
+    type bus_selection_t is (BS_REGISTER, BS_BOOT_ROM, BS_CART_RAM, BS_EFB, BS_DRAM, BS_AUDIO);
 
     component boot_ram is
     port (
@@ -263,6 +268,9 @@ begin
                             register_data <= x"00";
                             register_ack <= '1';
 
+                        when b"1010_0110_----_----" =>
+                            bus_selector <= BS_AUDIO;
+
                         -- Cart RAM
                         when b"1011_00--_----_----" =>
                             bus_selector <= BS_CART_RAM;
@@ -310,6 +318,7 @@ begin
         cart_ram_data   when BS_CART_RAM,
         EFB_DAT_I       when BS_EFB,
         DRAM_DAT_I      when BS_DRAM,
+        AUDIO_DAT_I     when BS_AUDIO,
         register_data   when others;
 
     -- Bus selection ack
@@ -317,10 +326,12 @@ begin
     with bus_selector select wb_ack <=
         EFB_ACK_I       when BS_EFB,
         DRAM_ACK_I      when BS_DRAM,
+        AUDIO_ACK_I     when BS_AUDIO,
         register_ack    when others;
 
     -- Bus selection strobe
     EFB_STB_O <= '1' when bus_selector = BS_EFB else '0';
     DRAM_STB_O <= '1' when bus_selector = BS_DRAM else '0';
+    AUDIO_STB_O <= '1' when bus_selector = BS_AUDIO else '0';
     
 end behaviour;
