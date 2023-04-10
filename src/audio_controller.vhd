@@ -52,7 +52,6 @@ architecture behaviour of audio_controller is
 
     signal sample_counter       : std_logic_vector(7 downto 0);
     signal sample_divider       : std_logic_vector(10 downto 0);
-    signal sample_clk           : std_logic;
     signal sample_current       : std_logic_vector(7 downto 0);
     signal sample_offset        : std_logic_vector(8 downto 0);
 
@@ -96,24 +95,17 @@ begin
         if rising_edge(CLK_S) then
             if RST_I = '1' then
                 sample_divider <= (others => '0');
-                sample_clk <= '0';
+                sample_counter <= (others => '0');
             else
                 -- Sample clock divider
                 sample_divider <= std_logic_vector(unsigned(sample_divider) + 1);
                 if sample_divider = SAMPLE_PRESCALER then
-                    sample_clk <= not(sample_clk);
                     sample_divider <= (others => '0');
+
+                    -- Sample clock process
+                    sample_counter <= std_logic_vector(unsigned(sample_counter) + 1);
                 end if;
             end if;
-        end if;
-    end process;
-
-    process (sample_clk)
-    begin
-        if RST_I = '1' then
-            sample_counter <= (others => '0');
-        elsif rising_edge(sample_clk) then
-            sample_counter <= std_logic_vector(unsigned(sample_counter) + 1);
         end if;
     end process;
 

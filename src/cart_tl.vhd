@@ -526,7 +526,7 @@ begin
     AUDIO_CTRL_INST : entity work.audio_controller
     port map (
         CLK_I => pll_clk_op,
-        RST_I => USER_RST,
+        RST_I => soft_reset,
         CLK_S => pll_clk_os,
         AUDIO_OUT => AUDIO_OUT);
 
