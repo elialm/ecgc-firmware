@@ -45,12 +45,10 @@ architecture behaviour of audio_controller is
         Q           : out std_logic_vector(7 downto 0));
     end component;
 
-    constant TRIANGLE_INIT          : std_logic_vector(8 downto 0) := "000000001";
-    constant TRIANGLE_BOTTOM        : std_logic_vector(8 downto 0) := "000000101";
-    constant TRIANGLE_TOP           : std_logic_vector(8 downto 0) := "100011101";
-    -- constant SAMPLE_DIVIDER_INIT   : std_logic_vector(10 downto 0) := "00100101001"; -- f_audio ~= 200Hz
+    constant TRIANGLE_INIT          : std_logic_vector(8 downto 0) := "000000000";
+    constant TRIANGLE_BOTTOM        : std_logic_vector(8 downto 0) := "000000010";  -- Dec = 2
+    constant TRIANGLE_TOP           : std_logic_vector(8 downto 0) := "100011110";  -- Dec = 286
     constant SAMPLE_DIVIDER_INIT    : std_logic_vector(10 downto 0) := "00000011110"; -- f_audio ~= 2kHz
-    -- constant SAMPLE_DIVIDER_INIT   : std_logic_vector(10 downto 0) := "00000000011"; -- f_audio ~= 20kHz
 
     signal triangle_counter     : std_logic_vector(8 downto 0);
     signal triangle_upcounting  : std_logic;
@@ -90,9 +88,9 @@ begin
             else
                 -- Increment/decrement triangle wave counter
                 if triangle_upcounting = '1' then
-                    triangle_counter <= std_logic_vector(unsigned(triangle_counter) + 4);
+                    triangle_counter <= std_logic_vector(unsigned(triangle_counter) + 2);
                 else
-                    triangle_counter <= std_logic_vector(unsigned(triangle_counter) - 4);
+                    triangle_counter <= std_logic_vector(unsigned(triangle_counter) - 2);
                 end if;
 
                 if triangle_is_bottom = '1' then
