@@ -20,6 +20,7 @@ use ieee.std_logic_misc.all;
 
 entity audio_controller is
     port (
+        -- Wishbone signals for configuration
         CLK_I   : in std_logic;
         RST_I   : in std_logic;
         CYC_I   : in std_logic;
@@ -30,8 +31,9 @@ entity audio_controller is
         DAT_O   : out std_logic_vector(7 downto 0);
         DAT_I   : in std_logic_vector(7 downto 0);
 
-        CLK_S       : in std_logic;
-        AUDIO_OUT   : out std_logic);
+        -- Miscellaneous signals
+        CLK_S  : in std_logic;                          -- Sample clock
+        AOUT   : out std_logic_vector(3 downto 0));     -- Audio outputs of channels 1-4
 end audio_controller;
 
 architecture behaviour of audio_controller is
@@ -45,6 +47,19 @@ architecture behaviour of audio_controller is
         Q           : out std_logic_vector(7 downto 0));
     end component;
 
+    component audio_voice
+    port (
+        CLK_I       : in std_logic;
+        CLK_S       : in std_logic;
+        RST_I       : in std_logic;
+        SMPL_EN     : out std_logic;
+        SMPL_A      : out std_logic_vector(7 downto 0);
+        SMPL_D      : in std_logic_vector(7 downto 0);
+        SMPL_DIV    : in std_logic_vector(10 downto 0);
+        TRNG_CNT    : in std_logic_vector(8 downto 0);
+        AOUT        : out std_logic);
+    end component;
+
     constant TRIANGLE_INIT          : std_logic_vector(8 downto 0) := "000000000";
     constant TRIANGLE_BOTTOM        : std_logic_vector(8 downto 0) := "000000010";  -- Dec = 2
     constant TRIANGLE_TOP           : std_logic_vector(8 downto 0) := "100011110";  -- Dec = 286
@@ -55,25 +70,39 @@ architecture behaviour of audio_controller is
     signal triangle_is_top      : std_logic;
     signal triangle_is_bottom   : std_logic;
 
-    signal sample_index         : std_logic_vector(7 downto 0);
-    signal sample_counter       : std_logic_vector(10 downto 0);
-    signal sample_divider_sh    : std_logic_vector(10 downto 0);
-    signal sample_divider       : std_logic_vector(10 downto 0);
-    signal sample_current       : std_logic_vector(7 downto 0);
-    signal sample_offset        : std_logic_vector(8 downto 0);
+    signal voice_smpl_en        : std_logic_vector(3 downto 0);
+    signal voice_smpl_a         : std_logic_vector(31 downto 0);
+    signal voice_smpl_d         : std_logic_vector(31 downto 0);
+    signal voice_smpl_div       : std_logic_vector(43 downto 0);
 
     signal wb_ack       : std_logic;
     signal wb_dat_o     : std_logic_vector(7 downto 0);
 
 begin
 
-    SIN_SAMPLES : component sin_table
-    port map (
-        Address => sample_index,
-        OutClock => CLK_I,
-        OutClockEn => '1',
-        Reset => RST_I,
-        Q => sample_current);
+    SAMPLE_TABLES : for i in 0 to 3 generate
+        SAMPLE_TABLE_X : component sin_table
+        port map (
+            Address => voice_smpl_a(((i + 1) * 8 - 1) downto (i * 8)),
+            OutClock => CLK_I,
+            OutClockEn => voice_smpl_en(i),
+            Reset => RST_I,
+            Q => voice_smpl_d(((i + 1) * 8 - 1) downto (i * 8)));
+    end generate SAMPLE_TABLES;
+
+    VOICES : for i in 0 to 3 generate
+        VOICE_X : component audio_voice
+        port map (
+            CLK_I => CLK_I,
+            CLK_S => CLK_S,
+            RST_I => RST_I,
+            SMPL_EN => voice_smpl_en(i),
+            SMPL_A => voice_smpl_a(((i + 1) * 8 - 1) downto (i * 8)),
+            SMPL_D => voice_smpl_d(((i + 1) * 8 - 1) downto (i * 8)),
+            SMPL_DIV => voice_smpl_div(((i + 1) * 11 - 1) downto (i * 11)),
+            TRNG_CNT => triangle_counter,
+            AOUT => AOUT(i));
+    end generate VOICES;
 
     process (CLK_I)
     begin
@@ -84,7 +113,10 @@ begin
                 triangle_counter <= TRIANGLE_INIT;
                 triangle_upcounting <= '1';
 
-                sample_divider_sh <= SAMPLE_DIVIDER_INIT;
+                voice_smpl_div(10 downto 0) <= SAMPLE_DIVIDER_INIT;
+                voice_smpl_div(21 downto 11) <= SAMPLE_DIVIDER_INIT;
+                voice_smpl_div(32 downto 22) <= SAMPLE_DIVIDER_INIT;
+                voice_smpl_div(43 downto 33) <= SAMPLE_DIVIDER_INIT;
             else
                 -- Increment/decrement triangle wave counter
                 if triangle_upcounting = '1' then
@@ -104,18 +136,68 @@ begin
                 -- Wishbone interface
                 if (CYC_I and STB_I and not(wb_ack)) = '1' then
                     case ADR_I is
+                        -- Channel 1 low frequency bits
                         when "0000" =>
                             if WE_I = '1' then
-                                sample_divider_sh(7 downto 0) <= DAT_I;
+                                voice_smpl_div(7 downto 0) <= DAT_I;
                             else
-                                wb_dat_o <= sample_divider_sh(7 downto 0);
+                                wb_dat_o <= voice_smpl_div(7 downto 0);
                             end if;
 
+                        -- Channel 1 high frequency bits
                         when "0001" =>
                             if WE_I = '1' then
-                                sample_divider_sh(10 downto 8) <= DAT_I(2 downto 0);
+                                voice_smpl_div(10 downto 8) <= DAT_I(2 downto 0);
                             else
-                                wb_dat_o <= "00000" & sample_divider_sh(10 downto 8);
+                                wb_dat_o <= "00000" & voice_smpl_div(10 downto 8);
+                            end if;
+
+                        -- Channel 2 low frequency bits
+                        when "0100" =>
+                            if WE_I = '1' then
+                                voice_smpl_div(18 downto 11) <= DAT_I;
+                            else
+                                wb_dat_o <= voice_smpl_div(18 downto 11);
+                            end if;
+
+                        -- Channel 2 high frequency bits
+                        when "0101" =>
+                            if WE_I = '1' then
+                                voice_smpl_div(21 downto 19) <= DAT_I(2 downto 0);
+                            else
+                                wb_dat_o <= "00000" & voice_smpl_div(21 downto 19);
+                            end if;
+
+                        -- Channel 3 low frequency bits
+                        when "1000" =>
+                            if WE_I = '1' then
+                                voice_smpl_div(29 downto 22) <= DAT_I;
+                            else
+                                wb_dat_o <= voice_smpl_div(29 downto 22);
+                            end if;
+
+                        -- Channel 3 high frequency bits
+                        when "1001" =>
+                            if WE_I = '1' then
+                                voice_smpl_div(32 downto 30) <= DAT_I(2 downto 0);
+                            else
+                                wb_dat_o <= "00000" & voice_smpl_div(32 downto 30);
+                            end if;
+
+                        -- Channel 4 low frequency bits
+                        when "1100" =>
+                            if WE_I = '1' then
+                                voice_smpl_div(40 downto 33) <= DAT_I;
+                            else
+                                wb_dat_o <= voice_smpl_div(40 downto 33);
+                            end if;
+
+                        -- Channel 4 high frequency bits
+                        when "1101" =>
+                            if WE_I = '1' then
+                                voice_smpl_div(43 downto 41) <= DAT_I(2 downto 0);
+                            else
+                                wb_dat_o <= "00000" & voice_smpl_div(43 downto 41);
                             end if;
 
                         when others =>
@@ -128,34 +210,8 @@ begin
         end if;
     end process;
 
-    process (CLK_S)
-    begin
-        if rising_edge(CLK_S) then
-            if RST_I = '1' then
-                sample_counter <= (others => '0');
-                sample_divider <= SAMPLE_DIVIDER_INIT;
-                sample_index <= (others => '0');
-            else
-                -- Sample clock divider
-                sample_counter <= std_logic_vector(unsigned(sample_counter) + 1);
-                if sample_counter = sample_divider then
-                    sample_counter <= (others => '0');
-                    sample_divider <= sample_divider_sh;
-
-                    -- Sample clock process
-                    sample_index <= std_logic_vector(unsigned(sample_index) + 1);
-                end if;
-            end if;
-        end if;
-    end process;
-
     triangle_is_bottom <= '1' when triangle_counter = TRIANGLE_BOTTOM else '0';
     triangle_is_top <= '1' when triangle_counter = TRIANGLE_TOP else '0';
-
-    -- Note: DAC value must be offset by +16
-    sample_offset <= std_logic_vector(unsigned('0' & sample_current) + 16);
-
-    AUDIO_OUT <= '1' when unsigned(sample_offset) > unsigned(triangle_counter) else '0';
 
     DAT_O <= wb_dat_o;
     ACK_O <= wb_ack;
