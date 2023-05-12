@@ -111,10 +111,11 @@ begin
 
     -- Select which voice divider is read from
     with voice_selector select vsmpl_div_r <=
-        voice_smpl_div(10 downto 0) when "00"
-        voice_smpl_div(21 downto 11) when "01"
-        voice_smpl_div(32 downto 22) when "10"
-        voice_smpl_div(43 downto 33) when "11"
+        voice_smpl_div(10 downto 0) when "00",
+        voice_smpl_div(21 downto 11) when "01",
+        voice_smpl_div(32 downto 22) when "10",
+        voice_smpl_div(43 downto 33) when "11",
+        "11111111111" when others;
 
     process (CLK_I)
     begin
@@ -183,6 +184,8 @@ begin
                             voice_smpl_div(32 downto 22) <= vsmpl_div_w;
                         when "11" =>
                             voice_smpl_div(43 downto 33) <= vsmpl_div_w;
+                        when others =>
+                            null;
                     end case;
                 end if;
             end if;
