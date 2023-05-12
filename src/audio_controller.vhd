@@ -56,16 +56,17 @@ architecture behaviour of audio_controller is
         SMPL_A      : out std_logic_vector(7 downto 0);
         SMPL_D      : in std_logic_vector(7 downto 0);
         SMPL_DIV    : in std_logic_vector(10 downto 0);
-        TRNG_CNT    : in std_logic_vector(8 downto 0);
+        TRNG_CNT    : in std_logic_vector(9 downto 0);
         AOUT        : out std_logic);
     end component;
 
-    constant TRIANGLE_INIT          : std_logic_vector(8 downto 0) := "000000000";
-    constant TRIANGLE_BOTTOM        : std_logic_vector(8 downto 0) := "000000010";  -- Dec = 2
-    constant TRIANGLE_TOP           : std_logic_vector(8 downto 0) := "100011110";  -- Dec = 286
+    constant TRIANGLE_INIT          : std_logic_vector(9 downto 0) := "0000000000";
+    constant TRIANGLE_BOTTOM        : std_logic_vector(9 downto 0) := "0000000010";  -- Dec = 2
+    constant TRIANGLE_TOP           : std_logic_vector(9 downto 0) := "0100011110";  -- Dec = 286
+    -- constant TRIANGLE_TOP           : std_logic_vector(9 downto 0) := "1000011110";  -- Dec = 542
     constant SAMPLE_DIVIDER_INIT    : std_logic_vector(10 downto 0) := "00000011110"; -- f_audio ~= 2kHz
 
-    signal triangle_counter     : std_logic_vector(8 downto 0);
+    signal triangle_counter     : std_logic_vector(9 downto 0);
     signal triangle_upcounting  : std_logic;
     signal triangle_is_top      : std_logic;
     signal triangle_is_bottom   : std_logic;
@@ -74,6 +75,10 @@ architecture behaviour of audio_controller is
     signal voice_smpl_a         : std_logic_vector(31 downto 0);
     signal voice_smpl_d         : std_logic_vector(31 downto 0);
     signal voice_smpl_div       : std_logic_vector(43 downto 0);
+
+    alias voice_selector : std_logic_vector(1 downto 0) is ADR_I(1 downto 0);
+    signal vsmpl_div_r  : std_logic_vector(10 downto 0);
+    signal vsmpl_div_w  : std_logic_vector(10 downto 0);
 
     signal wb_ack       : std_logic;
     signal wb_dat_o     : std_logic_vector(7 downto 0);
@@ -104,6 +109,13 @@ begin
             AOUT => AOUT(i));
     end generate VOICES;
 
+    -- Select which voice divider is read from
+    with voice_selector select vsmpl_div_r <=
+        voice_smpl_div(10 downto 0) when "00"
+        voice_smpl_div(21 downto 11) when "01"
+        voice_smpl_div(32 downto 22) when "10"
+        voice_smpl_div(43 downto 33) when "11"
+
     process (CLK_I)
     begin
         if rising_edge(CLK_I) then
@@ -117,6 +129,7 @@ begin
                 voice_smpl_div(21 downto 11) <= SAMPLE_DIVIDER_INIT;
                 voice_smpl_div(32 downto 22) <= SAMPLE_DIVIDER_INIT;
                 voice_smpl_div(43 downto 33) <= SAMPLE_DIVIDER_INIT;
+                vsmpl_div_w <= SAMPLE_DIVIDER_INIT;
             else
                 -- Increment/decrement triangle wave counter
                 if triangle_upcounting = '1' then
@@ -135,76 +148,42 @@ begin
 
                 -- Wishbone interface
                 if (CYC_I and STB_I and not(wb_ack)) = '1' then
-                    case ADR_I is
-                        -- Channel 1 low frequency bits
-                        when "0000" =>
+                    case? ADR_I is
+                        -- Low frequency bits
+                        when "--00" =>
                             if WE_I = '1' then
-                                voice_smpl_div(7 downto 0) <= DAT_I;
+                                vsmpl_div_w(7 downto 0) <= DAT_I;
                             else
-                                wb_dat_o <= voice_smpl_div(7 downto 0);
+                                wb_dat_o <= vsmpl_div_w(7 downto 0);
                             end if;
 
-                        -- Channel 1 high frequency bits
-                        when "0001" =>
+                        -- High frequency bits
+                        when "--01" =>
                             if WE_I = '1' then
-                                voice_smpl_div(10 downto 8) <= DAT_I(2 downto 0);
+                                vsmpl_div_w(10 downto 8) <= DAT_I(2 downto 0);
                             else
-                                wb_dat_o <= "00000" & voice_smpl_div(10 downto 8);
-                            end if;
-
-                        -- Channel 2 low frequency bits
-                        when "0100" =>
-                            if WE_I = '1' then
-                                voice_smpl_div(18 downto 11) <= DAT_I;
-                            else
-                                wb_dat_o <= voice_smpl_div(18 downto 11);
-                            end if;
-
-                        -- Channel 2 high frequency bits
-                        when "0101" =>
-                            if WE_I = '1' then
-                                voice_smpl_div(21 downto 19) <= DAT_I(2 downto 0);
-                            else
-                                wb_dat_o <= "00000" & voice_smpl_div(21 downto 19);
-                            end if;
-
-                        -- Channel 3 low frequency bits
-                        when "1000" =>
-                            if WE_I = '1' then
-                                voice_smpl_div(29 downto 22) <= DAT_I;
-                            else
-                                wb_dat_o <= voice_smpl_div(29 downto 22);
-                            end if;
-
-                        -- Channel 3 high frequency bits
-                        when "1001" =>
-                            if WE_I = '1' then
-                                voice_smpl_div(32 downto 30) <= DAT_I(2 downto 0);
-                            else
-                                wb_dat_o <= "00000" & voice_smpl_div(32 downto 30);
-                            end if;
-
-                        -- Channel 4 low frequency bits
-                        when "1100" =>
-                            if WE_I = '1' then
-                                voice_smpl_div(40 downto 33) <= DAT_I;
-                            else
-                                wb_dat_o <= voice_smpl_div(40 downto 33);
-                            end if;
-
-                        -- Channel 4 high frequency bits
-                        when "1101" =>
-                            if WE_I = '1' then
-                                voice_smpl_div(43 downto 41) <= DAT_I(2 downto 0);
-                            else
-                                wb_dat_o <= "00000" & voice_smpl_div(43 downto 41);
+                                wb_dat_o <= "00000" & vsmpl_div_w(10 downto 8);
                             end if;
 
                         when others =>
                             wb_dat_o <= x"00";
-                    end case;
+                    end case?;
                     
                     wb_ack <= '1';
+                end if;
+
+                -- Update write values
+                if wb_ack = '1' then
+                    case voice_selector is
+                        when "00" =>
+                            voice_smpl_div(10 downto 0) <= vsmpl_div_w;
+                        when "01" =>
+                            voice_smpl_div(21 downto 11) <= vsmpl_div_w;
+                        when "10" =>
+                            voice_smpl_div(32 downto 22) <= vsmpl_div_w;
+                        when "11" =>
+                            voice_smpl_div(43 downto 33) <= vsmpl_div_w;
+                    end case;
                 end if;
             end if;
         end if;
