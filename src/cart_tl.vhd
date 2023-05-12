@@ -65,7 +65,7 @@ entity cart_tl is
         DRAM_DQ     : inout std_logic_vector(7 downto 0);
 
         -- Audio related
-        AUDIO_OUT   : out std_logic;
+        AOUT        : out std_logic_vector(3 downto 0);
 
         -- Temporary for testing
         USER_RST    : in std_logic;
@@ -498,7 +498,7 @@ begin
         DAT_O => wb_audio_rdat,
         DAT_I => wb_data_incoming,
         CLK_S => pll_clk_os,
-        AUDIO_OUT => AUDIO_OUT);
+        AOUT => AOUT);
 
     -- GB clock indicator LED
     process (GB_CLK)

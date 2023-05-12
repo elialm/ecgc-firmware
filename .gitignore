@@ -20,3 +20,6 @@ transcript
 
 # Simulation files
 /sim
+
+# Reveal files
+/reveal.*

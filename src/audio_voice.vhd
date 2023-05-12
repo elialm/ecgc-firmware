@@ -43,7 +43,6 @@ architecture behaviour of audio_voice is
 
     signal sample_index         : std_logic_vector(7 downto 0);
     signal sample_counter       : std_logic_vector(10 downto 0);
-    signal sample_divider_sh    : std_logic_vector(10 downto 0);
     signal sample_divider       : std_logic_vector(10 downto 0);
     signal sample_offset        : std_logic_vector(8 downto 0);
 
