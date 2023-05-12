@@ -131,6 +131,8 @@ begin
                 voice_smpl_div(32 downto 22) <= SAMPLE_DIVIDER_INIT;
                 voice_smpl_div(43 downto 33) <= SAMPLE_DIVIDER_INIT;
                 vsmpl_div_w <= SAMPLE_DIVIDER_INIT;
+
+                wb_dat_o <= (others => '0');
             else
                 -- Increment/decrement triangle wave counter
                 if triangle_upcounting = '1' then

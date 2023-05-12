@@ -78,10 +78,12 @@ begin
         end loop;
     end process;
 
+    stb_i <= cyc_i;
+
     -- Bus transactions
     process (clk_i)
     begin
-        if falling_edge(clk_i) then
+        if rising_edge(clk_i) then
             transaction_id <= transaction_id + 1;
 
             case transaction_id is
@@ -101,6 +103,16 @@ begin
                     null;
                 when 7 =>
                     rst_i <= '0';
+                when 8 =>
+                    adr_i <= "0000";
+                    we_i <= '1';
+                    dat_i <= "10100101";
+                    cyc_i <= '1';
+                when 9 =>
+                    null;
+                when 10 =>
+                    cyc_i <= '0';
+                    we_i <= '0';
                 when others =>
                     transaction_id <= transaction_id;
             end case;
