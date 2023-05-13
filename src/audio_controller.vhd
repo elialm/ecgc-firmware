@@ -69,7 +69,7 @@ architecture behaviour of audio_controller is
     signal voice_smpl_div       : std_logic_vector(43 downto 0);
     signal voice_smpl_vol       : std_logic_vector(15 downto 0);
 
-    alias voice_selector : std_logic_vector(1 downto 0) is ADR_I(1 downto 0);
+    alias voice_selector : std_logic_vector(1 downto 0) is ADR_I(3 downto 2);
     signal vsmpl_div_r  : std_logic_vector(10 downto 0);
     signal vsmpl_div_w  : std_logic_vector(10 downto 0);
     signal vsmpl_vol_r  : std_logic_vector(3 downto 0);
@@ -142,6 +142,9 @@ begin
             else
                 -- Wishbone interface
                 if (CYC_I and STB_I and not(wb_ack)) = '1' then
+                    vsmpl_div_w <= vsmpl_div_r;
+                    vsmpl_vol_w <= vsmpl_vol_r;
+
                     case? ADR_I is
                         -- Low frequency bits
                         when "--00" =>
@@ -172,12 +175,16 @@ begin
                     case voice_selector is
                         when "00" =>
                             voice_smpl_div(10 downto 0) <= vsmpl_div_w;
+                            voice_smpl_vol(3 downto 0) <= vsmpl_vol_w;
                         when "01" =>
                             voice_smpl_div(21 downto 11) <= vsmpl_div_w;
+                            voice_smpl_vol(7 downto 4) <= vsmpl_vol_w;
                         when "10" =>
                             voice_smpl_div(32 downto 22) <= vsmpl_div_w;
+                            voice_smpl_vol(11 downto 8) <= vsmpl_vol_w;
                         when "11" =>
                             voice_smpl_div(43 downto 33) <= vsmpl_div_w;
+                            voice_smpl_vol(15 downto 12) <= vsmpl_vol_w;
                         when others =>
                             null;
                     end case;

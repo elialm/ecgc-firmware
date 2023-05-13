@@ -113,6 +113,13 @@ begin
                 when 10 =>
                     cyc_i <= '0';
                     we_i <= '0';
+                when 11 =>
+                    adr_i <= "0100";
+                    cyc_i <= '1';
+                when 12 =>
+                    null;
+                when 13 =>
+                    cyc_i <= '0';
                 when others =>
                     transaction_id <= transaction_id;
             end case;

@@ -268,6 +268,7 @@ begin
                             register_data <= x"00";
                             register_ack <= '1';
 
+                        -- Audio controller
                         when b"1010_0110_----_----" =>
                             bus_selector <= BS_AUDIO;
 
