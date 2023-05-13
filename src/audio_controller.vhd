@@ -56,6 +56,7 @@ architecture behaviour of audio_controller is
         SMPL_A      : out std_logic_vector(7 downto 0);
         SMPL_D      : in std_logic_vector(7 downto 0);
         SMPL_DIV    : in std_logic_vector(10 downto 0);
+        SMPL_VOL    : in std_logic_vector(3 downto 0);
         TRNG_CNT    : in std_logic_vector(9 downto 0);
         AOUT        : out std_logic);
     end component;
@@ -65,6 +66,7 @@ architecture behaviour of audio_controller is
     constant TRIANGLE_TOP           : std_logic_vector(9 downto 0) := "0100011110";  -- Dec = 286
     -- constant TRIANGLE_TOP           : std_logic_vector(9 downto 0) := "1000011110";  -- Dec = 542
     constant SAMPLE_DIVIDER_INIT    : std_logic_vector(10 downto 0) := "00000011110"; -- f_audio ~= 2kHz
+    constant SAMPLE_VOLUME_INIT     : std_logic_vector(3 downto 0) := "1111"; -- Max volume
 
     signal triangle_counter     : std_logic_vector(9 downto 0);
     signal triangle_upcounting  : std_logic;
@@ -75,10 +77,13 @@ architecture behaviour of audio_controller is
     signal voice_smpl_a         : std_logic_vector(31 downto 0);
     signal voice_smpl_d         : std_logic_vector(31 downto 0);
     signal voice_smpl_div       : std_logic_vector(43 downto 0);
+    signal voice_smpl_vol       : std_logic_vector(15 downto 0);
 
     alias voice_selector : std_logic_vector(1 downto 0) is ADR_I(1 downto 0);
     signal vsmpl_div_r  : std_logic_vector(10 downto 0);
     signal vsmpl_div_w  : std_logic_vector(10 downto 0);
+    signal vsmpl_vol_r  : std_logic_vector(3 downto 0);
+    signal vsmpl_vol_w  : std_logic_vector(3 downto 0);
 
     signal wb_ack       : std_logic;
     signal wb_dat_o     : std_logic_vector(7 downto 0);
@@ -105,6 +110,7 @@ begin
             SMPL_A => voice_smpl_a(((i + 1) * 8 - 1) downto (i * 8)),
             SMPL_D => voice_smpl_d(((i + 1) * 8 - 1) downto (i * 8)),
             SMPL_DIV => voice_smpl_div(((i + 1) * 11 - 1) downto (i * 11)),
+            SMPL_VOL => voice_smpl_vol(((i + 1) * 4 - 1) downto (i * 4)),
             TRNG_CNT => triangle_counter,
             AOUT => AOUT(i));
     end generate VOICES;
@@ -116,6 +122,14 @@ begin
         voice_smpl_div(32 downto 22) when "10",
         voice_smpl_div(43 downto 33) when "11",
         "11111111111" when others;
+
+    -- Select which voice volume is read from
+    with voice_selector select vsmpl_vol_r <=
+        voice_smpl_vol(3 downto 0) when "00",
+        voice_smpl_vol(7 downto 4) when "01",
+        voice_smpl_vol(11 downto 8) when "10",
+        voice_smpl_vol(15 downto 12) when "11",
+        "1111" when others;
 
     process (CLK_I)
     begin
@@ -131,6 +145,12 @@ begin
                 voice_smpl_div(32 downto 22) <= SAMPLE_DIVIDER_INIT;
                 voice_smpl_div(43 downto 33) <= SAMPLE_DIVIDER_INIT;
                 vsmpl_div_w <= SAMPLE_DIVIDER_INIT;
+
+                voice_smpl_vol(3 downto 0) <= SAMPLE_VOLUME_INIT;
+                voice_smpl_vol(7 downto 4) <= SAMPLE_VOLUME_INIT;
+                voice_smpl_vol(11 downto 8) <= SAMPLE_VOLUME_INIT;
+                voice_smpl_vol(15 downto 12) <= SAMPLE_VOLUME_INIT;
+                vsmpl_vol_w <= SAMPLE_VOLUME_INIT;
 
                 wb_dat_o <= (others => '0');
             else
@@ -157,15 +177,16 @@ begin
                             if WE_I = '1' then
                                 vsmpl_div_w(7 downto 0) <= DAT_I;
                             else
-                                wb_dat_o <= vsmpl_div_w(7 downto 0);
+                                wb_dat_o <= vsmpl_div_r(7 downto 0);
                             end if;
 
-                        -- High frequency bits
+                        -- High frequency bits and volume control
                         when "--01" =>
                             if WE_I = '1' then
                                 vsmpl_div_w(10 downto 8) <= DAT_I(2 downto 0);
+                                vsmpl_vol_w <= DAT_I(7 downto 4);
                             else
-                                wb_dat_o <= "00000" & vsmpl_div_w(10 downto 8);
+                                wb_dat_o <= vsmpl_vol_r & '0' & vsmpl_div_r(10 downto 8);
                             end if;
 
                         when others =>

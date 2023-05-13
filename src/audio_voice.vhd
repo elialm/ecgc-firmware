@@ -30,6 +30,7 @@ entity audio_voice is
         SMPL_A      : out std_logic_vector(7 downto 0);
         SMPL_D      : in std_logic_vector(7 downto 0);
         SMPL_DIV    : in std_logic_vector(10 downto 0);
+        SMPL_VOL    : in std_logic_vector(3 downto 0);
 
         -- Triangle counter for PWM modulation
         TRNG_CNT    : in std_logic_vector(9 downto 0);
