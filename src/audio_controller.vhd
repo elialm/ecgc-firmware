@@ -57,21 +57,11 @@ architecture behaviour of audio_controller is
         SMPL_D      : in std_logic_vector(7 downto 0);
         SMPL_DIV    : in std_logic_vector(10 downto 0);
         SMPL_VOL    : in std_logic_vector(3 downto 0);
-        TRNG_CNT    : in std_logic_vector(9 downto 0);
         AOUT        : out std_logic);
     end component;
 
-    constant TRIANGLE_INIT          : std_logic_vector(9 downto 0) := "0000000000";
-    constant TRIANGLE_BOTTOM        : std_logic_vector(9 downto 0) := "0000000010";  -- Dec = 2
-    constant TRIANGLE_TOP           : std_logic_vector(9 downto 0) := "0100011110";  -- Dec = 286
-    -- constant TRIANGLE_TOP           : std_logic_vector(9 downto 0) := "1000011110";  -- Dec = 542
     constant SAMPLE_DIVIDER_INIT    : std_logic_vector(10 downto 0) := "00000011110"; -- f_audio ~= 2kHz
     constant SAMPLE_VOLUME_INIT     : std_logic_vector(3 downto 0) := "1111"; -- Max volume
-
-    signal triangle_counter     : std_logic_vector(9 downto 0);
-    signal triangle_upcounting  : std_logic;
-    signal triangle_is_top      : std_logic;
-    signal triangle_is_bottom   : std_logic;
 
     signal voice_smpl_en        : std_logic_vector(3 downto 0);
     signal voice_smpl_a         : std_logic_vector(31 downto 0);
@@ -111,7 +101,6 @@ begin
             SMPL_D => voice_smpl_d(((i + 1) * 8 - 1) downto (i * 8)),
             SMPL_DIV => voice_smpl_div(((i + 1) * 11 - 1) downto (i * 11)),
             SMPL_VOL => voice_smpl_vol(((i + 1) * 4 - 1) downto (i * 4)),
-            TRNG_CNT => triangle_counter,
             AOUT => AOUT(i));
     end generate VOICES;
 
@@ -137,9 +126,6 @@ begin
             wb_ack <= '0';
 
             if RST_I = '1' then
-                triangle_counter <= TRIANGLE_INIT;
-                triangle_upcounting <= '1';
-
                 voice_smpl_div(10 downto 0) <= SAMPLE_DIVIDER_INIT;
                 voice_smpl_div(21 downto 11) <= SAMPLE_DIVIDER_INIT;
                 voice_smpl_div(32 downto 22) <= SAMPLE_DIVIDER_INIT;
@@ -154,21 +140,6 @@ begin
 
                 wb_dat_o <= (others => '0');
             else
-                -- Increment/decrement triangle wave counter
-                if triangle_upcounting = '1' then
-                    triangle_counter <= std_logic_vector(unsigned(triangle_counter) + 2);
-                else
-                    triangle_counter <= std_logic_vector(unsigned(triangle_counter) - 2);
-                end if;
-
-                if triangle_is_bottom = '1' then
-                    triangle_upcounting <= '1';
-                end if;
-
-                if triangle_is_top = '1' then
-                    triangle_upcounting <= '0';
-                end if;
-
                 -- Wishbone interface
                 if (CYC_I and STB_I and not(wb_ack)) = '1' then
                     case? ADR_I is
@@ -214,9 +185,6 @@ begin
             end if;
         end if;
     end process;
-
-    triangle_is_bottom <= '1' when triangle_counter = TRIANGLE_BOTTOM else '0';
-    triangle_is_top <= '1' when triangle_counter = TRIANGLE_TOP else '0';
 
     DAT_O <= wb_dat_o;
     ACK_O <= wb_ack;
