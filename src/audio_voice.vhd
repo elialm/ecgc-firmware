@@ -53,9 +53,6 @@ architecture behaviour of audio_voice is
     signal triangle_is_top      : std_logic;
     signal triangle_is_bottom   : std_logic;
 
-    signal wb_ack       : std_logic;
-    signal wb_dat_o     : std_logic_vector(7 downto 0);
-
 begin
 
     SMPL_EN <= '1';
@@ -112,9 +109,12 @@ begin
     triangle_is_bottom <= '1' when triangle_counter = TRIANGLE_BOTTOM else '0';
     triangle_is_top <= '1' when triangle_counter = TRIANGLE_TOP else '0';
 
-    -- Note: DAC value must be offset by +16
-    sample_offset <= std_logic_vector(unsigned('0' & SMPL_D) + 16);
+    with SMPL_VOL(3 downto 2) select sample_offset <=
+        std_logic_vector(unsigned("0" & SMPL_D) + 16) when "11",
+        std_logic_vector(unsigned("00" & SMPL_D(7 downto 1)) + 16) when "10",
+        std_logic_vector(unsigned("000" & SMPL_D(7 downto 2)) + 16) when "01",
+        std_logic_vector(unsigned("0000" & SMPL_D(7 downto 3)) + 16) when others;
 
-    AOUT <= '1' when unsigned(sample_offset) > unsigned(triangle_counter) else '0';
+    AOUT <= '1' when unsigned("0" & sample_offset) > unsigned(triangle_counter) else '0';
 
 end behaviour;
