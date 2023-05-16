@@ -89,6 +89,12 @@
         <Source name="impl1/impl1.xcf" type="Programming Project File" type_short="Programming">
             <Options/>
         </Source>
+        <Source name="reveal.rva" type="Reveal Analyzer Project File" type_short="RVA">
+            <Options/>
+        </Source>
+        <Source name="reveal.rvl" type="Reveal" type_short="Reveal" excluded="TRUE">
+            <Options/>
+        </Source>
         <Source name="sim/audio_controller/audio_controller.spf" type="Simulation Project File" type_short="SPF">
             <Options/>
         </Source>
