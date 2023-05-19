@@ -53,6 +53,8 @@ architecture behaviour of audio_voice is
     signal triangle_is_top      : std_logic;
     signal triangle_is_bottom   : std_logic;
 
+    signal pwm_audio    : std_logic;
+
 begin
 
     SMPL_EN <= '1';
@@ -115,6 +117,10 @@ begin
         std_logic_vector(unsigned("000" & SMPL_D(7 downto 2)) + 16) when "01",
         std_logic_vector(unsigned("0000" & SMPL_D(7 downto 3)) + 16) when others;
 
-    AOUT <= '1' when unsigned("0" & sample_offset) > unsigned(triangle_counter) else '0';
+    pwm_audio <= '1' when unsigned("0" & sample_offset) > unsigned(triangle_counter) else '0';
+    
+        with SMPL_VOL select AOUT <=
+        '0' when "0000",
+        pwm_audio when others;
 
 end behaviour;
