@@ -24,6 +24,7 @@ entity audio_voice is
         CLK_I   : in std_logic;     -- Logic clock
         CLK_S   : in std_logic;     -- Sample clock
         RST_I   : in std_logic;
+        RST_S   : in std_logic;
 
         -- Ports for connecting to a sample_table and audio control
         SMPL_EN     : out std_logic;
@@ -90,7 +91,7 @@ begin
     process (CLK_S)
     begin
         if rising_edge(CLK_S) then
-            if RST_I = '1' then
+            if (RST_I or RST_S) = '1' then
                 sample_counter <= (others => '0');
                 sample_divider <= SAMPLE_DIVIDER_INIT;
                 sample_index <= (others => '0');

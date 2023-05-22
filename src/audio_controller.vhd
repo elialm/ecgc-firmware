@@ -52,6 +52,7 @@ architecture behaviour of audio_controller is
         CLK_I       : in std_logic;
         CLK_S       : in std_logic;
         RST_I       : in std_logic;
+        RST_S       : in std_logic;
         SMPL_EN     : out std_logic;
         SMPL_A      : out std_logic_vector(7 downto 0);
         SMPL_D      : in std_logic_vector(7 downto 0);
@@ -75,6 +76,8 @@ architecture behaviour of audio_controller is
     signal vsmpl_vol_r  : std_logic_vector(3 downto 0);
     signal vsmpl_vol_w  : std_logic_vector(3 downto 0);
 
+    signal sample_reset_req     : std_logic;
+    signal sample_reset_ext     : std_logic_vector(1 downto 0);
     signal wb_ack       : std_logic;
     signal wb_dat_o     : std_logic_vector(7 downto 0);
 
@@ -96,6 +99,7 @@ begin
             CLK_I => CLK_I,
             CLK_S => CLK_S,
             RST_I => RST_I,
+            RST_S => sample_reset_req,
             SMPL_EN => voice_smpl_en(i),
             SMPL_A => voice_smpl_a(((i + 1) * 8 - 1) downto (i * 8)),
             SMPL_D => voice_smpl_d(((i + 1) * 8 - 1) downto (i * 8)),
@@ -120,6 +124,8 @@ begin
         voice_smpl_vol(15 downto 12) when "11",
         "1111" when others;
 
+    sample_reset_req <= or_reduce(sample_reset_ext);
+
     process (CLK_I)
     begin
         if rising_edge(CLK_I) then
@@ -137,9 +143,15 @@ begin
                 voice_smpl_vol(11 downto 8) <= SAMPLE_VOLUME_INIT;
                 voice_smpl_vol(15 downto 12) <= SAMPLE_VOLUME_INIT;
                 vsmpl_vol_w <= SAMPLE_VOLUME_INIT;
-
+                
+                sample_reset_ext <= (others => '0');
                 wb_dat_o <= (others => '0');
             else
+                -- Decrement sample reset extender
+                if sample_reset_req = '1' then
+                    sample_reset_ext <= std_logic_vector(unsigned(sample_reset_ext) - 1);
+                end if;
+
                 -- Wishbone interface
                 if (CYC_I and STB_I and not(wb_ack)) = '1' then
                     vsmpl_div_w <= vsmpl_div_r;
@@ -150,6 +162,7 @@ begin
                         when "--00" =>
                             if WE_I = '1' then
                                 vsmpl_div_w(7 downto 0) <= DAT_I;
+                                sample_reset_ext <= (others => '1');
                             else
                                 wb_dat_o <= vsmpl_div_r(7 downto 0);
                             end if;
@@ -159,6 +172,7 @@ begin
                             if WE_I = '1' then
                                 vsmpl_div_w(10 downto 8) <= DAT_I(2 downto 0);
                                 vsmpl_vol_w <= DAT_I(7 downto 4);
+                                sample_reset_ext <= (others => '1');
                             else
                                 wb_dat_o <= vsmpl_vol_r & '0' & vsmpl_div_r(10 downto 8);
                             end if;
