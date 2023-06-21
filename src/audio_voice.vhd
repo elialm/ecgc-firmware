@@ -10,7 +10,9 @@
 ----------------------------------------------------------------------------------
 -- Documentation
 --
--- TODO
+-- Audio controller's voice. These contain all the logic for driving an
+-- individual voice. It is controlled using a simple custom interface of
+-- configuration values. These signals are synchronised to CLK_I.
 ----------------------------------------------------------------------------------
 
 library ieee;
@@ -27,11 +29,11 @@ entity audio_voice is
         RST_S   : in std_logic;
 
         -- Ports for connecting to a sample_table and audio control
-        SMPL_EN     : out std_logic;
-        SMPL_A      : out std_logic_vector(7 downto 0);
-        SMPL_D      : in std_logic_vector(7 downto 0);
-        SMPL_DIV    : in std_logic_vector(10 downto 0);
-        SMPL_VOL    : in std_logic_vector(3 downto 0);
+        SMPL_EN     : out std_logic;                        -- Output for enabling the sample table
+        SMPL_A      : out std_logic_vector(7 downto 0);     -- Sample address
+        SMPL_D      : in std_logic_vector(7 downto 0);      -- Sample data
+        SMPL_DIV    : in std_logic_vector(10 downto 0);     -- Sample clock divider
+        SMPL_VOL    : in std_logic_vector(3 downto 0);      -- Audio volume (000 = off)
 
         AOUT    : out std_logic);   -- Audio out
 end audio_voice;

@@ -10,7 +10,16 @@
 ----------------------------------------------------------------------------------
 -- Documentation
 --
--- TODO
+-- Cartridge's audio controller for playing audio via the Vout pin on the
+-- cartridge's header. The controller contains memory mapped registers for 
+-- configuring audio. There are a number of 4 voices with independant controls.
+--
+-- The audio controller is clocked via 2 sources: CLK_I and CLK_S. CLK_I is the
+-- Wishbone clock and follows its specifications. CLK_S is used for clocking
+-- samples when playing audio. This clock is then passed through a configurable
+-- prescaler for setting the sample playing frequency.
+--
+-- The produced audio is outputted per channel via the AOUT pins.
 ----------------------------------------------------------------------------------
 
 library ieee;
