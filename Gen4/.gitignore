@@ -1,0 +1,25 @@
+# Lattice Diamond
+*.html
+impl*/
+*.xml
+.build_status
+.run_manager.ini
+.recovery
+.spread_sheet.ini
+.spreadsheet_view.ini
+*.dir/
+*.log
+*.tcl
+*.ccl
+*.srp
+*.dmp
+._Real_._Math_.vhd
+transcript
+*/work
+*/*.mti
+
+# Simulation files
+/sim
+
+# Reveal files
+/reveal.*

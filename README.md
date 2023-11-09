@@ -11,6 +11,15 @@ limited to:
 - SPI debugging
 - Cartridge DMA
 
+# Directory structure
+
+The [Gen3Prototype](/Gen3Prototype) directory contains the firmware for the
+3<sup>rd</sup> generation prototype.
+It currently has no planned changes,
+but I left it here as an archive.
+
+The [Gen4](/Gen4) directory has the firmware for the current cart iteration.
+
 # Development tools
 
 The FPGA used is the [LCMXO3D-9400HC-5BG256C](https://nl.mouser.com/ProductDetail/Lattice/LCMXO3D-9400HC-5BG256C?qs=P1JMDcb91o6QDVkyLV%2FaZw%3D%3D).
