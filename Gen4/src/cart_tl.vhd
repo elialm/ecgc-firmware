@@ -66,6 +66,41 @@ end entity cart_tl;
 
 architecture rtl of cart_tl is
 
+    component pll
+        port (
+            CLK   : in std_logic;
+            CLKOP : out std_logic;
+            CLKOK : out std_logic;
+            LOCK  : out std_logic
+        );
+    end component;
+
+    component CLKDIVB
+        -- synthesis translate_off
+        generic (
+            GSR : in string);
+        -- synthesis translate_on
+        port (
+            CLKI    : in std_logic;
+            RST     : in std_logic;
+            CDIV1   : out std_logic;
+            CDIV2   : out std_logic;
+            CDIV4   : out std_logic;
+            CDIV8   : out std_logic
+        );
+    end component;
+
+    attribute GSR : string;
+    attribute GSR of inst_clkdiv : label is "DISABLED";
+
+    signal pll_clk_op : std_logic;
+    signal pll_clk_ok : std_logic;
+    signal pll_lock : std_logic;
+    signal clk_100m : std_logic;
+    signal clk_50m : std_logic;
+    signal clk_25m : std_logic;
+    signal clk_12m5 : std_logic;
+
     signal gb_data_incoming : std_logic_vector(7 downto 0);
     signal gb_data_outgoing : std_logic_vector(7 downto 0);
 
@@ -81,10 +116,36 @@ architecture rtl of cart_tl is
 
 begin
 
+    -- PLL instantiation for frequency synthesis from FPGA_CLK33M
+    inst_pll : pll
+    port map(
+        CLK   => FPGA_CLK33M,
+        CLKOP => pll_clk_op,
+        CLKOK => pll_clk_ok,
+        LOCK  => pll_lock
+    );
+
+    -- CLKDIVB instantiation for lower clocks
+    inst_clkdiv : CLKDIVB
+    -- synthesis translate_off
+    generic map(
+        GSR => "disabled"
+    );
+    -- synthesis translate_on
+    port map(
+        CLKI    => pll_clk_op,
+        RST     => '0',
+        CDIV1   => clk_100m,
+        CDIV2   => clk_50m,
+        CDIV4   => clk_25m,
+        CDIV8   => clk_12m5
+    );
+
     -- Gameboy decoder instance
     GB_SIGNAL_DECODER : entity work.gb_decoder
         generic map(
-            ENABLE_TIMEOUT_DETECTION => true)
+            ENABLE_TIMEOUT_DETECTION => true
+        )
         port map(
             GB_CLK      => GB_CLK,
             GB_ADDR     => GB_ADDR,
@@ -93,7 +154,7 @@ begin
             GB_RDN      => GB_RDN,
             GB_CSN      => GB_CSN,
 
-            CLK_I => FPGA_CLK33M,
+            CLK_I => pll_clk_op,
             RST_I => FPGA_SOFT_RSTN,
             CYC_O => gbd_cyc,
             WE_O  => gbd_we,
@@ -106,7 +167,8 @@ begin
             ACCESS_RAM    => open,
             REFRESH_BLOCK => open,
             RD_TIMEOUT    => gb_timeout_rd,
-            WR_TIMEOUT    => gb_timeout_wr);
+            WR_TIMEOUT    => gb_timeout_wr
+        );
 
     CLK_EN <= '1';
     GB_DATA <= (others => 'Z');
