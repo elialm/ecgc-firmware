@@ -38,7 +38,6 @@ entity gb_decoder is
 
         ACCESS_ROM    : out std_logic;  -- Indicates when address range 0x0000-0x7FFF is being accessed. Only valid when CYC_O = 1.
         ACCESS_RAM    : out std_logic;  -- Indicates when address range 0xA000-0xBFFF is being accessed. Only valid when CYC_O = 1.
-        REFRESH_BLOCK : out std_logic;  -- Disallows DRAM controller from doing an auto refresh. This is done just before a possible Wishbone transaction.
         WR_TIMEOUT    : out std_logic;  -- Indicates that a write timeout has occurred. Asserting RST_I will reset this back to 0.
         RD_TIMEOUT    : out std_logic); -- Indicates that a read timeout has occurred. Asserting RST_I will reset this back to 0.
 end gb_decoder;
@@ -88,11 +87,6 @@ architecture behaviour of gb_decoder is
     signal cyc_timeout : std_logic;
     signal wb_cyc_o : std_logic;
 
-    -- Refresh block related
-    signal gb_clk_sync_p : std_logic;
-    signal rblock_counter : std_logic_vector(RBLOCK_COUNTER_BITS - 1 downto 0);
-    signal rblock_assert : std_logic;
-
 begin
 
     ADDRESS_SYNCHRONISER : component synchroniser
@@ -139,8 +133,6 @@ begin
                 gb_bus_state <= GBBS_AWAIT_ACCESS_FINISHED;
                 cyc_counter <= (others => '1');
                 wb_cyc_o <= '0';
-                gb_clk_sync_p <= '0';
-                rblock_counter <= (others => '0');
 
                 WE_O <= '0';
                 ADR_O <= (others => '0');
@@ -212,17 +204,6 @@ begin
             if cyc_timeout = '0' and ENABLE_TIMEOUT_DETECTION then
                 cyc_counter <= std_logic_vector(unsigned(cyc_counter) - 1);
             end if;
-
-            -- Check for rising GB_CLK edge to reset refresh block counter
-            gb_clk_sync_p <= gb_clk_sync;
-            if gb_clk_sync_p = '0' and gb_clk_sync = '1' then
-                rblock_counter <= T_COMP_RBLOCK;
-            end if;
-
-            -- Decrement refresh block counter
-            if rblock_assert = '1' then
-                rblock_counter <= std_logic_vector(unsigned(rblock_counter) - 1);
-            end if;
         end if;
     end process;
 
@@ -231,8 +212,5 @@ begin
     else generate
         cyc_timeout <= '0';
     end generate;
-
-    rblock_assert <= or_reduce(rblock_counter);
-    REFRESH_BLOCK <= rblock_assert;
 
 end behaviour;

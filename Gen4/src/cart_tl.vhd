@@ -165,7 +165,6 @@ begin
 
             ACCESS_ROM    => open,
             ACCESS_RAM    => open,
-            REFRESH_BLOCK => open,
             RD_TIMEOUT    => gb_timeout_rd,
             WR_TIMEOUT    => gb_timeout_wr
         );
