@@ -1,0 +1,52 @@
+[Device]
+Family=latticexp2
+PartType=LFXP2-8E
+PartName=LFXP2-8E-5M132C
+SpeedGrade=5
+Package=CSBGA132
+OperatingCondition=COM
+Status=S
+
+[IP]
+VendorName=Lattice Semiconductor Corporation
+CoreType=LPM
+CoreStatus=Demo
+CoreName=RAM_DQ
+CoreRevision=7.5
+ModuleName=boot_ram
+SourceFormat=VHDL
+ParameterFileVersion=1.0
+Date=11/24/2023
+Time=11:26:06
+
+[Parameters]
+Verilog=0
+VHDL=1
+EDIF=1
+Destination=Synplicity
+Expression=BusA(0 to 7)
+Order=Big Endian [MSB:LSB]
+IO=0
+Address=4096
+Data=8
+enByte=0
+ByteSize=9
+outPipeline=0
+GSR=Enabled
+Reset=Sync
+MemFile=c:/users/eliat/desktop/ecgc-firmware/gen4/mem/boot.mem
+MemFormat=hex
+EnECC=0
+Write=Normal
+adPipeline=0
+inPipeline=0
+MOR=0
+Pad=0
+Optimization=Speed
+Pipeline=0
+
+[FilesGenerated]
+c:/users/eliat/desktop/ecgc-firmware/gen4/mem/boot.mem=mem
+
+[Command]
+cmd_line= -w -n boot_ram -lang vhdl -synth lse -bus_exp 7 -bb -arch mg5a00 -type ramdq -device LFXP2-8E -addr_width 12 -data_width 8 -num_words 4096 -writemode NORMAL -resetmode SYNC -memfile c:/users/eliat/desktop/ecgc-firmware/gen4/mem/boot.mem -memformat hex -cascade -1
