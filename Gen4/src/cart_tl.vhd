@@ -445,7 +445,6 @@ begin
     GB_DATA <= gb_data_outgoing when (GB_CLK nor GB_RDN) = '1' else
         (others => 'Z');
     GB_BUS_EN <= '0';
-    GB_RSTN <= '1';
 
     RAM_ADQ <= (others => 'Z');
     RAM_A <= "000000";
