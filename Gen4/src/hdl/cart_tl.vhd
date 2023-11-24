@@ -18,6 +18,9 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
+library XP2;
+use XP2.all;
+
 entity cart_tl is
     generic (
         SIMULATION : boolean := FALSE
@@ -85,12 +88,14 @@ architecture rtl of cart_tl is
         );
         -- synthesis translate_on
         port (
-            CLKI  : in std_logic;
-            RST   : in std_logic;
-            CDIV1 : out std_logic;
-            CDIV2 : out std_logic;
-            CDIV4 : out std_logic;
-            CDIV8 : out std_logic
+            CLKI    : in std_logic;
+            RST     : in std_logic;
+            -- The synthesizer is not fond of the usage of release as a name...
+            RELEASE : in std_logic;
+            CDIV1   : out std_logic;
+            CDIV2   : out std_logic;
+            CDIV4   : out std_logic;
+            CDIV8   : out std_logic
         );
     end component;
 
@@ -216,7 +221,8 @@ architecture rtl of cart_tl is
             WE_O       : out std_logic;
             ADR_O      : out std_logic_vector(15 downto 0);
             DAT_O      : out std_logic_vector(7 downto 0);
-            DAT_I      : in std_logic_vector(7 downto 0));
+            DAT_I      : in std_logic_vector(7 downto 0)
+        );
     end component;
 
     component mbch
@@ -248,6 +254,7 @@ architecture rtl of cart_tl is
     signal pll_clk_op : std_logic;
     signal pll_clk_ok : std_logic;
     signal pll_lock : std_logic;
+    signal pll_lockn : std_logic;
     signal clk_div1 : std_logic;
     signal clk_div2 : std_logic;
     signal clk_div4 : std_logic;
@@ -319,20 +326,23 @@ begin
         LOCK  => pll_lock
     );
 
+    pll_lockn <= not(pll_lock);
+
     -- CLKDIVB instantiation for lower clocks
     inst_clkdiv : CLKDIVB
     -- synthesis translate_off
     generic map(
         GSR => "disabled"
-    );
+    )
     -- synthesis translate_on
     port map(
-        CLKI  => pll_clk_op,
-        RST   => '0',
-        CDIV1 => clk_div1,
-        CDIV2 => clk_div2,
-        CDIV4 => clk_div4,
-        CDIV8 => clk_div8
+        CLKI    => pll_clk_op,
+        RST     => pll_lockn,
+        RELEASE => '1',
+        CDIV1   => clk_div1,
+        CDIV2   => clk_div2,
+        CDIV4   => clk_div4,
+        CDIV8   => clk_div8
     );
 
     -- Instantiate reset controller (hard and soft resets)

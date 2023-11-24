@@ -139,6 +139,9 @@ architecture rtl of gameboy_tb is
 
 begin
 
+    -- 33.333333 MHz clock
+    fpga_clk33m <= not(fpga_clk33m) after 15 ns;
+
     inst_cart : cart_tl
     port map(
         FPGA_CLK33M => fpga_clk33m,
@@ -185,17 +188,8 @@ begin
         variable transaction_is_idle : boolean;
         variable transaction_is_read : boolean;
     begin
-    
-        -- Not assuming reset to be pressed
-        -- user_rst <= '1';
-        -- for i in 0 to 1 loop
-        -- wait for 500 ns;
-        -- gb_clk <= not(gb_clk);
-        -- end loop;
-        -- user_rst <= '0';
-        -- wait for 500 ns;
-
-        wait for 200 us;
+        -- Wait a bit for the PLL to lock
+        wait for 1 us;
     
         for i in test_bus_transactions'low to test_bus_transactions'high loop
             current_transaction := test_bus_transactions(i);
@@ -215,8 +209,8 @@ begin
                     case state is
                         when BS_CLK_UP_UP =>
                             gb_clk <= '1';
-                            gb_data <= x"UU";
-                            gb_addr(14 downto 0) <= x"UUUU";
+                            gb_data <= (others => 'U');
+                            gb_addr(14 downto 0) <= (others => 'U');
                             gb_rdn <= '0';
                             gb_addr(15) <= '1';
                             gb_csn <= '1';
@@ -230,7 +224,7 @@ begin
                             gb_csn <= not(transaction_address(15));
                             -- Data should be presented during read
                             if transaction_is_read then
-                                gb_data <= "ZZZZZZZZ";
+                                gb_data <= (others => 'Z');
                             end if;
                         when BS_CLK_HIGH_DOWN =>
                             null;
@@ -249,10 +243,10 @@ begin
                             gb_wrn <= '1';
                     end case;
                 else
-                    gb_addr(14 downto 0) <= x"UUUU";
+                    gb_addr(14 downto 0) <= (others => 'U');
                     gb_addr(15) <= '1';
                     gb_csn <= '1';
-                    gb_data <= x"UU";
+                    gb_data <= (others => 'U');
                     gb_rdn <= '0';
                     gb_wrn <= '1';
                     
