@@ -90,8 +90,9 @@ architecture rtl of cart_tl is
         port (
             CLKI    : in std_logic;
             RST     : in std_logic;
-            -- The synthesizer is not fond of the usage of release as a name...
+            -- synthesis translate_off
             RELEASE : in std_logic;
+            -- synthesis translate_on
             CDIV1   : out std_logic;
             CDIV2   : out std_logic;
             CDIV4   : out std_logic;
@@ -338,7 +339,9 @@ begin
     port map(
         CLKI    => pll_clk_op,
         RST     => pll_lockn,
+        -- synthesis translate_off
         RELEASE => '1',
+        -- synthesis translate_on
         CDIV1   => clk_div1,
         CDIV2   => clk_div2,
         CDIV4   => clk_div4,
