@@ -215,6 +215,28 @@ architecture rtl of cart_tl is
             DAT_I      : in std_logic_vector(7 downto 0));
     end component;
 
+    component mbch
+        port (
+            CLK_I          : in std_logic;
+            RST_I          : in std_logic;
+            CYC_I          : in std_logic;
+            WE_I           : in std_logic;
+            ACK_O          : out std_logic;
+            ADR_I          : in std_logic_vector(15 downto 0);
+            DAT_I          : in std_logic_vector(7 downto 0);
+            DAT_O          : out std_logic_vector(7 downto 0);
+            XRAM_ADR_O     : out std_logic_vector(21 downto 0);
+            XRAM_DAT_I     : in std_logic_vector(7 downto 0);
+            XRAM_ACK_I     : in std_logic;
+            GPIO_IN        : in std_logic_vector(3 downto 0);
+            GPIO_OUT       : out std_logic_vector(3 downto 0);
+            SELECT_MBC     : out std_logic_vector(2 downto 0);
+            SOFT_RESET_REQ : out std_logic;
+            SOFT_RESET_IN  : in std_logic;
+            DBG_ACTIVE     : in std_logic
+        );
+    end component;
+
     attribute GSR : string;
     attribute GSR of inst_clkdiv : label is "DISABLED";
 
@@ -233,7 +255,7 @@ architecture rtl of cart_tl is
     signal aux_reset : std_logic;
 
     -- Gameboy decoder related
-    signal gb_data_o     : std_logic_vector(7 downto 0);
+    signal gb_data_o : std_logic_vector(7 downto 0);
     signal gb_access_ram : std_logic;
     signal gb_timeout_rd : std_logic;
     signal gb_timeout_wr : std_logic;
@@ -272,12 +294,15 @@ architecture rtl of cart_tl is
     signal dma_busy : std_logic;
 
     -- Wisbone bus from central crossbar
-    signal ccb_adr   : std_logic_vector(15 downto 0);
-    signal ccb_we    : std_logic;
-    signal ccb_cyc   : std_logic;
+    signal ccb_adr : std_logic_vector(15 downto 0);
+    signal ccb_we : std_logic;
+    signal ccb_cyc : std_logic;
     signal ccb_dat_i : std_logic_vector(7 downto 0);
     signal ccb_dat_o : std_logic_vector(7 downto 0);
-    signal ccb_ack   : std_logic;
+    signal ccb_ack : std_logic;
+
+    -- MBCH related signals
+    signal mbch_selected_mcb : std_logic_vector(2 downto 0);
 
 begin
 
@@ -356,7 +381,7 @@ begin
         CLK_I      => clk_div1,
         RST_I      => hard_reset,
         ACCESS_RAM => gb_access_ram,
-        SELECT_MBC => "000",
+        SELECT_MBC => mbch_selected_mcb,
 
         CYC_I => gbd_cyc,
         ACK_O => gbd_ack,
@@ -438,6 +463,27 @@ begin
         ADR_O => ccb_adr,
         DAT_O => ccb_dat_o,
         DAT_I => ccb_dat_i
+    );
+
+    inst_mbch : mbch
+    port map(
+        CLK_I => clk_div1,
+        RST_I => hard_reset,
+        CYC_I => ccb_cyc,
+        WE_I => ccb_we,
+        ACK_O => ccb_ack,
+        ADR_I => ccb_adr,
+        DAT_I => ccb_dat_o,
+        DAT_O => ccb_dat_i,
+        XRAM_ADR_O => open,
+        XRAM_DAT_I => (others => '0'),
+        XRAM_ACK_I => '1',
+        GPIO_IN => (others => '0'),
+        GPIO_OUT => open,
+        SELECT_MBC => mbch_selected_mcb,
+        SOFT_RESET_REQ => aux_reset,
+        SOFT_RESET_IN => soft_reset,
+        DBG_ACTIVE => '0'
     );
 
     CLK_EN <= '1';
