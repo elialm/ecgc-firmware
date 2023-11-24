@@ -233,8 +233,7 @@ architecture rtl of cart_tl is
     signal aux_reset : std_logic;
 
     -- Gameboy decoder related
-    signal gb_data_incoming : std_logic_vector(7 downto 0);
-    signal gb_data_outgoing : std_logic_vector(7 downto 0);
+    signal gb_data_o     : std_logic_vector(7 downto 0);
     signal gb_access_ram : std_logic;
     signal gb_timeout_rd : std_logic;
     signal gb_timeout_wr : std_logic;
@@ -331,8 +330,8 @@ begin
     port map(
         GB_CLK      => GB_CLK,
         GB_ADDR     => GB_ADDR,
-        GB_DATA_IN  => gb_data_incoming,
-        GB_DATA_OUT => gb_data_outgoing,
+        GB_DATA_IN  => GB_DATA,
+        GB_DATA_OUT => gb_data_o,
         GB_RDN      => GB_RDN,
         GB_CSN      => GB_CSN,
 
@@ -442,8 +441,7 @@ begin
     );
 
     CLK_EN <= '1';
-    GB_DATA <= gb_data_outgoing when (GB_CLK nor GB_RDN) = '1' else
-        (others => 'Z');
+    GB_DATA <= gb_data_o when (GB_CLK nor GB_RDN) = '1' else (others => 'Z');
     GB_BUS_EN <= '0';
 
     RAM_ADQ <= (others => 'Z');
