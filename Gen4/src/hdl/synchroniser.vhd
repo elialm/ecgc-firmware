@@ -3,7 +3,7 @@
 -- 
 -- Create Date: 03/31/2022 03:12:42 PM
 -- Design Name: Synchroniser
--- Module Name: synchroniser - behaviour
+-- Module Name: synchroniser - rtl
 -- 
 ----------------------------------------------------------------------------------
 
@@ -32,7 +32,7 @@ entity synchroniser is
         DAT_OUT : out std_logic_vector(DATA_WIDTH-1 downto 0));
 end synchroniser;
 
-architecture behaviour of synchroniser is
+architecture rtl of synchroniser is
 
     -- Note: we subtract FF_COUNT by 2, since DAT_OUT will also be made from flip flops
     type logic_vector_array is array (integer range <>) of std_logic_vector(FF_COUNT-2 downto 0);
@@ -62,4 +62,4 @@ begin
         end if;
     end process;
     
-end behaviour;
+end rtl;

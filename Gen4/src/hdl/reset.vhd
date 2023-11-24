@@ -3,7 +3,7 @@
 -- 
 -- Create Date: 06/22/2022 17:03:42 PM
 -- Design Name: Reset controller
--- Module Name: reset - behaviour
+-- Module Name: reset - rtl
 -- 
 ----------------------------------------------------------------------------------
 
@@ -57,7 +57,7 @@ entity reset is
         HARD_RESET  : out std_logic);   -- Connected to all RST(_I)?
 end reset;
 
-architecture behaviour of reset is
+architecture rtl of reset is
 
     component synchroniser is
     generic (
@@ -158,4 +158,4 @@ begin
     SOFT_RESET <= soft_reset_s;
     HARD_RESET <= ff_stages(ff_stages'high);
     
-end behaviour;
+end rtl;

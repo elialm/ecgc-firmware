@@ -3,7 +3,7 @@
 -- 
 -- Create Date: 09/11/2023 15:44:31 PM
 -- Design Name: Cartridge top level
--- Module Name: cart_tl - behaviour
+-- Module Name: cart_tl - rtl
 -- 
 ----------------------------------------------------------------------------------
 
@@ -19,6 +19,9 @@ use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
 entity cart_tl is
+    generic (
+        SIMULATION : boolean := FALSE
+    );
     port (
         -- Clocking and reset
         FPGA_CLK33M    : in std_logic;
@@ -78,7 +81,8 @@ architecture rtl of cart_tl is
     component CLKDIVB
         -- synthesis translate_off
         generic (
-            GSR : in string);
+            GSR : in string
+        );
         -- synthesis translate_on
         port (
             CLKI  : in std_logic;
@@ -94,7 +98,7 @@ architecture rtl of cart_tl is
         generic (
             RESET_FF : positive := 8;
             AUX_FF : positive := 9;
-            SIMULATION : boolean := false
+            SIMULATION : boolean := SIMULATION
         );
         port (
             SYNC_CLK   : in std_logic;
@@ -333,9 +337,6 @@ begin
 
     -- Instantiate reset controller (hard and soft resets)
     inst_reset_controller : reset
-    generic map(
-        SIMULATION => false
-    )
     port map(
         SYNC_CLK   => clk_div1,
         PLL_LOCK   => pll_lock,

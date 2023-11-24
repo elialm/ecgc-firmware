@@ -3,7 +3,7 @@
 -- 
 -- Create Date: 06/22/2022 14:49:42 PM
 -- Design Name: Memory Bank Controller Hypervisor
--- Module Name: mbch - behaviour
+-- Module Name: mbch - rtl
 -- 
 ----------------------------------------------------------------------------------
 
@@ -64,7 +64,7 @@ entity mbch is
     );
 end mbch;
 
-architecture behaviour of mbch is
+architecture rtl of mbch is
 
     type bus_selection_t is (BS_REGISTER, BS_BOOT_ROM, BS_CART_RAM, BS_XRAM);
 
@@ -310,4 +310,4 @@ begin
     -- Bus selection CYC_O
     XRAM_CYC_O <= CYC_I when bus_selector = BS_XRAM else '0';
     
-end behaviour;
+end rtl;

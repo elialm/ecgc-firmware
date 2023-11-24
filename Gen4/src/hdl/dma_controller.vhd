@@ -3,7 +3,7 @@
 -- 
 -- Create Date: 01/16/2023 03:07:43 PM
 -- Design Name: DMA controller
--- Module Name: dma_controller - behaviour
+-- Module Name: dma_controller - rtl
 -- 
 ----------------------------------------------------------------------------------
 
@@ -51,7 +51,7 @@ entity dma_controller is
         STATUS_BUSY : out std_logic);   -- Indicates that the DMA is busy copying data
 end dma_controller;
 
-architecture behaviour of dma_controller is
+architecture rtl of dma_controller is
 
     type DMA_STATE_TYPE is (DMAS_IDLE, DMAS_READ, DMAS_WRITE);
 
@@ -216,4 +216,4 @@ begin
 
     STATUS_BUSY <= dma_is_busy;
 
-end behaviour;
+end rtl;

@@ -3,7 +3,7 @@
 -- 
 -- Create Date: 03/31/2022 04:10:42 PM
 -- Design Name: Gameboy bus decoder
--- Module Name: gb_decoder - behaviour
+-- Module Name: gb_decoder - rtl
 -- 
 ----------------------------------------------------------------------------------
 
@@ -42,7 +42,7 @@ entity gb_decoder is
         RD_TIMEOUT    : out std_logic); -- Indicates that a read timeout has occurred. Asserting RST_I will reset this back to 0.
 end gb_decoder;
 
-architecture behaviour of gb_decoder is
+architecture rtl of gb_decoder is
 
     type GAMEBOY_BUS_STATE_TYPE is (GBBS_AWAIT_ACCESS_FINISHED, GBBS_IDLE, GBBS_READ_AWAIT_ACK, GBBS_WRITE_AWAIT_FALLING_EDGE, GBBS_WRITE_AWAIT_ACK);
 
@@ -213,4 +213,4 @@ begin
         cyc_timeout <= '0';
     end generate;
 
-end behaviour;
+end rtl;

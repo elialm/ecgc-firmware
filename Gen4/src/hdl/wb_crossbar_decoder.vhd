@@ -3,7 +3,7 @@
 -- 
 -- Create Date: 01/25/2023 16:43:12 PM
 -- Design Name: Gameboy bus Wishbone crossbar
--- Module Name: wb_crossbar_decoder - behaviour
+-- Module Name: wb_crossbar_decoder - rtl
 -- 
 ----------------------------------------------------------------------------------
 
@@ -57,7 +57,7 @@ entity wb_crossbar_decoder is
         DMA_DAT_I   : in std_logic_vector(7 downto 0));
 end wb_crossbar_decoder;
 
-architecture behaviour of wb_crossbar_decoder is
+architecture rtl of wb_crossbar_decoder is
 
     signal mbch_is_active   : std_logic;
     signal dma_reg_addr     : std_logic;
@@ -90,4 +90,4 @@ begin
     ACK_O <= DMA_ACK_I when valid_dma_access = '1' else CCB_ACK_I;
     DAT_O <= DMA_DAT_I when valid_dma_access = '1' else CCB_DAT_I;
 
-end behaviour;
+end rtl;

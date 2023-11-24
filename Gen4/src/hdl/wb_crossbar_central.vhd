@@ -3,7 +3,7 @@
 -- 
 -- Create Date: 01/25/2023 15:15:12 PM
 -- Design Name: Central Wishbone crossbar
--- Module Name: wb_crossbar_central - behaviour
+-- Module Name: wb_crossbar_central - rtl
 -- 
 ----------------------------------------------------------------------------------
 
@@ -78,7 +78,7 @@ entity wb_crossbar_central is
         DAT_I   : in std_logic_vector(7 downto 0));
 end wb_crossbar_central;
 
-architecture behaviour of wb_crossbar_central is
+architecture rtl of wb_crossbar_central is
 
     signal master_is_dma    : std_logic;
     signal master_is_dbg    : std_logic;
@@ -116,4 +116,4 @@ begin
     ADR_O <= DBG_ADR_I when master_is_dbg = '1' else cart_adr_o;
     DAT_O <= DBG_DAT_I when master_is_dbg = '1' else cart_dat_o;
 
-end behaviour;
+end rtl;
