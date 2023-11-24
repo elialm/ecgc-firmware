@@ -370,7 +370,7 @@ begin
         ACK_I => gbd_ack,
 
         ACCESS_ROM => open,
-        ACCESS_RAM => open,
+        ACCESS_RAM => gb_access_ram,
         RD_TIMEOUT => gb_timeout_rd,
         WR_TIMEOUT => gb_timeout_wr
     );
