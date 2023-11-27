@@ -64,7 +64,7 @@ end entity as1c8m16pl_controller;
 
 architecture rtl of as1c8m16pl_controller is
 
-    type ram_state_t is (RS_IDLE, RS_BUFFER_REG_WR, RS_AWAIT_COUNTER);
+    type ram_state_t is (RS_IDLE, RS_BUFFER_REG_WR, RS_AWAIT_WP_START_REG_WR, RS_AWAIT_COUNTER);
     type ram_reg_buffer_state_t is (RBS_ADQ7_0, RBS_ADQ15_8, RBS_A21_16);
 
     -- Number of bits in counter based on maximum counter value needed
@@ -83,8 +83,12 @@ architecture rtl of as1c8m16pl_controller is
         return std_logic_vector(to_unsigned(natural(ceil(tns * CLK_FREQ / 1000.00)), bc));
     end to_tcomp_ns;
 
-    -- Chip enable to end of WRITE
-    constant T_COMP_CW : std_logic_vector(RAM_COUNTER_BITS - 1 downto 0) := to_tcomp_ns(70.0 - T_CLK, RAM_COUNTER_BITS);
+    -- Chip enable to end of WRITE (minus Twp)
+    -- Note: minus Twp should be rounded value, it's hard coded for now
+    constant T_COMP_CW : std_logic_vector(RAM_COUNTER_BITS - 1 downto 0) := to_tcomp_ns(70.0 - 50.0 - T_CLK, RAM_COUNTER_BITS);
+
+    -- WRITE pulse width
+    constant T_COMP_WP : std_logic_vector(RAM_COUNTER_BITS - 1 downto 0) := to_tcomp_ns(45.0 - T_CLK, RAM_COUNTER_BITS);
 
     signal ram_state : ram_state_t;
     signal ram_drive_adq : std_logic;
@@ -163,7 +167,7 @@ begin
 
                                 when RBS_A21_16 =>
                                     RAM_A <= DAT_I(5 downto 0);
-                                    ram_state <= RS_AWAIT_COUNTER;
+                                    ram_state <= RS_AWAIT_WP_START_REG_WR;
 
                                     -- RAM_ADVN pulse needs to be at least 5 ns (<1 clock cycle @ 100MHz)
                                     RAM_ADVN <= '0';
@@ -182,10 +186,18 @@ begin
                             end case;
                         end if;
 
+                    when RS_AWAIT_WP_START_REG_WR =>
+                        if ram_counter_elapsed = '1' then
+                            ram_state <= RS_AWAIT_COUNTER;
+                            ram_counter <= T_COMP_WP;
+                            RAM_WEN <= '0';
+                        end if;
+
                     when RS_AWAIT_COUNTER =>
                         if ram_counter_elapsed = '1' then
                             ram_state <= RS_IDLE;
                             ram_cen_oe <= '0';
+                            RAM_WEN <= '1';
                         end if;
                 end case;
 
