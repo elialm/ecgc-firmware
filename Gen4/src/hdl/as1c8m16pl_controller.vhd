@@ -108,6 +108,7 @@ architecture rtl of as1c8m16pl_controller is
     signal ram_state_current : ram_state_t;
     signal ram_state_next : ram_state_t;
     signal ram_drive_adq : std_logic;
+    signal ram_drive_adq_d : std_logic;
     signal ram_release : std_logic;
     signal ram_adq_out : std_logic_vector(15 downto 0);
     signal ram_adq_in : std_logic_vector(15 downto 0);
@@ -131,7 +132,7 @@ begin
     DAT_O <= ram_adq_in(7 downto 0) when ram_rw_sel = '0' else ram_adq_in(15 downto 8);
 
     RAM_CLK <= '0';
-    RAM_ADQ <= ram_adq_out when ram_drive_adq = '1' else (others => 'Z');
+    RAM_ADQ <= ram_adq_out when ram_drive_adq_d = '1' else (others => 'Z');
     RAM_CE0N <= ram_cen_sel when ram_cen_oe = '1' else '1';
     RAM_CE1N <= not(ram_cen_sel) when ram_cen_oe = '1' else '1';
     RAM_WEN <= not(ram_rw_sel) when ram_rw_oe = '1' else '1';
@@ -141,12 +142,13 @@ begin
     begin
         if rising_edge(CLK_I) then
             wb_ack <= '0';
+            ram_drive_adq <= '0';
+            ram_drive_adq_d <= ram_drive_adq;
             RAM_ADVN <= '1';
 
             if RST_I = '1' then
                 ram_state_current <= RS_IDLE;
                 ram_state_next <= RS_IDLE;
-                ram_drive_adq <= '0';
                 ram_release <= '0';
                 ram_adq_out <= (others => '0');
                 ram_reg_buff_sel <= '1';
@@ -176,6 +178,8 @@ begin
 
                                     -- Start ADNV pulse (in the next clock cycle, address will be latched)
                                     RAM_ADVN <= '0';
+                                    ram_drive_adq <= '1';
+                                    ram_drive_adq_d <= '1';
                                     ram_cen_oe <= '1';
                                     ram_rw_oe <= '1';
                                     RAM_LBN <= ADR_I(0);
@@ -195,6 +199,8 @@ begin
 
                                     -- Start ADNV pulse (in the next clock cycle, address will be latched)
                                     RAM_ADVN <= '0';
+                                    ram_drive_adq <= '1';
+                                    ram_drive_adq_d <= '1';
                                     ram_cen_oe <= '1';
                                     RAM_LBN <= ADR_I(0);
                                     RAM_UBN <= not(ADR_I(0));
@@ -213,6 +219,8 @@ begin
 
                                     -- Start ADNV pulse (in the next clock cycle, address will be latched)
                                     RAM_ADVN <= '0';
+                                    ram_drive_adq <= '1';
+                                    ram_drive_adq_d <= '1';
                                     RAM_CRE <= '1';
                                     ram_cen_oe <= '1';
                                     RAM_LBN <= '0';
@@ -222,6 +230,10 @@ begin
                                     ram_counter <= T_COMP_AOE;
                                 end if;
                             end if;
+
+                            -- latch address
+                            RAM_A <= ADR_I(22 downto 17);
+                            ram_adq_out <= ADR_I(16 downto 1);
 
                             -- latch correct chip select
                             ram_cen_sel <= ADR_I(23);
@@ -254,6 +266,8 @@ begin
 
                                     -- Start ADNV pulse (in the next clock cycle, address will be latched)
                                     RAM_ADVN <= '0';
+                                    ram_drive_adq <= '1';
+                                    ram_drive_adq_d <= '1';
                                     RAM_CRE <= '1';
                                     ram_cen_oe <= '1';
                                     ram_rw_oe <= '1';
