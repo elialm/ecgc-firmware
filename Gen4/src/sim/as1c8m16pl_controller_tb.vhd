@@ -76,7 +76,7 @@ begin
     begin
         wait on clk_i until clk_i = '1' and rst_i = '0';
 
-        -- Test register write
+        -- test register write
         cyc_i <= '1';
         we_i <= '1';
         tga_i(0) <= '1';
@@ -89,6 +89,19 @@ begin
         wait on clk_i until clk_i = '1' and ack_o = '1';
         cyc_i <= '0';
         we_i <= '0';
+        tga_i(0) <= '0';
+
+        -- wait a bit for the core to write the register
+        wait for 100 ns;
+
+        -- test register read
+        cyc_i <= '1';
+        tga_i(0) <= '1';
+        adr_i <= (others => '0'); -- address can be whatever
+        wait on clk_i until clk_i = '1' and ack_o = '1';
+        wait on clk_i until clk_i = '1' and ack_o = '1';
+        wait on clk_i until clk_i = '1' and ack_o = '1';
+        cyc_i <= '0';
         tga_i(0) <= '0';
 
         wait;
