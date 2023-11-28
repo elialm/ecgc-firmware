@@ -72,6 +72,18 @@ begin
     clk_i <= not(clk_i) after 5 ns;
     rst_i <= '1', '0' after 160 ns;
 
+    -- simulate ram driving ADQ on OE#
+    process
+    begin
+        ram_adq <= (others => 'Z');
+
+        wait on ram_oen until ram_oen = '0';
+        wait for 20 ns - 1 ps;
+        ram_adq <= x"1234";
+        wait on ram_oen until ram_oen = '1';
+        wait for 7 ns;
+    end process;
+
     process
     begin
         wait on clk_i until clk_i = '1' and rst_i = '0';
@@ -98,7 +110,6 @@ begin
         cyc_i <= '1';
         tga_i(0) <= '1';
         adr_i <= (others => '0'); -- address can be whatever
-        wait on clk_i until clk_i = '1' and ack_o = '1';
         wait on clk_i until clk_i = '1' and ack_o = '1';
         wait on clk_i until clk_i = '1' and ack_o = '1';
         cyc_i <= '0';
