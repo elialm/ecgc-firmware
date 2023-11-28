@@ -64,7 +64,7 @@ end entity as1c8m16pl_controller;
 
 architecture rtl of as1c8m16pl_controller is
 
-    type ram_state_t is (RS_IDLE, RS_BUFFER_REG_WR, RS_OE_REG_RD, RS_BUFFER_REG_RD, RS_AWAIT_COUNTER);
+    type ram_state_t is (RS_IDLE, RS_BUFFER_REG_WR, RS_OE_REG_RD, RS_BUFFER_REG_RD, RS_AWAIT_RD_HANDSHAKE, RS_AWAIT_COUNTER);
     type ram_reg_buffer_state_t is (RBS_ADQ7_0, RBS_ADQ15_8, RBS_A21_16);
 
     -- Number of bits in counter based on maximum counter value needed
@@ -170,7 +170,38 @@ begin
                             -- select between memory access and register access
                             if TGA_I(0) = '0' then
                                 -- memory operation
-                                null;
+                                if WE_I = '1' then
+                                    ram_state_current <= RS_AWAIT_COUNTER;
+                                    ram_state_next <= RS_IDLE;
+
+                                    -- Start ADNV pulse (in the next clock cycle, address will be latched)
+                                    RAM_ADVN <= '0';
+                                    ram_cen_oe <= '1';
+                                    ram_rw_oe <= '1';
+                                    RAM_LBN <= ADR_I(0);
+                                    RAM_UBN <= not(ADR_I(0));
+
+                                    -- Initialise counter to idle after write finished
+                                    ram_counter <= T_COMP_CW;
+
+                                    -- release ram bus after timer elapsed
+                                    ram_release <= '1';
+
+                                    -- acknowledge to release the bus
+                                    wb_ack <= '1';
+                                else
+                                    ram_state_current <= RS_AWAIT_COUNTER;
+                                    ram_state_next <= RS_OE_REG_RD;
+
+                                    -- Start ADNV pulse (in the next clock cycle, address will be latched)
+                                    RAM_ADVN <= '0';
+                                    ram_cen_oe <= '1';
+                                    RAM_LBN <= ADR_I(0);
+                                    RAM_UBN <= not(ADR_I(0));
+
+                                    -- Initialise counter to wait until OE# may be asserted
+                                    ram_counter <= T_COMP_AOE;
+                                end if;
                             else
                                 -- register operation
                                 if WE_I = '1' then
@@ -184,7 +215,6 @@ begin
                                     RAM_ADVN <= '0';
                                     RAM_CRE <= '1';
                                     ram_cen_oe <= '1';
-                                    ram_rw_oe <= '0';
                                     RAM_LBN <= '0';
                                     RAM_UBN <= '0';
 
@@ -243,7 +273,7 @@ begin
                     -- assert OE after waiting a bit
                     when RS_OE_REG_RD =>
                         ram_state_current <= RS_AWAIT_COUNTER;
-                        ram_state_next <= RS_BUFFER_REG_RD;
+                        ram_state_next <= RS_BUFFER_REG_RD when TGA_I(0) = '1' else RS_AWAIT_RD_HANDSHAKE;
                         ram_rw_oe <= '1';
 
                         -- Initialise counter to idle until data is available
@@ -252,12 +282,10 @@ begin
                         -- release ram bus after timer elapsed
                         ram_release <= '1';
 
-                        -- prepare to send lower byte
-                        ram_rw_sel <= '0';
-
                     -- send buffered reg to master
                     when RS_BUFFER_REG_RD =>
                         wb_ack <= '1';
+                        ram_rw_sel <= '0';
 
                         -- check for handshake
                         if (CYC_I and wb_ack) = '1' then
@@ -267,6 +295,16 @@ begin
                                 wb_ack <= '0';
                                 ram_state_current <= RS_IDLE;
                             end if;
+                        end if;
+
+                    -- await Wishbone handshake after
+                    when RS_AWAIT_RD_HANDSHAKE =>
+                        wb_ack <= '1';
+
+                        -- check for handshake
+                        if (CYC_I and wb_ack) = '1' then
+                            wb_ack <= '0';
+                            ram_state_current <= RS_IDLE;
                         end if;
 
                     -- wait for the counter to elapse and jump to next state

@@ -103,7 +103,7 @@ begin
         we_i <= '0';
         tga_i(0) <= '0';
 
-        -- wait a bit for the core to write the register
+        -- wait a bit for the core to write to register
         wait for 100 ns;
 
         -- test register read
@@ -114,6 +114,44 @@ begin
         wait on clk_i until clk_i = '1' and ack_o = '1';
         cyc_i <= '0';
         tga_i(0) <= '0';
+
+        -- test normal write (LBN, CSN0)
+        cyc_i <= '1';
+        we_i <= '1';
+        adr_i <= x"402010";
+        dat_i <= x"55";
+        wait on clk_i until clk_i = '1' and ack_o = '1';
+        cyc_i <= '0';
+        we_i <= '0';
+
+        -- wait a bit for the core to write to memory
+        wait for 100 ns;
+
+        -- test normal write (UBN, CSN1)
+        cyc_i <= '1';
+        we_i <= '1';
+        adr_i <= x"F02013";
+        dat_i <= x"55";
+        wait on clk_i until clk_i = '1' and ack_o = '1';
+        cyc_i <= '0';
+        we_i <= '0';
+
+        -- wait a bit for the core to write to memory
+        wait for 100 ns;
+
+        -- test normal read (LBN, CSN1)
+        cyc_i <= '1';
+        adr_i <= x"802010";
+        wait on clk_i until clk_i = '1' and ack_o = '1';
+        cyc_i <= '0';
+        we_i <= '0';
+
+        -- test normal read (UBN, CSN0)
+        cyc_i <= '1';
+        adr_i <= x"402011";
+        wait on clk_i until clk_i = '1' and ack_o = '1';
+        cyc_i <= '0';
+        we_i <= '0';
 
         wait;
     end process;
