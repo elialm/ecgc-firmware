@@ -188,8 +188,8 @@ begin
         variable transaction_is_idle : boolean;
         variable transaction_is_read : boolean;
     begin
-        -- Wait a bit for the PLL to lock
-        wait for 1 us;
+        -- Wait a bit for the PLL to lock and GB_RSTN to deassert
+        wait for 5 us;
     
         for i in test_bus_transactions'low to test_bus_transactions'high loop
             current_transaction := test_bus_transactions(i);
