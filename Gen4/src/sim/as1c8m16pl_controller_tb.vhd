@@ -106,11 +106,20 @@ begin
         -- wait a bit for the core to write to register
         wait for 100 ns;
 
-        -- test register read
+        -- test register read (lower byte)
         cyc_i <= '1';
         tga_i(0) <= '1';
-        adr_i <= (others => '0'); -- address can be whatever
+        -- bit 0 = upper or lower byte of register
+        -- bits 20:19 = select register (see datasheet)
+        adr_i <= (0 => '0', others => '0');
         wait on clk_i until clk_i = '1' and ack_o = '1';
+        cyc_i <= '0';
+        tga_i(0) <= '0';
+
+        -- test register read (upper byte)
+        cyc_i <= '1';
+        tga_i(0) <= '1';
+        adr_i <= (0 => '1', others => '0');
         wait on clk_i until clk_i = '1' and ack_o = '1';
         cyc_i <= '0';
         tga_i(0) <= '0';

@@ -14,7 +14,7 @@
 --
 -- TGA_I(0): control the CRE pin on the RAM interface, allowing programming/reading
 -- of control registers RCR, BCR and DIDR. The register is selected using A[19:18]
--- (which corresponds to ADR_I[19:18] of the Wishbone bus) according to the datasheet.
+-- (which corresponds to ADR_I[20:19] of the Wishbone bus) according to the datasheet.
 --
 -- ADR_I(23) is used to drive the CE# pins of the PSRAM. To ensure proper timings, 
 -- no Wishbone burst shall be done crossing a boundary which would make this bit
@@ -64,7 +64,7 @@ end entity as1c8m16pl_controller;
 
 architecture rtl of as1c8m16pl_controller is
 
-    type ram_state_t is (RS_IDLE, RS_BUFFER_REG_WR, RS_OE_REG_RD, RS_BUFFER_REG_RD, RS_AWAIT_RD_HANDSHAKE, RS_AWAIT_COUNTER);
+    type ram_state_t is (RS_IDLE, RS_BUFFER_REG_WR, RS_OE_MEM_RD, RS_AWAIT_RD_HANDSHAKE, RS_AWAIT_COUNTER);
     type ram_reg_buffer_state_t is (RBS_ADQ7_0, RBS_ADQ15_8, RBS_A21_16);
 
     -- Number of bits in counter based on maximum counter value needed
@@ -195,7 +195,7 @@ begin
                                     wb_ack <= '1';
                                 else
                                     ram_state_current <= RS_AWAIT_COUNTER;
-                                    ram_state_next <= RS_OE_REG_RD;
+                                    ram_state_next <= RS_OE_MEM_RD;
 
                                     -- Start ADNV pulse (in the next clock cycle, address will be latched)
                                     RAM_ADVN <= '0';
@@ -215,7 +215,7 @@ begin
                                     wb_ack <= '1';
                                 else
                                     ram_state_current <= RS_AWAIT_COUNTER;
-                                    ram_state_next <= RS_OE_REG_RD;
+                                    ram_state_next <= RS_OE_MEM_RD;
 
                                     -- Start ADNV pulse (in the next clock cycle, address will be latched)
                                     RAM_ADVN <= '0';
@@ -285,9 +285,9 @@ begin
                         end if;
 
                     -- assert OE after waiting a bit
-                    when RS_OE_REG_RD =>
+                    when RS_OE_MEM_RD =>
                         ram_state_current <= RS_AWAIT_COUNTER;
-                        ram_state_next <= RS_BUFFER_REG_RD when TGA_I(0) = '1' else RS_AWAIT_RD_HANDSHAKE;
+                        ram_state_next <= RS_AWAIT_RD_HANDSHAKE;
                         ram_rw_oe <= '1';
 
                         -- Initialise counter to idle until data is available
@@ -295,21 +295,6 @@ begin
 
                         -- release ram bus after timer elapsed
                         ram_release <= '1';
-
-                    -- send buffered reg to master
-                    when RS_BUFFER_REG_RD =>
-                        wb_ack <= '1';
-                        ram_rw_sel <= '0';
-
-                        -- check for handshake
-                        if (CYC_I and wb_ack) = '1' then
-                            if ram_rw_sel = '0' then
-                                ram_rw_sel <= '1';
-                            else
-                                wb_ack <= '0';
-                                ram_state_current <= RS_IDLE;
-                            end if;
-                        end if;
 
                     -- await Wishbone handshake after
                     when RS_AWAIT_RD_HANDSHAKE =>
