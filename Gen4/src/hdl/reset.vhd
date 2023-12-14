@@ -42,7 +42,7 @@ use ieee.std_logic_misc.all;
 
 entity reset is
     generic (
-        RESET_FF    : positive := 8;
+        GSR_FF      : positive := 8;
         AUX_FF      : positive := 9;
         SIMULATION  : boolean := false);
     port (
@@ -79,61 +79,57 @@ architecture rtl of reset is
         Q   : out std_logic);
     end component;
 
-    signal ff_stages    : std_logic_vector(RESET_FF-1 downto 0) := (others => '1');
-
     signal soft_reset_s     : std_logic;
+    signal hard_reset_s     : std_logic := '1';
     signal ext_soft_sync    : std_logic;
-    signal aux_extender     : std_logic_vector(AUX_FF-1 downto 0);
+    signal soft_extender    : std_logic_vector(AUX_FF - 1 downto 0);
+    signal gb_rst_extender  : std_logic_vector(8 downto 0);
 
     signal dbg_active_d     : std_logic;
     signal aux_internal     : std_logic;
 
 begin
 
-    GSR_RST_FF : if SIMULATION = true generate
-        -- In simulation, treat as shift register (initialisation is done at signal)
-        process (SYNC_CLK)
-        begin
-            if rising_edge(SYNC_CLK) then
-                ff_stages <= ff_stages(ff_stages'high-1 downto 0) & '0';
+    -- Provide GSR while PLL is not locked
+    process (SYNC_CLK)
+    begin
+        if rising_edge(SYNC_CLK) then
+            if PLL_LOCK = '1' then
+                hard_reset_s <= '0';
             end if;
-        end process;
-    else generate
-        -- GSR preset FF used for reset pulse
-        GSR_RST_FF_0 : component FD1P3AY
-        port map (
-            D => '0',
-            SP => PLL_LOCK,
-            CK => SYNC_CLK,
-            Q => ff_stages(0));
-    
-        GSR_RST_FF_STAGES : for i in 1 to RESET_FF-1 generate
-            GSR_RST_FF_X : component FD1P3AY
-            port map (
-                D => ff_stages(i-1),
-                SP => PLL_LOCK,
-                CK => SYNC_CLK,
-                Q => ff_stages(i));
-        end generate;
-    end generate;
+        end if;
+    end process;
 
     -- Sychronise EXT_SOFT
     EXT_SOFT_SYNCHRONISER : component synchroniser
     port map (
         CLK => SYNC_CLK,
-        RST => ff_stages(ff_stages'high),
+        RST => hard_reset_s,
         DAT_IN(0) => EXT_SOFT,
-        DAT_OUT(0) => ext_soft_sync);
+        DAT_OUT(0) => ext_soft_sync
+    );
 
-    -- Extend the auxilary reset
+    -- Extend soft reset to be some clock cycles long
     process (SYNC_CLK)
     begin
         if rising_edge(SYNC_CLK) then
-            if (ff_stages(ff_stages'high) or AUX_SOFT or aux_internal) = '1' then
-                aux_extender <= (aux_extender'high => '1', others => '0');
+            if (hard_reset_s or AUX_SOFT or aux_internal or ext_soft_sync) = '1' then
+                soft_extender <= (others => '1');
             else
-                if aux_extender(aux_extender'high) = '1' then
-                    aux_extender <= std_logic_vector(unsigned(aux_extender) + 1);
+                soft_extender <= soft_extender(soft_extender'high - 1 downto 0) & '0';
+            end if;
+        end if;
+    end process;
+
+    -- Extend the Gameboy reset
+    process (SYNC_CLK)
+    begin
+        if rising_edge(SYNC_CLK) then
+            if (hard_reset_s or soft_reset_s) = '1' then
+                gb_rst_extender <= (gb_rst_extender'high => '1', others => '0');
+            else
+                if gb_rst_extender(gb_rst_extender'high) = '1' then
+                    gb_rst_extender <= std_logic_vector(unsigned(gb_rst_extender) + 1);
                 end if;
             end if;
         end if;
@@ -143,7 +139,7 @@ begin
     process (SYNC_CLK)
     begin
         if rising_edge(SYNC_CLK) then
-            if ff_stages(ff_stages'high) = '1' then
+            if hard_reset_s then
                 dbg_active_d <= '0';
             else
                 dbg_active_d <= DBG_ACTIVE;
@@ -152,10 +148,10 @@ begin
         end if;
     end process;
 
-    soft_reset_s <= ext_soft_sync or aux_extender(aux_extender'high);
+    soft_reset_s <= soft_extender(soft_extender'high);
 
-    GB_RESETN <= not(soft_reset_s) and not(DBG_ACTIVE);
+    GB_RESETN <= not(gb_rst_extender(gb_rst_extender'high)) and not(DBG_ACTIVE);
     SOFT_RESET <= soft_reset_s;
-    HARD_RESET <= ff_stages(ff_stages'high);
+    HARD_RESET <= hard_reset_s;
     
 end rtl;

@@ -102,7 +102,7 @@ architecture rtl of cart_tl is
 
     component reset
         generic (
-            RESET_FF : positive := 8;
+            GSR_FF : positive := 8;
             AUX_FF : positive := 9;
             SIMULATION : boolean := SIMULATION
         );
