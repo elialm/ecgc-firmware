@@ -12,11 +12,11 @@
 --
 -- TODO
 --
--- TGA_I(0): control the CRE pin on the RAM interface, allowing programming/reading
+-- i_tga(0): control the CRE pin on the RAM interface, allowing programming/reading
 -- of control registers RCR, BCR and DIDR. The register is selected using A[19:18]
--- (which corresponds to ADR_I[20:19] of the Wishbone bus) according to the datasheet.
+-- (which corresponds to i_adr[20:19] of the Wishbone bus) according to the datasheet.
 --
--- ADR_I(23) is used to drive the CE# pins of the PSRAM. To ensure proper timings, 
+-- i_adr(23) is used to drive the CE# pins of the PSRAM. To ensure proper timings, 
 -- no Wishbone burst shall be done crossing a boundary which would make this bit
 -- flip. I.e. regions (0x00_0000 - 0x7F_FFFF) and (0x80_0000 - 0xFF_FFFF) shall not
 -- be accessed in the same burst. Additionally, this bit can also be used to select
@@ -31,59 +31,59 @@ use IEEE.math_real.all;
 
 entity as1c8m16pl_controller is
     generic (
-        -- Clock frequency of CLK_I
-        CLK_FREQ : real := 100.0
+        -- Clock frequency of i_clk in MHz (must not exceed 200MHz)
+        p_clk_freq : real := 100.0
     );
     port (
         -- Wishbone slave interface
-        CLK_I : in std_logic;
-        RST_I : in std_logic;
-        CYC_I : in std_logic;
-        WE_I  : in std_logic;
-        ACK_O : out std_logic;
-        ADR_I : in std_logic_vector(23 downto 0);
-        TGA_I : in std_logic_vector(0 downto 0);
-        DAT_I : in std_logic_vector(7 downto 0);
-        DAT_O : out std_logic_vector(7 downto 0);
+        i_clk : in std_logic;
+        i_rst : in std_logic;
+        i_cyc : in std_logic;
+        i_we  : in std_logic;
+        o_ack : out std_logic;
+        i_adr : in std_logic_vector(23 downto 0);
+        i_tga : in std_logic_vector(0 downto 0);
+        i_dat : in std_logic_vector(7 downto 0);
+        o_dat : out std_logic_vector(7 downto 0);
 
         -- RAM interface
-        RAM_ADQ  : inout std_logic_vector(15 downto 0);
-        RAM_A    : out std_logic_vector(5 downto 0);
-        RAM_ADVN : out std_logic;
-        RAM_CE0N : out std_logic;
-        RAM_CE1N : out std_logic;
-        RAM_CLK  : out std_logic;
-        RAM_CRE  : out std_logic;
-        RAM_LBN  : out std_logic;
-        RAM_UBN  : out std_logic;
-        RAM_OEN  : out std_logic;
-        RAM_WAIT : in std_logic;
-        RAM_WEN  : out std_logic
+        io_ram_adq : inout std_logic_vector(15 downto 0);
+        o_ram_a    : out std_logic_vector(5 downto 0);
+        o_ram_advn : out std_logic;
+        o_ram_ce0n : out std_logic;
+        o_ram_ce1n : out std_logic;
+        o_ram_clk  : out std_logic;
+        o_ram_cre  : out std_logic;
+        o_ram_lbn  : out std_logic;
+        o_ram_ubn  : out std_logic;
+        o_ram_oen  : out std_logic;
+        i_ram_wait : in std_logic;
+        o_ram_wen  : out std_logic
     );
 end entity as1c8m16pl_controller;
 
 architecture rtl of as1c8m16pl_controller is
 
-    type ram_state_t is (RS_IDLE, RS_BUFFER_REG_WR, RS_OE_MEM_RD, RS_AWAIT_RD_HANDSHAKE, RS_AWAIT_COUNTER);
-    type ram_reg_buffer_state_t is (RBS_ADQ7_0, RBS_ADQ15_8, RBS_A21_16);
+    type t_ram_state is (s_idle, s_buffer_reg_wr, s_oe_mem_rd, s_await_rd_handshake, s_await_counter);
+    type t_ram_reg_buffer_state is (s_adq7_0, s_adq15_8, s_a21_16);
 
     -- Number of bits in counter based on maximum counter value needed
-    constant RAM_COUNTER_BITS : positive := positive(ceil(log2(0.070 * CLK_FREQ)));
+    constant c_ram_counter_bits : positive := positive(ceil(log2(0.070 * p_clk_freq)));
 
     -- Clock period in ns
-    constant T_CLK : real := 1000.00 / CLK_FREQ;
+    constant c_t_clk : real := 1000.00 / p_clk_freq;
 
     -- Take time in ns and convert to value to be used in a timer
     function to_tcomp_ns(tns : real; bc : positive)
         return std_logic_vector is
         variable compensated_tns : real;
     begin
-        compensated_tns := tns - T_CLK;
+        compensated_tns := tns - c_t_clk;
 
         -- assert that tns is positive (if negative, another implementation should be attempted)
         assert compensated_tns > 0.0 report "to_tcomp_ns: compensated_tns is less then zero" severity ERROR;
 
-        return std_logic_vector(to_unsigned(natural(ceil(compensated_tns * CLK_FREQ / 1000.00)), bc));
+        return std_logic_vector(to_unsigned(natural(ceil(compensated_tns * p_clk_freq / 1000.00)), bc));
     end to_tcomp_ns;
 
     function to_ns_tcomp(tcomp : std_logic_vector)
@@ -91,244 +91,245 @@ architecture rtl of as1c8m16pl_controller is
         variable clock_cycles : natural;
     begin
         clock_cycles := to_integer(unsigned(tcomp)) + 1;
-        return real(clock_cycles) * T_CLK;
+        return real(clock_cycles) * c_t_clk;
     end to_ns_tcomp;
 
     -- Chip enable to end of WRITE
-    constant T_COMP_CW : std_logic_vector(RAM_COUNTER_BITS - 1 downto 0) := to_tcomp_ns(70.0, RAM_COUNTER_BITS);
+    constant c_t_comp_cw : std_logic_vector(c_ram_counter_bits - 1 downto 0) := to_tcomp_ns(70.0, c_ram_counter_bits);
 
     -- Output enable to valid output
-    constant T_COMP_TOE : std_logic_vector(RAM_COUNTER_BITS - 1 downto 0) := to_tcomp_ns(20.0, RAM_COUNTER_BITS);
+    constant c_t_comp_toe : std_logic_vector(c_ram_counter_bits - 1 downto 0) := to_tcomp_ns(20.0, c_ram_counter_bits);
 
-    -- ADV high to OE low time (Taadv - Toe - T_CLK (to compensate for double state transition))
-    constant T_COMP_AOE : std_logic_vector(RAM_COUNTER_BITS - 1 downto 0) := to_tcomp_ns(70.0 - 20.0 - T_CLK, RAM_COUNTER_BITS);
+    -- ADV high to OE low time (Taadv - Toe - c_t_clk (to compensate for double state transition))
+    constant c_t_comp_aoe : std_logic_vector(c_ram_counter_bits - 1 downto 0) := to_tcomp_ns(70.0 - 20.0 - c_t_clk, c_ram_counter_bits);
 
-    signal wb_ack : std_logic;
+    signal r_ack : std_logic;
 
-    signal ram_state_current : ram_state_t;
-    signal ram_state_next : ram_state_t;
-    signal ram_drive_adq : std_logic;
-    signal ram_drive_adq_d : std_logic;
-    signal ram_release : std_logic;
-    signal ram_adq_out : std_logic_vector(15 downto 0);
-    signal ram_adq_in : std_logic_vector(15 downto 0);
-    signal ram_reg_buff_sel : std_logic;
-    signal ram_cen_oe : std_logic;
-    signal ram_cen_sel : std_logic;
-    signal ram_byte_sel : std_logic;
-    signal ram_rw_oe : std_logic;
-    signal ram_rw_sel : std_logic;
+    signal r_ram_state_current : t_ram_state;
+    signal r_ram_state_next : t_ram_state;
+    signal r_ram_drive_adq : std_logic;
+    signal r_ram_drive_adq_d : std_logic;
+    signal r_ram_release : std_logic;
+    signal r_ram_adq_out : std_logic_vector(15 downto 0);
+    signal r_ram_adq_in : std_logic_vector(15 downto 0);
+    signal r_ram_reg_buff_sel : std_logic;
+    signal r_ram_cen_oe : std_logic;
+    signal r_ram_cen_sel : std_logic;
+    signal r_ram_byte_sel : std_logic;
+    signal r_ram_rw_oe : std_logic;
+    signal r_ram_rw_sel : std_logic;
 
-    signal ram_reg_buffer_state : ram_reg_buffer_state_t;
-    signal ram_counter : std_logic_vector(RAM_COUNTER_BITS - 1 downto 0);
-    signal ram_counter_elapsed : std_logic;
+    signal r_ram_reg_buffer_state : t_ram_reg_buffer_state;
+    signal r_ram_counter : std_logic_vector(c_ram_counter_bits - 1 downto 0);
+    signal n_ram_counter_elapsed : std_logic;
 
 begin
 
-    assert T_CLK >= 5.0 report "T_CLK is smaller than Tvp, which could lead to undefined behaviour with the current implementation" severity ERROR;
-    assert T_CLK >= 5.0 report "T_CLK is smaller than Tavs, which could lead to undefined behaviour with the current implementation" severity ERROR;
+    assert c_t_clk >= 5.0 report "c_t_clk is smaller than Tvp, which could lead to undefined behaviour with the current implementation" severity ERROR;
+    assert c_t_clk >= 5.0 report "c_t_clk is smaller than Tavs, which could lead to undefined behaviour with the current implementation" severity ERROR;
 
-    ACK_O <= wb_ack;
-    DAT_O <= ram_adq_in(7 downto 0) when ram_rw_sel = '0' else ram_adq_in(15 downto 8);
+    o_ack <= r_ack;
+    o_dat <= r_ram_adq_in(7 downto 0) when r_ram_rw_sel = '0' else r_ram_adq_in(15 downto 8);
 
-    RAM_CLK <= '0';
-    RAM_ADQ <= ram_adq_out when ram_drive_adq_d = '1' else (others => 'Z');
-    RAM_CE0N <= ram_cen_sel when ram_cen_oe = '1' else '1';
-    RAM_CE1N <= not(ram_cen_sel) when ram_cen_oe = '1' else '1';
-    RAM_WEN <= not(ram_rw_sel) when ram_rw_oe = '1' else '1';
-    RAM_OEN <= ram_rw_sel when ram_rw_oe = '1' else '1';
+    o_ram_clk <= '0';
+    io_ram_adq <= r_ram_adq_out when r_ram_drive_adq_d = '1' else (others => 'Z');
+    o_ram_ce0n <= r_ram_cen_sel when r_ram_cen_oe = '1' else '1';
+    o_ram_ce1n <= not(r_ram_cen_sel) when r_ram_cen_oe = '1' else '1';
+    o_ram_wen <= not(r_ram_rw_sel) when r_ram_rw_oe = '1' else '1';
+    o_ram_oen <= r_ram_rw_sel when r_ram_rw_oe = '1' else '1';
 
-    process (CLK_I)
+    process (i_clk)
     begin
-        if rising_edge(CLK_I) then
-            wb_ack <= '0';
-            ram_drive_adq <= '0';
-            ram_drive_adq_d <= ram_drive_adq;
-            RAM_ADVN <= '1';
+        if rising_edge(i_clk) then
+            r_ack <= '0';
+            r_ram_drive_adq <= '0';
+            r_ram_drive_adq_d <= r_ram_drive_adq;
+            o_ram_advn <= '1';
 
-            if RST_I = '1' then
-                ram_state_current <= RS_IDLE;
-                ram_state_next <= RS_IDLE;
-                ram_release <= '0';
-                ram_adq_out <= (others => '0');
-                ram_reg_buff_sel <= '1';
-                ram_cen_oe <= '0';
-                ram_cen_sel <= '0';
-                ram_byte_sel <= '0';
-                ram_rw_oe <= '0';
-                ram_rw_sel <= '0';
-                ram_reg_buffer_state <= RBS_ADQ7_0;
-                ram_counter <= (others => '0');
+            if i_rst = '1' then
+                r_ram_state_current <= s_idle;
+                r_ram_state_next <= s_idle;
+                r_ram_release <= '0';
+                r_ram_adq_out <= (others => '0');
+                r_ram_adq_in <= (others => '0');
+                r_ram_reg_buff_sel <= '1';
+                r_ram_cen_oe <= '0';
+                r_ram_cen_sel <= '0';
+                r_ram_byte_sel <= '0';
+                r_ram_rw_oe <= '0';
+                r_ram_rw_sel <= '0';
+                r_ram_reg_buffer_state <= s_adq7_0;
+                r_ram_counter <= (others => '0');
 
-                RAM_A <= (others => '0');
-                RAM_CRE <= '0';
-                RAM_LBN <= '1';
-                RAM_UBN <= '1';
+                o_ram_a <= (others => '0');
+                o_ram_cre <= '0';
+                o_ram_lbn <= '1';
+                o_ram_ubn <= '1';
             else
-                case ram_state_current is
+                case r_ram_state_current is
                     -- idle and await cycle start
-                    when RS_IDLE =>
-                        if CYC_I = '1' then
+                    when s_idle =>
+                        if i_cyc = '1' then
                             -- select between memory access and register access
-                            if TGA_I(0) = '0' then
+                            if i_tga(0) = '0' then
                                 -- memory operation
-                                if WE_I = '1' then
-                                    ram_state_current <= RS_AWAIT_COUNTER;
-                                    ram_state_next <= RS_IDLE;
+                                if i_we = '1' then
+                                    r_ram_state_current <= s_await_counter;
+                                    r_ram_state_next <= s_idle;
 
                                     -- Start ADNV pulse (in the next clock cycle, address will be latched)
-                                    RAM_ADVN <= '0';
-                                    ram_drive_adq <= '1';
-                                    ram_drive_adq_d <= '1';
-                                    ram_cen_oe <= '1';
-                                    ram_rw_oe <= '1';
-                                    RAM_LBN <= ADR_I(0);
-                                    RAM_UBN <= not(ADR_I(0));
+                                    o_ram_advn <= '0';
+                                    r_ram_drive_adq <= '1';
+                                    r_ram_drive_adq_d <= '1';
+                                    r_ram_cen_oe <= '1';
+                                    r_ram_rw_oe <= '1';
+                                    o_ram_lbn <= i_adr(0);
+                                    o_ram_ubn <= not(i_adr(0));
 
                                     -- Initialise counter to idle after write finished
-                                    ram_counter <= T_COMP_CW;
+                                    r_ram_counter <= c_t_comp_cw;
 
                                     -- release ram bus after timer elapsed
-                                    ram_release <= '1';
+                                    r_ram_release <= '1';
 
                                     -- acknowledge to release the bus
-                                    wb_ack <= '1';
+                                    r_ack <= '1';
                                 else
-                                    ram_state_current <= RS_AWAIT_COUNTER;
-                                    ram_state_next <= RS_OE_MEM_RD;
+                                    r_ram_state_current <= s_await_counter;
+                                    r_ram_state_next <= s_oe_mem_rd;
 
                                     -- Start ADNV pulse (in the next clock cycle, address will be latched)
-                                    RAM_ADVN <= '0';
-                                    ram_drive_adq <= '1';
-                                    ram_drive_adq_d <= '1';
-                                    ram_cen_oe <= '1';
-                                    RAM_LBN <= ADR_I(0);
-                                    RAM_UBN <= not(ADR_I(0));
+                                    o_ram_advn <= '0';
+                                    r_ram_drive_adq <= '1';
+                                    r_ram_drive_adq_d <= '1';
+                                    r_ram_cen_oe <= '1';
+                                    o_ram_lbn <= i_adr(0);
+                                    o_ram_ubn <= not(i_adr(0));
 
                                     -- Initialise counter to wait until OE# may be asserted
-                                    ram_counter <= T_COMP_AOE;
+                                    r_ram_counter <= c_t_comp_aoe;
                                 end if;
                             else
                                 -- register operation
-                                if WE_I = '1' then
-                                    ram_state_current <= RS_BUFFER_REG_WR;
-                                    wb_ack <= '1';
+                                if i_we = '1' then
+                                    r_ram_state_current <= s_buffer_reg_wr;
+                                    r_ack <= '1';
                                 else
-                                    ram_state_current <= RS_AWAIT_COUNTER;
-                                    ram_state_next <= RS_OE_MEM_RD;
+                                    r_ram_state_current <= s_await_counter;
+                                    r_ram_state_next <= s_oe_mem_rd;
 
                                     -- Start ADNV pulse (in the next clock cycle, address will be latched)
-                                    RAM_ADVN <= '0';
-                                    ram_drive_adq <= '1';
-                                    ram_drive_adq_d <= '1';
-                                    RAM_CRE <= '1';
-                                    ram_cen_oe <= '1';
-                                    RAM_LBN <= '0';
-                                    RAM_UBN <= '0';
+                                    o_ram_advn <= '0';
+                                    r_ram_drive_adq <= '1';
+                                    r_ram_drive_adq_d <= '1';
+                                    o_ram_cre <= '1';
+                                    r_ram_cen_oe <= '1';
+                                    o_ram_lbn <= '0';
+                                    o_ram_ubn <= '0';
 
                                     -- Initialise counter to wait until OE# may be asserted
-                                    ram_counter <= T_COMP_AOE;
+                                    r_ram_counter <= c_t_comp_aoe;
                                 end if;
                             end if;
 
                             -- latch address
-                            RAM_A <= ADR_I(22 downto 17);
-                            ram_adq_out <= ADR_I(16 downto 1);
+                            o_ram_a <= i_adr(22 downto 17);
+                            r_ram_adq_out <= i_adr(16 downto 1);
 
                             -- latch correct chip select
-                            ram_cen_sel <= ADR_I(23);
+                            r_ram_cen_sel <= i_adr(23);
 
                             -- latch correct lower/upper byte
-                            ram_byte_sel <= ADR_I(0);
+                            r_ram_byte_sel <= i_adr(0);
 
                             -- latch we for later use
-                            ram_rw_sel <= WE_I;
+                            r_ram_rw_sel <= i_we;
                         end if;
 
                     -- buffer the bytes for writing value to a register
-                    when RS_BUFFER_REG_WR =>
-                        if CYC_I = '1' then
-                            case ram_reg_buffer_state is
-                                when RBS_ADQ7_0 =>
-                                    ram_adq_out(7 downto 0) <= DAT_I;
-                                    ram_reg_buffer_state <= RBS_ADQ15_8;
-                                    wb_ack <= '1';
+                    when s_buffer_reg_wr =>
+                        if i_cyc = '1' then
+                            case r_ram_reg_buffer_state is
+                                when s_adq7_0 =>
+                                    r_ram_adq_out(7 downto 0) <= i_dat;
+                                    r_ram_reg_buffer_state <= s_adq15_8;
+                                    r_ack <= '1';
 
-                                when RBS_ADQ15_8 =>
-                                    ram_adq_out(15 downto 8) <= DAT_I;
-                                    ram_reg_buffer_state <= RBS_A21_16;
-                                    wb_ack <= '1';
+                                when s_adq15_8 =>
+                                    r_ram_adq_out(15 downto 8) <= i_dat;
+                                    r_ram_reg_buffer_state <= s_a21_16;
+                                    r_ack <= '1';
 
-                                when RBS_A21_16 =>
-                                    RAM_A <= DAT_I(5 downto 0);
-                                    ram_state_current <= RS_AWAIT_COUNTER;
-                                    ram_state_next <= RS_IDLE;
+                                when s_a21_16 =>
+                                    o_ram_a <= i_dat(5 downto 0);
+                                    r_ram_state_current <= s_await_counter;
+                                    r_ram_state_next <= s_idle;
 
                                     -- Start ADNV pulse (in the next clock cycle, address will be latched)
-                                    RAM_ADVN <= '0';
-                                    ram_drive_adq <= '1';
-                                    ram_drive_adq_d <= '1';
-                                    RAM_CRE <= '1';
-                                    ram_cen_oe <= '1';
-                                    ram_rw_oe <= '1';
-                                    RAM_LBN <= '0';
-                                    RAM_UBN <= '0';
+                                    o_ram_advn <= '0';
+                                    r_ram_drive_adq <= '1';
+                                    r_ram_drive_adq_d <= '1';
+                                    o_ram_cre <= '1';
+                                    r_ram_cen_oe <= '1';
+                                    r_ram_rw_oe <= '1';
+                                    o_ram_lbn <= '0';
+                                    o_ram_ubn <= '0';
 
                                     -- Initialise counter to idle after write finished
-                                    ram_counter <= T_COMP_CW;
+                                    r_ram_counter <= c_t_comp_cw;
 
                                     -- release ram bus after timer elapsed
-                                    ram_release <= '1';
+                                    r_ram_release <= '1';
 
-                                    wb_ack <= '0';
+                                    r_ack <= '0';
                             end case;
                         end if;
 
                     -- assert OE after waiting a bit
-                    when RS_OE_MEM_RD =>
-                        ram_state_current <= RS_AWAIT_COUNTER;
-                        ram_state_next <= RS_AWAIT_RD_HANDSHAKE;
-                        ram_rw_oe <= '1';
+                    when s_oe_mem_rd =>
+                        r_ram_state_current <= s_await_counter;
+                        r_ram_state_next <= s_await_rd_handshake;
+                        r_ram_rw_oe <= '1';
 
                         -- Initialise counter to idle until data is available
-                        ram_counter <= T_COMP_TOE;
+                        r_ram_counter <= c_t_comp_toe;
 
                         -- release ram bus after timer elapsed
-                        ram_release <= '1';
+                        r_ram_release <= '1';
 
                     -- await Wishbone handshake after
-                    when RS_AWAIT_RD_HANDSHAKE =>
-                        wb_ack <= '1';
+                    when s_await_rd_handshake =>
+                        r_ack <= '1';
 
                         -- check for handshake
-                        if (CYC_I and wb_ack) = '1' then
-                            wb_ack <= '0';
-                            ram_state_current <= RS_IDLE;
+                        if (i_cyc and r_ack) = '1' then
+                            r_ack <= '0';
+                            r_ram_state_current <= s_idle;
                         end if;
 
                     -- wait for the counter to elapse and jump to next state
-                    when RS_AWAIT_COUNTER =>
-                        if ram_counter_elapsed = '1' then
-                            ram_state_current <= ram_state_next;
-                            if ram_release = '1' then
-                                ram_release <= '0';
-                                ram_cen_oe <= '0';
-                                ram_rw_oe <= '0';
-                                RAM_CRE <= '0';
-                                RAM_LBN <= '1';
-                                RAM_UBN <= '1';
-                                ram_adq_in <= RAM_ADQ;
+                    when s_await_counter =>
+                        if n_ram_counter_elapsed = '1' then
+                            r_ram_state_current <= r_ram_state_next;
+                            if r_ram_release = '1' then
+                                r_ram_release <= '0';
+                                r_ram_cen_oe <= '0';
+                                r_ram_rw_oe <= '0';
+                                o_ram_cre <= '0';
+                                o_ram_lbn <= '1';
+                                o_ram_ubn <= '1';
+                                r_ram_adq_in <= io_ram_adq;
                             end if;
                         end if;
                 end case;
 
-                if ram_counter_elapsed = '0' then
-                    ram_counter <= std_logic_vector(unsigned(ram_counter) - 1);
+                if n_ram_counter_elapsed = '0' then
+                    r_ram_counter <= std_logic_vector(unsigned(r_ram_counter) - 1);
                 end if;
             end if;
         end if;
     end process;
 
-    ram_counter_elapsed <= nor_reduce(ram_counter);
+    n_ram_counter_elapsed <= nor_reduce(r_ram_counter);
 
 end architecture rtl;

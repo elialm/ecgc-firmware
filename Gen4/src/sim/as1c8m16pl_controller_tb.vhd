@@ -18,176 +18,176 @@ architecture rtl of as1c8m16pl_controller_tb is
 
     component as1c8m16pl_controller
         generic (
-            CLK_FREQ : real := 100.0
+            p_clk_freq : real := 100.0
         );
         port (
-            CLK_I    : in std_logic;
-            RST_I    : in std_logic;
-            CYC_I    : in std_logic;
-            WE_I     : in std_logic;
-            ACK_O    : out std_logic;
-            ADR_I    : in std_logic_vector(23 downto 0);
-            TGA_I    : in std_logic_vector(0 downto 0);
-            DAT_I    : in std_logic_vector(7 downto 0);
-            DAT_O    : out std_logic_vector(7 downto 0);
-            RAM_ADQ  : inout std_logic_vector(15 downto 0);
-            RAM_A    : out std_logic_vector(5 downto 0);
-            RAM_ADVN : out std_logic;
-            RAM_CE0N : out std_logic;
-            RAM_CE1N : out std_logic;
-            RAM_CLK  : out std_logic;
-            RAM_CRE  : out std_logic;
-            RAM_LBN  : out std_logic;
-            RAM_UBN  : out std_logic;
-            RAM_OEN  : out std_logic;
-            RAM_WAIT : in std_logic;
-            RAM_WEN  : out std_logic
+            i_clk      : in std_logic;
+            i_rst      : in std_logic;
+            i_cyc      : in std_logic;
+            i_we       : in std_logic;
+            o_ack      : out std_logic;
+            i_adr      : in std_logic_vector(23 downto 0);
+            i_tga      : in std_logic_vector(0 downto 0);
+            i_dat      : in std_logic_vector(7 downto 0);
+            o_dat      : out std_logic_vector(7 downto 0);
+            io_ram_adq : inout std_logic_vector(15 downto 0);
+            o_ram_a    : out std_logic_vector(5 downto 0);
+            o_ram_advn : out std_logic;
+            o_ram_ce0n : out std_logic;
+            o_ram_ce1n : out std_logic;
+            o_ram_clk  : out std_logic;
+            o_ram_cre  : out std_logic;
+            o_ram_lbn  : out std_logic;
+            o_ram_ubn  : out std_logic;
+            o_ram_oen  : out std_logic;
+            i_ram_wait : in std_logic;
+            o_ram_wen  : out std_logic
         );
     end component;
 
-    signal clk_i : std_logic := '0';
-    signal rst_i : std_logic := '1';
-    signal cyc_i : std_logic := '0';
-    signal we_i : std_logic := '0';
-    signal ack_o : std_logic;
-    signal adr_i : std_logic_vector(23 downto 0);
-    signal tga_i : std_logic_vector(0 downto 0);
-    signal dat_i : std_logic_vector(7 downto 0);
-    signal dat_o : std_logic_vector(7 downto 0);
-    signal ram_adq : std_logic_vector(15 downto 0);
-    signal ram_a : std_logic_vector(5 downto 0);
-    signal ram_advn : std_logic;
-    signal ram_ce0n : std_logic;
-    signal ram_ce1n : std_logic;
-    signal ram_clk : std_logic;
-    signal ram_cre : std_logic;
-    signal ram_lbn : std_logic;
-    signal ram_ubn : std_logic;
-    signal ram_oen : std_logic;
-    signal ram_wait : std_logic := '0';
-    signal ram_wen : std_logic;
+    signal n_clk : std_logic := '0';
+    signal n_rst : std_logic := '1';
+    signal n_cyc : std_logic := '0';
+    signal n_we : std_logic := '0';
+    signal n_ack : std_logic;
+    signal n_adr : std_logic_vector(23 downto 0);
+    signal n_tga : std_logic_vector(0 downto 0);
+    signal n_din : std_logic_vector(7 downto 0);
+    signal n_dout : std_logic_vector(7 downto 0);
+    signal n_ram_adq : std_logic_vector(15 downto 0);
+    signal n_ram_a : std_logic_vector(5 downto 0);
+    signal n_ram_advn : std_logic;
+    signal n_ram_ce0n : std_logic;
+    signal n_ram_ce1n : std_logic;
+    signal n_ram_clk : std_logic;
+    signal n_ram_cre : std_logic;
+    signal n_ram_lbn : std_logic;
+    signal n_ram_ubn : std_logic;
+    signal n_ram_oen : std_logic;
+    signal n_ram_wait : std_logic := '0';
+    signal n_ram_wen : std_logic;
 
 begin
 
-    clk_i <= not(clk_i) after 5 ns;
-    rst_i <= '1', '0' after 160 ns;
+    n_clk <= not(n_clk) after 5 ns;
+    n_rst <= '1', '0' after 160 ns;
 
     -- simulate ram driving ADQ on OE#
     process
     begin
-        ram_adq <= (others => 'Z');
+        n_ram_adq <= (others => 'Z');
 
-        wait on ram_oen until ram_oen = '0';
+        wait on n_ram_oen until n_ram_oen = '0';
         wait for 20 ns - 1 ps;
-        ram_adq <= x"1234";
-        wait on ram_oen until ram_oen = '1';
+        n_ram_adq <= x"1234";
+        wait on n_ram_oen until n_ram_oen = '1';
         wait for 7 ns;
     end process;
 
     process
     begin
-        wait on clk_i until clk_i = '1' and rst_i = '0';
+        wait on n_clk until n_clk = '1' and n_rst = '0';
 
         -- test register write
-        cyc_i <= '1';
-        we_i <= '1';
-        tga_i(0) <= '1';
-        adr_i <= (others => '0'); -- address can be whatever
-        dat_i <= x"35";
-        wait on clk_i until clk_i = '1' and ack_o = '1';
-        dat_i <= x"AC";
-        wait on clk_i until clk_i = '1' and ack_o = '1';
-        dat_i <= x"2F";
-        wait on clk_i until clk_i = '1' and ack_o = '1';
-        cyc_i <= '0';
-        we_i <= '0';
-        tga_i(0) <= '0';
+        n_cyc <= '1';
+        n_we <= '1';
+        n_tga(0) <= '1';
+        n_adr <= (others => '0'); -- address can be whatever
+        n_din <= x"35";
+        wait on n_clk until n_clk = '1' and n_ack = '1';
+        n_din <= x"AC";
+        wait on n_clk until n_clk = '1' and n_ack = '1';
+        n_din <= x"2F";
+        wait on n_clk until n_clk = '1' and n_ack = '1';
+        n_cyc <= '0';
+        n_we <= '0';
+        n_tga(0) <= '0';
 
         -- wait a bit for the core to write to register
         wait for 100 ns;
 
         -- test register read (lower byte)
-        cyc_i <= '1';
-        tga_i(0) <= '1';
+        n_cyc <= '1';
+        n_tga(0) <= '1';
         -- bit 0 = upper or lower byte of register
         -- bits 20:19 = select register (see datasheet)
-        adr_i <= (0 => '0', others => '0');
-        wait on clk_i until clk_i = '1' and ack_o = '1';
-        cyc_i <= '0';
-        tga_i(0) <= '0';
+        n_adr <= (0 => '0', others => '0');
+        wait on n_clk until n_clk = '1' and n_ack = '1';
+        n_cyc <= '0';
+        n_tga(0) <= '0';
 
         -- test register read (upper byte)
-        cyc_i <= '1';
-        tga_i(0) <= '1';
-        adr_i <= (0 => '1', others => '0');
-        wait on clk_i until clk_i = '1' and ack_o = '1';
-        cyc_i <= '0';
-        tga_i(0) <= '0';
+        n_cyc <= '1';
+        n_tga(0) <= '1';
+        n_adr <= (0 => '1', others => '0');
+        wait on n_clk until n_clk = '1' and n_ack = '1';
+        n_cyc <= '0';
+        n_tga(0) <= '0';
 
         -- test normal write (LBN, CSN0)
-        cyc_i <= '1';
-        we_i <= '1';
-        adr_i <= x"402010";
-        dat_i <= x"55";
-        wait on clk_i until clk_i = '1' and ack_o = '1';
-        cyc_i <= '0';
-        we_i <= '0';
+        n_cyc <= '1';
+        n_we <= '1';
+        n_adr <= x"402010";
+        n_din <= x"55";
+        wait on n_clk until n_clk = '1' and n_ack = '1';
+        n_cyc <= '0';
+        n_we <= '0';
 
         -- wait a bit for the core to write to memory
         wait for 100 ns;
 
         -- test normal write (UBN, CSN1)
-        cyc_i <= '1';
-        we_i <= '1';
-        adr_i <= x"F02013";
-        dat_i <= x"55";
-        wait on clk_i until clk_i = '1' and ack_o = '1';
-        cyc_i <= '0';
-        we_i <= '0';
+        n_cyc <= '1';
+        n_we <= '1';
+        n_adr <= x"F02013";
+        n_din <= x"55";
+        wait on n_clk until n_clk = '1' and n_ack = '1';
+        n_cyc <= '0';
+        n_we <= '0';
 
         -- wait a bit for the core to write to memory
         wait for 100 ns;
 
         -- test normal read (LBN, CSN1)
-        cyc_i <= '1';
-        adr_i <= x"802010";
-        wait on clk_i until clk_i = '1' and ack_o = '1';
-        cyc_i <= '0';
-        we_i <= '0';
+        n_cyc <= '1';
+        n_adr <= x"802010";
+        wait on n_clk until n_clk = '1' and n_ack = '1';
+        n_cyc <= '0';
+        n_we <= '0';
 
         -- test normal read (UBN, CSN0)
-        cyc_i <= '1';
-        adr_i <= x"402011";
-        wait on clk_i until clk_i = '1' and ack_o = '1';
-        cyc_i <= '0';
-        we_i <= '0';
+        n_cyc <= '1';
+        n_adr <= x"402011";
+        wait on n_clk until n_clk = '1' and n_ack = '1';
+        n_cyc <= '0';
+        n_we <= '0';
 
         wait;
     end process;
 
     inst_ram_controller : as1c8m16pl_controller
     port map(
-        CLK_I    => clk_i,
-        RST_I    => rst_i,
-        CYC_I    => cyc_i,
-        WE_I     => we_i,
-        ACK_O    => ack_o,
-        ADR_I    => adr_i,
-        TGA_I    => tga_i,
-        DAT_I    => dat_i,
-        DAT_O    => dat_o,
-        RAM_ADQ  => ram_adq,
-        RAM_A    => ram_a,
-        RAM_ADVN => ram_advn,
-        RAM_CE0N => ram_ce0n,
-        RAM_CE1N => ram_ce1n,
-        RAM_CLK  => ram_clk,
-        RAM_CRE  => ram_cre,
-        RAM_LBN  => ram_lbn,
-        RAM_UBN  => ram_ubn,
-        RAM_OEN  => ram_oen,
-        RAM_WAIT => ram_wait,
-        RAM_WEN  => ram_wen
+        i_clk      => n_clk,
+        i_rst      => n_rst,
+        i_cyc      => n_cyc,
+        i_we       => n_we,
+        o_ack      => n_ack,
+        i_adr      => n_adr,
+        i_tga      => n_tga,
+        i_dat      => n_dat,
+        o_dat      => n_dat,
+        io_ram_adq => no_ram_adq,
+        o_ram_a    => n_ram_a,
+        o_ram_advn => n_ram_advn,
+        o_ram_ce0n => n_ram_ce0n,
+        o_ram_ce1n => n_ram_ce1n,
+        o_ram_clk  => n_ram_clk,
+        o_ram_cre  => n_ram_cre,
+        o_ram_lbn  => n_ram_lbn,
+        o_ram_ubn  => n_ram_ubn,
+        o_ram_oen  => n_ram_oen,
+        i_ram_wait => n_ram_wait,
+        o_ram_wen  => n_ram_wen
     );
 
 end architecture rtl;
