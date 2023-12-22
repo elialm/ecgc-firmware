@@ -15,49 +15,41 @@ use IEEE.math_real.all;
 
 entity gb_decoder is
     generic (
-        ENABLE_TIMEOUT_DETECTION : boolean := false;
-        CLK_FREQ : real := 53.20);
+        p_enable_timeout_detection : boolean := false;
+        p_clk_freq : real := 53.20
+    );
     port (
         -- Gameboy signals
-        GB_CLK      : in std_logic;
-        GB_ADDR     : in std_logic_vector(15 downto 0);
-        GB_DATA_IN  : in std_logic_vector(7 downto 0);
-        GB_DATA_OUT : out std_logic_vector(7 downto 0);
-        GB_RDN      : in std_logic;
-        GB_CSN      : in std_logic;
+        i_gb_clk  : in std_logic;
+        i_gb_addr : in std_logic_vector(15 downto 0);
+        i_gb_din  : in std_logic_vector(7 downto 0);
+        o_gb_dout : out std_logic_vector(7 downto 0);
+        i_gb_rdn  : in std_logic;
+        i_gb_csn  : in std_logic;
 
         -- Wishbone signals
-        CLK_I : in std_logic;
-        RST_I : in std_logic;
-        CYC_O : out std_logic;
-        WE_O  : out std_logic;
-        ADR_O : out std_logic_vector(15 downto 0);
-        DAT_I : in std_logic_vector(7 downto 0);
-        DAT_O : out std_logic_vector(7 downto 0);
-        ACK_I : in std_logic;
+        i_clk : in std_logic;
+        i_rst : in std_logic;
+        o_cyc : out std_logic;
+        o_we  : out std_logic;
+        o_adr : out std_logic_vector(15 downto 0);
+        i_dat : in std_logic_vector(7 downto 0);
+        o_dat : out std_logic_vector(7 downto 0);
+        i_ack : in std_logic;
 
-        ACCESS_ROM    : out std_logic;  -- Indicates when address range 0x0000-0x7FFF is being accessed. Only valid when CYC_O = 1.
-        ACCESS_RAM    : out std_logic;  -- Indicates when address range 0xA000-0xBFFF is being accessed. Only valid when CYC_O = 1.
-        WR_TIMEOUT    : out std_logic;  -- Indicates that a write timeout has occurred. Asserting RST_I will reset this back to 0.
-        RD_TIMEOUT    : out std_logic); -- Indicates that a read timeout has occurred. Asserting RST_I will reset this back to 0.
-end gb_decoder;
+        o_access_rom : out std_logic;  -- Indicates when address range 0x0000-0x7FFF is being accessed. Only valid when n_cyc = 1.
+        o_access_ram : out std_logic;  -- Indicates when address range 0xA000-0xBFFF is being accessed. Only valid when n_cyc = 1.
+        o_wr_timeout : out std_logic;  -- Indicates that a write timeout has occurred. Asserting i_rst will reset this back to 0.
+        o_rd_timeout : out std_logic   -- Indicates that a read timeout has occurred. Asserting i_rst will reset this back to 0.
+    );
+    end gb_decoder;
 
 architecture rtl of gb_decoder is
 
-    type GAMEBOY_BUS_STATE_TYPE is (GBBS_AWAIT_ACCESS_FINISHED, GBBS_IDLE, GBBS_READ_AWAIT_ACK, GBBS_WRITE_AWAIT_FALLING_EDGE, GBBS_WRITE_AWAIT_ACK);
+    type t_gb_bus_state is (s_await_access_finished, s_idle, s_read_await_ack, s_write_await_falling_edge, s_write_await_ack);
 
-    constant CYC_COUNTER_READ : std_logic_vector(3 downto 0) := "1000"; -- 9 cycles
-    constant CYC_COUNTER_WRITE : std_logic_vector(3 downto 0) := "1000"; -- 9 cycles (I think)
-    constant RBLOCK_COUNTER_BITS : positive := positive(ceil(log2(0.5 * CLK_FREQ))); -- T = half GB clock cycle
-
-    -- Take time in ns and convert to value to be used in a timer
-    function to_tcomp_ns(tns : real; bc : positive)
-        return std_logic_vector is
-    begin
-        return std_logic_vector(to_unsigned(natural(ceil(tns * CLK_FREQ / 1000.00)), bc));
-    end to_tcomp_ns;
-
-    constant T_COMP_RBLOCK : std_logic_vector(RBLOCK_COUNTER_BITS - 1 downto 0) := to_tcomp_ns(500.0, RBLOCK_COUNTER_BITS);
+    constant c_cyc_counter_read : std_logic_vector(3 downto 0) := "1000"; -- 9 cycles
+    constant c_cyc_counter_write : std_logic_vector(3 downto 0) := "1000"; -- 9 cycles (I think)
 
     component synchroniser is
         generic (
@@ -72,145 +64,154 @@ architecture rtl of gb_decoder is
     end component;
 
     -- Synchronised signals from GameBoy
-    signal gb_clk_sync : std_logic;
-    signal gb_csn_sync : std_logic;
-    signal gb_addr_sync : std_logic_vector(2 downto 0);
+    signal n_gb_clk_sync : std_logic;
+    signal n_gb_csn_sync : std_logic;
+    signal n_gb_addr_sync : std_logic_vector(2 downto 0);
 
     -- Access signals (combinatorial)
-    signal gb_access_rom : std_logic;
-    signal gb_access_ram : std_logic;
-    signal gb_access_cart : std_logic;
+    signal n_gb_access_rom : std_logic;
+    signal n_gb_access_ram : std_logic;
+    signal n_gb_access_cart : std_logic;
 
-    signal gb_bus_state : GAMEBOY_BUS_STATE_TYPE;
-
-    signal cyc_counter : std_logic_vector(3 downto 0);
-    signal cyc_timeout : std_logic;
-    signal wb_cyc_o : std_logic;
+    signal r_gb_bus_state : t_gb_bus_state;
+    signal r_cyc_counter  : std_logic_vector(3 downto 0);
+    signal n_cyc_timeout  : std_logic;
+    signal n_cyc          : std_logic;
 
 begin
 
-    ADDRESS_SYNCHRONISER : component synchroniser
-        generic map(
-            DATA_WIDTH => 3)
-        port map(
-            CLK     => CLK_I,
-            RST     => RST_I,
-            DAT_IN  => GB_ADDR(15 downto 13),
-            DAT_OUT => gb_addr_sync);
+    -- We only synchronise the upper 3 bits of the address, since only
+    -- those are needed for the activation trigger. By the time these are
+    -- processed, enough time has passed to safely read the other bits.
+    inst_address_synchroniser : synchroniser
+    generic map(
+        DATA_WIDTH => 3
+    )
+    port map(
+        CLK     => i_clk,
+        RST     => i_rst,
+        DAT_IN  => i_gb_addr(15 downto 13),
+        DAT_OUT => n_gb_addr_sync
+    );
 
-    CLK_SYNCHRONISER : component synchroniser
-        port map(
-            CLK        => CLK_I,
-            RST        => RST_I,
-            DAT_IN(0)  => GB_CLK,
-            DAT_OUT(0) => gb_clk_sync);
+    inst_clk_synchroniser : synchroniser
+    port map(
+        CLK        => i_clk,
+        RST        => i_rst,
+        DAT_IN(0)  => i_gb_clk,
+        DAT_OUT(0) => n_gb_clk_sync
+    );
 
-    CSN_SYNCHRONISER : component synchroniser
-        port map(
-            CLK        => CLK_I,
-            RST        => RST_I,
-            DAT_IN(0)  => GB_CSN,
-            DAT_OUT(0) => gb_csn_sync);
+    inst_csn_synchroniser : synchroniser
+    port map(
+        CLK        => i_clk,
+        RST        => i_rst,
+        DAT_IN(0)  => i_gb_csn,
+        DAT_OUT(0) => n_gb_csn_sync
+    );
 
     -- Signals for determining type of access
-    gb_access_rom <= not(gb_addr_sync(2)); -- 0x0000 - 0x7FFF
-    gb_access_ram <= not(gb_csn_sync)
-        and gb_addr_sync(2)
-        and not(gb_addr_sync(1))
-        and gb_addr_sync(0); -- 0xA000 - 0xBFFF
-    gb_access_cart <= gb_access_rom or gb_access_ram;
+    -- n_gb_access_rom <= '1' on accesses in range 0x0000 - 0x7FFF
+    -- n_gb_access_ram <= '1' on accesses in range 0xA000 - 0xBFFF
+    n_gb_access_cart <= n_gb_access_rom or n_gb_access_ram;
+    n_gb_access_rom <= not(n_gb_addr_sync(2));
+    n_gb_access_ram <= not(n_gb_csn_sync)
+        and n_gb_addr_sync(2)
+        and not(n_gb_addr_sync(1))
+        and n_gb_addr_sync(0);
 
-    ACCESS_ROM <= gb_access_rom;
-    ACCESS_RAM <= gb_access_ram;
-
-    CYC_O <= wb_cyc_o;
+    o_access_rom <= n_gb_access_rom;
+    o_access_ram <= n_gb_access_ram;
+    o_cyc <= n_cyc;
 
     -- Control Wishbone cycles
-    process (CLK_I)
+    process (i_clk)
     begin
-        if rising_edge(CLK_I) then
-            if RST_I = '1' then
-                gb_bus_state <= GBBS_AWAIT_ACCESS_FINISHED;
-                cyc_counter <= (others => '1');
-                wb_cyc_o <= '0';
+        if rising_edge(i_clk) then
+            if i_rst = '1' then
+                r_gb_bus_state <= s_await_access_finished;
+                r_cyc_counter <= (others => '1');
+                n_cyc <= '0';
 
-                WE_O <= '0';
-                ADR_O <= (others => '0');
-                DAT_O <= (others => '0');
-                GB_DATA_OUT <= (others => '0');
-                RD_TIMEOUT <= '0';
-                WR_TIMEOUT <= '0';
+                o_we <= '0';
+                o_adr <= (oth => '0');
+                o_dat <= (oth => '0');
+                o_gb_dout <= hers => '0');
+                o_rd_timeout '0';
+                o_wr_timeout <= '0';
             else
                 -- Bus decoder state machine
-                case gb_bus_state is
-                    when GBBS_AWAIT_ACCESS_FINISHED =>
-                        if gb_access_cart = '0' then
-                            gb_bus_state <= GBBS_IDLE;
+                case r_gb_bus_state is
+                    when s_await_access_finished =>
+                        if n_gb_access_cart = '0' then
+                            r_gb_bus_state <= s_idle;
                         end if;
 
-                    when GBBS_IDLE =>
-                        if gb_access_cart = '1' then
-                            if GB_RDN = '0' then
+                    when s_idle =>
+                        if n_gb_access_cart = '1' then
+                            if i_gb_rdn = '0' then
                                 -- Initiate read from cart
-                                gb_bus_state <= GBBS_READ_AWAIT_ACK;
-                                wb_cyc_o <= '1';
-                                WE_O <= '0';
-                                cyc_counter <= CYC_COUNTER_READ;
+                                r_gb_bus_state <= s_read_await_ack;
+                                n_cyc <= '1';
+                                o_we <= '0';
+                                r_cyc_counter <= c_cyc_counter_read;
                             else
                                 -- Initiate write to cart
-                                gb_bus_state <= GBBS_WRITE_AWAIT_FALLING_EDGE;
+                                r_gb_bus_state <= s_write_await_falling_edge;
                             end if;
 
-                            ADR_O <= GB_ADDR;
+                            o_adr <= i_gb_addr;
                         end if;
 
-                    when GBBS_READ_AWAIT_ACK =>
-                        if ACK_I = '1' then
-                            gb_bus_state <= GBBS_AWAIT_ACCESS_FINISHED;
-                            wb_cyc_o <= '0';
-                            GB_DATA_OUT <= DAT_I;
+                    when s_read_await_ack =>
+                        if i_ack = '1' then
+                            r_gb_bus_state <= s_await_access_finished;
+                            n_cyc <= '0';
+                            o_gb_dout <= i_dat;
+                        end 
+                        if n_cyc_timeout =  then
+                            o_rd_timeout '1';
                         end if;
 
-                        if cyc_timeout = '1' then
-                            RD_TIMEOUT <= '1';
+                    when s_write_await_falling_edge =>
+                        if n_gb_clk_sync = '0' then
+                            r_gb_bus_state <= s_write_await_ack;
+                            n_cyc <= '1';
+                            o_we <= '1';
+                            o_dat <= i_gb_din;
+                            r_cyc_counter <= c_cyc_counter_write;
                         end if;
 
-                    when GBBS_WRITE_AWAIT_FALLING_EDGE =>
-                        if gb_clk_sync = '0' then
-                            gb_bus_state <= GBBS_WRITE_AWAIT_ACK;
-                            wb_cyc_o <= '1';
-                            WE_O <= '1';
-                            DAT_O <= GB_DATA_IN;
-                            cyc_counter <= CYC_COUNTER_WRITE;
+                    when s_write_await_ack =>
+                        if i_ack = '1' then
+                            r_gb_bus_state <= s_await_access_finished;
+                            n_cyc <= '0';
                         end if;
 
-                    when GBBS_WRITE_AWAIT_ACK =>
-                        if ACK_I = '1' then
-                            gb_bus_state <= GBBS_AWAIT_ACCESS_FINISHED;
-                            wb_cyc_o <= '0';
-                        end if;
-
-                        if cyc_timeout = '1' then
-                            WR_TIMEOUT <= '1';
+                        if n_cyc_timeout = '1' then
+                            o_wr_timeout <= '1';
                         end if;
 
                     when others =>
-                        gb_bus_state <= GBBS_AWAIT_ACCESS_FINISHED;
-                        wb_cyc_o <= '0';
+                        r_gb_bus_state <= s_await_access_finished;
+                        n_cyc <= '0';
                 end case;
             end if;
 
             -- Decrement timeout counter
-            if cyc_timeout = '0' and ENABLE_TIMEOUT_DETECTION then
-                cyc_counter <= std_logic_vector(unsigned(cyc_counter) - 1);
+            if n_cyc_timeout = '0' and p_enable_timeout_detection then
+                r_cyc_counter <= std_logic_vector(unsigned(r_cyc_counter) - 1);
             end if;
         end if;
     end process;
 
-    CYC_TIMEOUT_SIGNAL : if ENABLE_TIMEOUT_DETECTION generate
-        cyc_timeout <= nor_reduce(cyc_counter);
+    -- Should not be necessary, since the synthesiser should optimise
+    -- it out if r_cyc_counter does not change, but I will leave it
+    -- to feel good about it.
+    gen_conditional_cyc_timeout : if p_enable_timeout_detection generate
+        n_cyc_timeout <= nor_reduce(r_cyc_counter);
     else generate
-        cyc_timeout <= '0';
+        n_cyc_timeout <= '0';
     end generate;
 
 end rtl;

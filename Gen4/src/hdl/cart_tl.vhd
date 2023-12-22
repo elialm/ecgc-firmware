@@ -23,80 +23,88 @@ use XP2.all;
 
 entity cart_tl is
     generic (
-        SIMULATION : boolean := FALSE
+        p_simulation : boolean := FALSE
     );
     port (
         -- Clocking and reset
-        FPGA_CLK33M    : in std_logic;
-        CLK_EN         : out std_logic;
-        FPGA_SOFT_RSTN : in std_logic;
+        i_fpga_clk33m : in std_logic;
+        o_clk_en      : out std_logic;
+        i_fpga_rstn   : in std_logic;
 
         -- GB related ports
-        GB_ADDR   : in std_logic_vector(15 downto 0);
-        GB_DATA   : inout std_logic_vector(7 downto 0);
-        GB_BUS_EN : out std_logic;
-        GB_CLK    : in std_logic;
-        GB_CSN    : in std_logic;
-        GB_RDN    : in std_logic;
-        GB_WRN    : in std_logic;
-        GB_RSTN   : out std_logic;
+        i_gb_addr   : in std_logic_vector(15 downto 0);
+        io_gb_data  : inout std_logic_vector(7 downto 0);
+        o_gb_bus_en : out std_logic;
+        i_gb_clk    : in std_logic;
+        i_gb_csn    : in std_logic;
+        i_gb_rdn    : in std_logic;
+        i_gb_wrn    : in std_logic;
+        o_gb_rstn   : out std_logic;
 
         -- RAM related ports
-        RAM_ADQ  : inout std_logic_vector(15 downto 0);
-        RAM_A    : out std_logic_vector(5 downto 0);
-        RAM_ADVN : out std_logic;
-        RAM_CE0N : out std_logic;
-        RAM_CE1N : out std_logic;
-        RAM_CLK  : out std_logic;
-        RAM_CRE  : out std_logic;
-        RAM_LBN  : out std_logic;
-        RAM_UBN  : out std_logic;
-        RAM_OEN  : out std_logic;
-        RAM_WAIT : in std_logic;
-        RAM_WEN  : out std_logic;
+        io_ram_adq : inout std_logic_vector(15 downto 0);
+        o_ram_a    : out std_logic_vector(5 downto 0);
+        o_ram_advn : out std_logic;
+        o_ram_ce0n : out std_logic;
+        o_ram_ce1n : out std_logic;
+        o_ram_clk  : out std_logic;
+        o_ram_cre  : out std_logic;
+        o_ram_lbn  : out std_logic;
+        o_ram_ubn  : out std_logic;
+        o_ram_oen  : out std_logic;
+        i_ram_wait : in std_logic;
+        o_ram_wen  : out std_logic;
 
         -- SPI related signals
-        FPGA_SPI_CLK       : inout std_logic;
-        FPGA_SPI_MISO      : inout std_logic;
-        FPGA_SPI_MOSI      : inout std_logic;
-        FPGA_SPI_FLASH_CSN : out std_logic;
-        FPGA_SPI_RTC_CSN   : out std_logic;
-        FPGA_SPI_SD_CSN    : out std_logic;
+        io_fpga_spi_clk      : inout std_logic;
+        io_fpga_spi_miso     : inout std_logic;
+        io_fpga_spi_miso     : inout std_logic;
+        o_fpga_spi_flash_csn : out std_logic;
+        o_fpga_spi_rtc_csn   : out std_logic;
+        o_fpga_spi_sd_csn    : out std_logic;
 
         -- Miscellaneous signals
-        FPGA_USER      : inout std_logic_vector(5 downto 0);
-        RTC_RSTN       : in std_logic;
-        SD_CARD_DETECT : in std_logic
+        io_fpga_user     : inout std_logic_vector(5 downto 0);
+        i_rtc_rstn       : in std_logic;
+        i_sd_card_detect : in std_logic
     );
 end entity cart_tl;
 
 architecture rtl of cart_tl is
 
+    -- Frequencies used for timing calculations
+    constant c_pll_clkop_freq     : real := 99.999999;
+    constant c_pll_clkok_freq     : real := c_pll_clkop_freq / 100;
+    constant c_clkdivb_cdiv1_freq : real := c_pll_clkop_freq;
+    constant c_clkdivb_cdiv2_freq : real := c_clkdivb_cdiv1_freq / 2;
+    constant c_clkdivb_cdiv4_freq : real := c_clkdivb_cdiv1_freq / 4;
+    constant c_clkdivb_cdiv8_freq : real := c_clkdivb_cdiv1_freq / 8;
+
     component pll
         port (
-            CLK   : in std_logic;
-            CLKOP : out std_logic;
-            CLKOK : out std_logic;
-            LOCK  : out std_logic
+            clk   : in std_logic;
+            clkop : out std_logic;
+            clkok : out std_logic;
+            lock  : out std_logic
         );
     end component;
 
     component CLKDIVB
         -- synthesis translate_off
         generic (
-            GSR : in string
+            gsr : in string
         );
         -- synthesis translate_on
         port (
-            CLKI    : in std_logic;
-            RST     : in std_logic;
+            clki    : in std_logic;
+            rst     : in std_logic;
             -- synthesis translate_off
-            RELEASE : in std_logic;
+            release : in std_logic;
             -- synthesis translate_on
-            CDIV1   : out std_logic;
-            CDIV2   : out std_logic;
-            CDIV4   : out std_logic;
-            CDIV8   : out std_logic
+            cdiv1   : out std_logic;
+            cdiv2   : out std_logic;
+            cdiv4   : out std_logic;
+            cdiv8   : out std_logic
         );
     end component;
 
@@ -104,7 +112,7 @@ architecture rtl of cart_tl is
         generic (
             GSR_FF : positive := 8;
             AUX_FF : positive := 9;
-            SIMULATION : boolean := SIMULATION
+            SIMULATION : boolean := p_simulation
         );
         port (
             SYNC_CLK   : in std_logic;
@@ -121,28 +129,28 @@ architecture rtl of cart_tl is
 
     component gb_decoder
         generic (
-            ENABLE_TIMEOUT_DETECTION : boolean := false;
-            CLK_FREQ : real := 99.999999
+            p_enable_timeout_detection : boolean := true;
+            p_clk_freq : real := c_clkdivb_cdiv1_freq
         );
         port (
-            GB_CLK      : in std_logic;
-            GB_ADDR     : in std_logic_vector(15 downto 0);
-            GB_DATA_IN  : in std_logic_vector(7 downto 0);
-            GB_DATA_OUT : out std_logic_vector(7 downto 0);
-            GB_RDN      : in std_logic;
-            GB_CSN      : in std_logic;
-            CLK_I       : in std_logic;
-            RST_I       : in std_logic;
-            CYC_O       : out std_logic;
-            WE_O        : out std_logic;
-            ADR_O       : out std_logic_vector(15 downto 0);
-            DAT_I       : in std_logic_vector(7 downto 0);
-            DAT_O       : out std_logic_vector(7 downto 0);
-            ACK_I       : in std_logic;
-            ACCESS_ROM  : out std_logic;
-            ACCESS_RAM  : out std_logic;
-            WR_TIMEOUT  : out std_logic;
-            RD_TIMEOUT  : out std_logic
+            i_gb_clk      : in std_logic;
+            i_gb_addr     : in std_logic_vector(15 downto 0);
+            i_gb_din  : in std_logic_vector(7 downto 0);
+            o_gb_dout : out std_logic_vector(7 downto 0);
+            i_gb_rdn      : in std_logic;
+            i_gb_csn      : in std_logic;
+            i_clk       : in std_logic;
+            i_rst       : in std_logic;
+            o_cyc       : out std_logic;
+            o_we        : out std_logic;
+            o_adr       : out std_logic_vector(15 downto 0);
+            i_dat       : in std_logic_vector(7 downto 0);
+            o_dat       : out std_logic_vector(7 downto 0);
+            i_ack       : in std_logic;
+            o_access_rom  : out std_logic;
+            o_access_ram  : out std_logic;
+            o_wr_timeout  : out std_logic;
+            o_rd_timeout  : out std_logic
         );
     end component;
 
@@ -252,79 +260,79 @@ architecture rtl of cart_tl is
     attribute GSR of inst_clkdiv : label is "DISABLED";
 
     -- Clocks
-    signal pll_clk_op : std_logic;
-    signal pll_clk_ok : std_logic;
-    signal pll_lock : std_logic;
-    signal pll_lockn : std_logic;
-    signal clk_div1 : std_logic;
-    signal clk_div2 : std_logic;
-    signal clk_div4 : std_logic;
-    signal clk_div8 : std_logic;
+    signal n_pll_clk_op : std_logic;
+    signal n_pll_clk_ok : std_logic;
+    signal n_pll_lock : std_logic;
+    signal n_pll_lockn : std_logic;
+    signal n_clk_div1 : std_logic;
+    signal n_clk_div2 : std_logic;
+    signal n_clk_div4 : std_logic;
+    signal n_clk_div8 : std_logic;
 
     -- Resets
-    signal soft_reset : std_logic;
-    signal hard_reset : std_logic;
-    signal aux_reset : std_logic;
+    signal n_soft_reset : std_logic;
+    signal n_hard_reset : std_logic;
+    signal n_aux_reset : std_logic;
 
     -- Gameboy decoder related
-    signal gb_data_o : std_logic_vector(7 downto 0);
-    signal gb_access_ram : std_logic;
-    signal gb_timeout_rd : std_logic;
-    signal gb_timeout_wr : std_logic;
+    signal n_gb_dout       : std_logic_vector(7 downto 0);
+    signal n_gb_access_ram : std_logic;
+    signal n_gb_timeout_rd : std_logic;
+    signal n_gb_timeout_wr : std_logic;
 
     -- Wishbone bus from Gameboy decoder
-    signal gbd_cyc : std_logic;
-    signal gbd_we : std_logic;
-    signal gbd_adr : std_logic_vector(15 downto 0);
-    signal gbd_dat_i : std_logic_vector(7 downto 0);
-    signal gbd_dat_o : std_logic_vector(7 downto 0);
-    signal gbd_ack : std_logic;
+    signal n_gbd_cyc : std_logic;
+    signal n_gbd_we : std_logic;
+    signal n_gbd_adr : std_logic_vector(15 downto 0);
+    signal n_gbd_dat_i : std_logic_vector(7 downto 0);
+    signal n_gbd_dat_o : std_logic_vector(7 downto 0);
+    signal n_gbd_ack : std_logic;
 
     -- Wishbone bus from decoder crossbar to central crossbar
-    signal dcb_ccb_cyc : std_logic;
-    signal dcb_ccb_we : std_logic;
-    signal dcb_ccb_adr : std_logic_vector(15 downto 0);
-    signal dcb_ccb_dat_i : std_logic_vector(7 downto 0);
-    signal dcb_ccb_dat_o : std_logic_vector(7 downto 0);
-    signal dcb_ccb_ack : std_logic;
+    signal n_dcb_ccb_cyc : std_logic;
+    signal n_dcb_ccb_we : std_logic;
+    signal n_dcb_ccb_adr : std_logic_vector(15 downto 0);
+    signal n_dcb_ccb_dat_i : std_logic_vector(7 downto 0);
+    signal n_dcb_ccb_dat_o : std_logic_vector(7 downto 0);
+    signal n_dcb_ccb_ack : std_logic;
 
     -- Wishbone bus from decoder crossbar to DMA config port
-    signal dcb_dma_cyc : std_logic;
-    signal dcb_dma_we : std_logic;
-    signal dcb_dma_adr : std_logic_vector(3 downto 0);
-    signal dcb_dma_dat_i : std_logic_vector(7 downto 0);
-    signal dcb_dma_dat_o : std_logic_vector(7 downto 0);
-    signal dcb_dma_ack : std_logic;
+    signal n_dcb_dma_cyc : std_logic;
+    signal n_dcb_dma_we : std_logic;
+    signal n_dcb_dma_adr : std_logic_vector(3 downto 0);
+    signal n_dcb_dma_dat_i : std_logic_vector(7 downto 0);
+    signal n_dcb_dma_dat_o : std_logic_vector(7 downto 0);
+    signal n_dcb_dma_ack : std_logic;
 
     -- Wisbone bus from DMA master and DMA related
-    signal dma_cyc : std_logic;
-    signal dma_ack : std_logic;
-    signal dma_we : std_logic;
-    signal dma_adr : std_logic_vector(15 downto 0);
-    signal dma_dat_i : std_logic_vector(7 downto 0);
-    signal dma_dat_o : std_logic_vector(7 downto 0);
-    signal dma_busy : std_logic;
+    signal n_dma_cyc : std_logic;
+    signal n_dma_ack : std_logic;
+    signal n_dma_we : std_logic;
+    signal n_dma_adr : std_logic_vector(15 downto 0);
+    signal n_dma_dat_i : std_logic_vector(7 downto 0);
+    signal n_dma_dat_o : std_logic_vector(7 downto 0);
+    signal n_dma_busy : std_logic;
 
     -- Wisbone bus from central crossbar
-    signal ccb_adr : std_logic_vector(15 downto 0);
-    signal ccb_we : std_logic;
-    signal ccb_cyc : std_logic;
-    signal ccb_dat_i : std_logic_vector(7 downto 0);
-    signal ccb_dat_o : std_logic_vector(7 downto 0);
-    signal ccb_ack : std_logic;
+    signal n_ccb_adr : std_logic_vector(15 downto 0);
+    signal n_ccb_we : std_logic;
+    signal n_ccb_cyc : std_logic;
+    signal n_ccb_dat_i : std_logic_vector(7 downto 0);
+    signal n_ccb_dat_o : std_logic_vector(7 downto 0);
+    signal n_ccb_ack : std_logic;
 
     -- MBCH related signals
-    signal mbch_selected_mcb : std_logic_vector(2 downto 0);
+    signal n_mbch_selected_mcb : std_logic_vector(2 downto 0);
 
 begin
 
-    -- PLL instantiation for frequency synthesis from FPGA_CLK33M
+    -- PLL instantiation for frequency synthesis from i_fpga_clk33m
     inst_pll : pll
     port map(
-        CLK   => FPGA_CLK33M,
-        CLKOP => pll_clk_op,
-        CLKOK => pll_clk_ok,
-        LOCK  => pll_lock
+        CLK   => i_fpga_clk33m,
+        CLKOP => n_pll_clk_op,
+        CLKOK => n_pll_clk_ok,
+        LOCK  => n_pll_lock
     );
 
     pll_lockn <= not(pll_lock);
@@ -337,56 +345,53 @@ begin
     )
     -- synthesis translate_on
     port map(
-        CLKI    => pll_clk_op,
-        RST     => pll_lockn,
+        CLKI    => n_pll_clk_op,
+        RST     => n_pll_lockn,
         -- synthesis translate_off
         RELEASE => '1',
         -- synthesis translate_on
-        CDIV1   => clk_div1,
-        CDIV2   => clk_div2,
-        CDIV4   => clk_div4,
-        CDIV8   => clk_div8
+        CDIV1   => n_clk_div1,
+        CDIV2   => n_clk_div2,
+        CDIV4   => n_clk_div4,
+        CDIV8   => n_clk_div8
     );
 
     -- Instantiate reset controller (hard and soft resets)
     inst_reset_controller : reset
     port map(
-        SYNC_CLK   => clk_div1,
-        PLL_LOCK   => pll_lock,
-        EXT_SOFT   => FPGA_SOFT_RSTN,
-        AUX_SOFT   => aux_reset,
+        SYNC_CLK   => n_clk_div1,
+        PLL_LOCK   => n_pll_lock,
+        EXT_SOFT   => i_fpga_rstn,
+        AUX_SOFT   => n_aux_reset,
         DBG_ACTIVE => '0',
-        GB_RESETN  => GB_RSTN,
-        SOFT_RESET => soft_reset,
-        HARD_RESET => hard_reset
+        GB_RESETN  => o_gb_rstn,
+        SOFT_RESET => n_soft_reset,
+        HARD_RESET => n_hard_reset
     );
 
     -- Gameboy decoder instance
     inst_gameboy_decoder : gb_decoder
-    generic map(
-        ENABLE_TIMEOUT_DETECTION => true
-    )
     port map(
-        GB_CLK      => GB_CLK,
-        GB_ADDR     => GB_ADDR,
-        GB_DATA_IN  => GB_DATA,
-        GB_DATA_OUT => gb_data_o,
-        GB_RDN      => GB_RDN,
-        GB_CSN      => GB_CSN,
+        i_gb_clk  => i_gb_clk,
+        i_gb_addr => i_gb_addr,
+        i_gb_din  => io_gb_data,
+        o_gb_dout => n_gb_dout,
+        i_gb_rdn  => i_gb_rdn,
+        i_gb_csn  => i_gb_csn,
 
-        CLK_I => clk_div1,
-        RST_I => soft_reset,
-        CYC_O => gbd_cyc,
-        WE_O  => gbd_we,
-        ADR_O => gbd_adr,
-        DAT_I => gbd_dat_i,
-        DAT_O => gbd_dat_o,
-        ACK_I => gbd_ack,
+        i_clk => n_clk_div1,
+        i_rst => n_soft_reset,
+        o_cyc => n_gbd_cyc,
+        o_we  => n_gbd_we,
+        o_adr => n_gbd_adr,
+        i_dat => n_gbd_dat_i,
+        o_dat => n_gbd_dat_o,
+        i_ack => n_gbd_ack,
 
-        ACCESS_ROM => open,
-        ACCESS_RAM => gb_access_ram,
-        RD_TIMEOUT => gb_timeout_rd,
-        WR_TIMEOUT => gb_timeout_wr
+        o_access_rom => open,
+        o_access_ram => gb_access_ram,
+        o_wr_timeout => gb_timeout_rd,
+        o_rd_timeout => gb_timeout_wr
     );
 
     -- Decoder crossbar instance
@@ -395,7 +400,7 @@ begin
         CLK_I      => clk_div1,
         RST_I      => hard_reset,
         ACCESS_RAM => gb_access_ram,
-        SELECT_MBC => mbch_selected_mcb,
+        SELECT_MBC => n_mbch_selected_mcb,
 
         CYC_I => gbd_cyc,
         ACK_O => gbd_ack,
@@ -494,35 +499,35 @@ begin
         XRAM_ACK_I => '1',
         GPIO_IN => (others => '0'),
         GPIO_OUT => open,
-        SELECT_MBC => mbch_selected_mcb,
+        SELECT_MBC => n_mbch_selected_mcb,
         SOFT_RESET_REQ => aux_reset,
         SOFT_RESET_IN => soft_reset,
         DBG_ACTIVE => '0'
     );
 
-    CLK_EN <= '1';
-    GB_DATA <= gb_data_o when (GB_CLK nor GB_RDN) = '1' else (others => 'Z');
-    GB_BUS_EN <= '0';
+    o_clk_en <= '1';
+    io_gb_data <= n_gb_dout when (i_gb_clk nor i_gb_rdn) = '1' else (others => 'Z');
+    o_gb_bus_en <= '0';
 
-    RAM_ADQ <= (others => 'Z');
-    RAM_A <= "000000";
-    RAM_ADVN <= '0';
-    RAM_CE0N <= '0';
-    RAM_CE1N <= '0';
-    RAM_CLK <= '0';
-    RAM_CRE <= '0';
-    RAM_LBN <= '0';
-    RAM_UBN <= '0';
-    RAM_OEN <= '0';
-    RAM_WEN <= '0';
+    io_ram_adq <= (others => 'Z');
+    o_ram_a <= "000000";
+    o_ram_advn <= '0';
+    o_ram_ce0n <= '0';
+    o_ram_ce1n <= '0';
+    o_ram_clk <= '0';
+    o_ram_cre <= '0';
+    o_ram_lbn <= '0';
+    o_ram_ubn <= '0';
+    o_ram_oen <= '0';
+    o_ram_wen <= '0';
 
-    FPGA_SPI_CLK <= 'Z';
-    FPGA_SPI_MISO <= 'Z';
-    FPGA_SPI_MOSI <= 'Z';
-    FPGA_SPI_FLASH_CSN <= '1';
-    FPGA_SPI_RTC_CSN <= '1';
-    FPGA_SPI_SD_CSN <= '1';
+    io_fpga_spi_clk <= 'Z';
+    io_fpga_spi_miso <= 'Z';
+    io_fpga_spi_miso <= 'Z';
+    o_fpga_spi_flash_csn <= '1';
+    o_fpga_spi_rtc_csn <= '1';
+    o_fpga_spi_sd_csn <= '1';
 
-    FPGA_USER <= "ZZZZZZ";
+    io_fpga_user <= "ZZZZZZ";
 
 end architecture rtl;
