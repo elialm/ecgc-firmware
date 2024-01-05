@@ -15,7 +15,7 @@
 --      1. DMA configuration slave (signals prefixed with DMA_)
 --      2. Central crossbar slave (signals prefixed with CCB_)
 --
--- The crossbar decodes the address (ADR_I) to figure out if a transaction is
+-- The crossbar decodes the address (i_adr) to figure out if a transaction is
 -- meant to access the DMA slave or the central crossbar (which is routed
 -- further through the cartridge).
 ----------------------------------------------------------------------------------
@@ -27,67 +27,68 @@ use ieee.std_logic_misc.all;
 entity wb_crossbar_decoder is
     port (
         -- Global signals
-        CLK_I           : in std_logic;
-        RST_I           : in std_logic;
-        ACCESS_RAM      : in std_logic;
-        SELECT_MBC      : in std_logic_vector(2 downto 0);
+        i_clk           : in std_logic;
+        i_rst           : in std_logic;
+        i_access_ram      : in std_logic;
+        i_select_mbc      : in std_logic_vector(2 downto 0);
 
         -- GB decoder master connection
-        CYC_I   : in std_logic;
-        ACK_O   : out std_logic;
-        WE_I    : in std_logic;
-        ADR_I   : in std_logic_vector(15 downto 0);
-        DAT_O   : out std_logic_vector(7 downto 0);
-        DAT_I   : in std_logic_vector(7 downto 0);
+        i_cyc   : in std_logic;
+        o_ack   : out std_logic;
+        i_we    : in std_logic;
+        i_adr   : in std_logic_vector(15 downto 0);
+        o_dat   : out std_logic_vector(7 downto 0);
+        i_dat   : in std_logic_vector(7 downto 0);
 
         -- Master to central crossbar
-        CCB_CYC_O   : out std_logic;
-        CCB_ACK_I   : in std_logic;
-        CCB_WE_O    : out std_logic;
-        CCB_ADR_O   : out std_logic_vector(15 downto 0);
-        CCB_DAT_O   : out std_logic_vector(7 downto 0);
-        CCB_DAT_I   : in std_logic_vector(7 downto 0);
+        o_ccb_cyc   : out std_logic;
+        i_ccb_ack   : in std_logic;
+        o_ccb_we    : out std_logic;
+        o_ccb_adr   : out std_logic_vector(15 downto 0);
+        o_ccb_dat   : out std_logic_vector(7 downto 0);
+        i_ccb_dat   : in std_logic_vector(7 downto 0);
 
         -- Master to DMA configuration port
-        DMA_CYC_O   : out std_logic;
-        DMA_ACK_I   : in std_logic;
-        DMA_WE_O    : out std_logic;
-        DMA_ADR_O   : out std_logic_vector(3 downto 0);
-        DMA_DAT_O   : out std_logic_vector(7 downto 0);
-        DMA_DAT_I   : in std_logic_vector(7 downto 0));
+        o_dma_cyc   : out std_logic;
+        i_dma_ack   : in std_logic;
+        o_dma_we    : out std_logic;
+        o_dma_adr   : out std_logic_vector(3 downto 0);
+        o_dma_dat   : out std_logic_vector(7 downto 0);
+        i_dma_dat   : in std_logic_vector(7 downto 0)
+    );
 end wb_crossbar_decoder;
 
 architecture rtl of wb_crossbar_decoder is
 
-    signal mbch_is_active   : std_logic;
-    signal dma_reg_addr     : std_logic;
-    signal valid_dma_access : std_logic;
+    signal n_mbch_is_active   : std_logic;
+    signal n_dma_reg_addr     : std_logic;
+    signal n_valid_dma_access : std_logic;
 
 begin
 
     -- Bus decoding for DMA access
-    mbch_is_active <= '1' when SELECT_MBC = "000" else '0';
+    n_mbch_is_active <= '1' when i_select_mbc = "000" else '0';
     -- DMA is accessible at address range 0xA500 to 0xA5FF
     -- Though, only last nibble is relavant due to the address being 4-bit
-    dma_reg_addr <= '1'
-        when ACCESS_RAM = '1' and ADR_I(12 downto 8) = "00101"
+    n_dma_reg_addr <= '1'
+        when i_access_ram = '1' and i_adr(12 downto 8) = "00101"
         else '0';
-    valid_dma_access <= mbch_is_active and dma_reg_addr;
+    n_valid_dma_access <= n_mbch_is_active and n_dma_reg_addr;
 
     -- Master output (central crossbar)
-    CCB_CYC_O <= CYC_I and not(valid_dma_access);
-    CCB_WE_O <= WE_I;
-    CCB_ADR_O <= ADR_I;
-    CCB_DAT_O <= DAT_I;
+    o_ccb_cyc <= i_cyc and not(n_valid_dma_access);
+    o_ccb_we <= i_we;
+    o_ccb_adr <= i_adr;
+    o_ccb_dat <= i_dat;
 
     -- Master output (DMA)
-    DMA_CYC_O <= CYC_I and valid_dma_access;
-    DMA_WE_O <= WE_I;
-    DMA_ADR_O <= ADR_I(3 downto 0);
-    DMA_DAT_O <= DAT_I;
+    o_dma_cyc <= i_cyc and n_valid_dma_access;
+    o_dma_we <= i_we;
+    o_dma_adr <= i_adr(3 downto 0);
+    o_dma_dat <= i_dat;
 
     -- GB decoder output multiplexers
-    ACK_O <= DMA_ACK_I when valid_dma_access = '1' else CCB_ACK_I;
-    DAT_O <= DMA_DAT_I when valid_dma_access = '1' else CCB_DAT_I;
+    o_ack <= i_dma_ack when n_valid_dma_access = '1' else i_ccb_ack;
+    o_dat <= i_dma_dat when n_valid_dma_access = '1' else i_ccb_dat;
 
 end rtl;

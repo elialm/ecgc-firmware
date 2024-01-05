@@ -40,80 +40,80 @@ use ieee.std_logic_misc.all;
 entity wb_crossbar_central is
     port (
         -- Global signals
-        CLK_I           : in std_logic;
-        RST_I           : in std_logic;
-        DMA_BUSY        : in std_logic;
-        DBG_ACTIVE      : in std_logic;
+        i_clk           : in std_logic;
+        i_rst           : in std_logic;
+        i_dma_busy        : in std_logic;
+        i_dbg_active      : in std_logic;
 
         -- SPI debug master connection
-        DBG_CYC_I   : in std_logic;
-        DBG_ACK_O   : out std_logic;
-        DBG_WE_I    : in std_logic;
-        DBG_ADR_I   : in std_logic_vector(15 downto 0);
-        DBG_DAT_O   : out std_logic_vector(7 downto 0);
-        DBG_DAT_I   : in std_logic_vector(7 downto 0);
+        i_dbg_cyc   : in std_logic;
+        o_dbg_ack   : out std_logic;
+        i_dbg_we    : in std_logic;
+        i_dbg_adr   : in std_logic_vector(15 downto 0);
+        o_dbg_dat   : out std_logic_vector(7 downto 0);
+        i_dbg_dat   : in std_logic_vector(7 downto 0);
 
         -- GB decoder master connection
-        GBD_CYC_I   : in std_logic;
-        GBD_ACK_O   : out std_logic;
-        GBD_WE_I    : in std_logic;
-        GBD_ADR_I   : in std_logic_vector(15 downto 0);
-        GBD_DAT_O   : out std_logic_vector(7 downto 0);
-        GBD_DAT_I   : in std_logic_vector(7 downto 0);
+        i_gbd_cyc   : in std_logic;
+        o_gbd_ack   : out std_logic;
+        i_gbd_we    : in std_logic;
+        i_gbd_adr   : in std_logic_vector(15 downto 0);
+        o_gbd_dat   : out std_logic_vector(7 downto 0);
+        i_gbd_dat   : in std_logic_vector(7 downto 0);
 
         -- DMA master connection
-        DMA_CYC_I   : in std_logic;
-        DMA_ACK_O   : out std_logic;
-        DMA_WE_I    : in std_logic;
-        DMA_ADR_I   : in std_logic_vector(15 downto 0);
-        DMA_DAT_O   : out std_logic_vector(7 downto 0);
-        DMA_DAT_I   : in std_logic_vector(7 downto 0);
+        i_dma_cyc   : in std_logic;
+        o_dma_ack   : out std_logic;
+        i_dma_we    : in std_logic;
+        i_dma_adr   : in std_logic_vector(15 downto 0);
+        o_dma_dat   : out std_logic_vector(7 downto 0);
+        i_dma_dat   : in std_logic_vector(7 downto 0);
 
         -- Master out (routed to MBCs)
-        CYC_O   : out std_logic;
-        ACK_I   : in std_logic;
-        WE_O    : out std_logic;
-        ADR_O   : out std_logic_vector(15 downto 0);
-        DAT_O   : out std_logic_vector(7 downto 0);
-        DAT_I   : in std_logic_vector(7 downto 0));
+        o_cyc   : out std_logic;
+        i_ack   : in std_logic;
+        o_we    : out std_logic;
+        o_adr   : out std_logic_vector(15 downto 0);
+        o_dat   : out std_logic_vector(7 downto 0);
+        i_dat   : in std_logic_vector(7 downto 0));
 end wb_crossbar_central;
 
 architecture rtl of wb_crossbar_central is
 
-    signal master_is_dma    : std_logic;
-    signal master_is_dbg    : std_logic;
+    signal n_master_is_dma    : std_logic;
+    signal n_master_is_dbg    : std_logic;
 
-    signal cart_cyc_o   : std_logic;
-    signal cart_we_o    : std_logic;
-    signal cart_adr_o   : std_logic_vector(15 downto 0);
-    signal cart_dat_o   : std_logic_vector(7 downto 0);
+    signal n_cart_cyc_o   : std_logic;
+    signal n_cart_we_o    : std_logic;
+    signal n_cart_adr_o   : std_logic_vector(15 downto 0);
+    signal n_cart_dat_o   : std_logic_vector(7 downto 0);
 
 begin
 
     -- Master selection
-    master_is_dma <= DMA_BUSY;
-    master_is_dbg <= DBG_ACTIVE;
+    n_master_is_dma <= i_dma_busy;
+    n_master_is_dbg <= i_dbg_active;
 
-    -- DAT_O signals
-    DBG_DAT_O <= DAT_I;
-    GBD_DAT_O <= x"00" when master_is_dma = '1' else DAT_I;
-    DMA_DAT_O <= DAT_I;
+    -- o_dat signals
+    o_dbg_dat <= i_dat;
+    o_gbd_dat <= x"00" when n_master_is_dma = '1' else i_dat;
+    o_dma_dat <= i_dat;
 
     -- ACK_O signals
-    DBG_ACK_O <= ACK_I;
-    GBD_ACK_O <= '1' when master_is_dma = '1' else ACK_I;
-    DMA_ACK_O <= ACK_I;
+    o_dbg_ack <= i_ack;
+    o_gbd_ack <= '1' when n_master_is_dma = '1' else i_ack;
+    o_dma_ack <= i_ack;
 
     -- DMA and GBD output multiplexers
-    cart_cyc_o <= DMA_CYC_I when master_is_dma = '1' else GBD_CYC_I;
-    cart_we_o <= DMA_WE_I when master_is_dma = '1' else GBD_WE_I;
-    cart_adr_o <= DMA_ADR_I when master_is_dma = '1' else GBD_ADR_I;
-    cart_dat_o <= DMA_DAT_I when master_is_dma = '1' else GBD_DAT_I;
+    n_cart_cyc_o <= i_dma_cyc when n_master_is_dma = '1' else i_gbd_cyc;
+    n_cart_we_o <= i_dma_we when n_master_is_dma = '1' else i_gbd_we;
+    n_cart_adr_o <= i_dma_adr when n_master_is_dma = '1' else i_gbd_adr;
+    n_cart_dat_o <= i_dma_dat when n_master_is_dma = '1' else i_gbd_dat;
 
     -- Master output multiplexers
-    CYC_O <= DBG_CYC_I when master_is_dbg = '1' else cart_cyc_o;
-    WE_O <= DBG_WE_I when master_is_dbg = '1' else cart_we_o;
-    ADR_O <= DBG_ADR_I when master_is_dbg = '1' else cart_adr_o;
-    DAT_O <= DBG_DAT_I when master_is_dbg = '1' else cart_dat_o;
+    o_cyc <= i_dbg_cyc when n_master_is_dbg = '1' else n_cart_cyc_o;
+    o_we <= i_dbg_we when n_master_is_dbg = '1' else n_cart_we_o;
+    o_adr <= i_dbg_adr when n_master_is_dbg = '1' else n_cart_adr_o;
+    o_dat <= i_dbg_dat when n_master_is_dbg = '1' else n_cart_dat_o;
 
 end rtl;

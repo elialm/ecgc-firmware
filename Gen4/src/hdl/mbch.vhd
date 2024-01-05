@@ -19,7 +19,7 @@
 -- such as DRAM banking and soft reset control. The control registers are further
 -- documented in /doc/register.md. 
 --
--- It also uses the SELECT_MBC to override itself and switch to a different MBC
+-- It also uses the o_select_mbc to override itself and switch to a different MBC
 -- implementation. After switching to a different MBC, it is only possible to
 -- switch back after a reset.
 --
@@ -39,28 +39,28 @@ use ieee.std_logic_misc.all;
 entity mbch is
     port (
         -- Main slave interface
-        CLK_I   : in std_logic;
-        RST_I   : in std_logic;
-        CYC_I   : in std_logic;
-        WE_I    : in std_logic;
-        ACK_O   : out std_logic;
-        ADR_I   : in std_logic_vector(15 downto 0);
-        DAT_I   : in std_logic_vector(7 downto 0);
-        DAT_O   : out std_logic_vector(7 downto 0);
+        i_clk   : in std_logic;
+        i_rst   : in std_logic;
+        i_cyc   : in std_logic;
+        i_we    : in std_logic;
+        o_ack   : out std_logic;
+        i_adr   : in std_logic_vector(15 downto 0);
+        i_dat   : in std_logic_vector(7 downto 0);
+        o_dat   : out std_logic_vector(7 downto 0);
 
         -- Master interface to external RAM controller
-        XRAM_ADR_O  : out std_logic_vector(21 downto 0);
-        XRAM_DAT_I  : in std_logic_vector(7 downto 0);
-        XRAM_ACK_I  : in std_logic;
-        XRAM_CYC_O  : out std_logic;
+        o_xram_adr  : out std_logic_vector(21 downto 0);
+        i_xram_dat  : in std_logic_vector(7 downto 0);
+        i_xram_ack  : in std_logic;
+        o_xram_cyc  : out std_logic;
 
-        GPIO_IN     : in std_logic_vector(3 downto 0);
-        GPIO_OUT    : out std_logic_vector(3 downto 0);
+        i_gpio     : in std_logic_vector(3 downto 0);
+        o_gpio    : out std_logic_vector(3 downto 0);
 
-        SELECT_MBC      : out std_logic_vector(2 downto 0);
-        SOFT_RESET_REQ  : out std_logic;
-        SOFT_RESET_IN   : in std_logic;
-        DBG_ACTIVE      : in std_logic
+        o_select_mbc      : out std_logic_vector(2 downto 0);
+        o_soft_reset_req  : out std_logic;
+        i_soft_reset   : in std_logic;
+        i_dbg_active      : in std_logic
     );
 end mbch;
 
@@ -96,35 +96,35 @@ architecture rtl of mbch is
         DATA_WIDTH : natural := 4;
         RESET_VALUE : std_logic := '0');
     port (
-        CLK : in std_logic;
-        RST : in std_logic;
-        DAT_IN : in std_logic_vector(DATA_WIDTH-1 downto 0);
-        DAT_OUT : out std_logic_vector(DATA_WIDTH-1 downto 0));
+        i_clk : in std_logic;
+        i_rst : in std_logic;
+        i_din : in std_logic_vector(DATA_WIDTH-1 downto 0);
+        o_dout : out std_logic_vector(DATA_WIDTH-1 downto 0));
     end component;
 
-    signal wb_ack           : std_logic;
+    signal n_wb_ack           : std_logic;
 
-    signal boot_rom_enabled         : std_logic;
-    signal boot_rom_accessible      : std_logic;
-    signal boot_rom_accessible_reg  : std_logic;
-    signal boot_rom_data            : std_logic_vector(7 downto 0);
-    signal boot_rom_we              : std_logic;
-    signal cart_ram_data            : std_logic_vector(7 downto 0);
+    signal n_boot_rom_enabled         : std_logic;
+    signal r_boot_rom_accessible      : std_logic;
+    signal r_boot_rom_accessible_reg  : std_logic;
+    signal n_boot_rom_data            : std_logic_vector(7 downto 0);
+    signal n_boot_rom_we              : std_logic;
+    signal n_cart_ram_data            : std_logic_vector(7 downto 0);
 
-    signal xram_bank_mbc            : std_logic_vector(6 downto 0);     -- MBC bank selector register
-    signal xram_bank                : std_logic_vector(0 downto 0);     -- XRAM bank selector register
-    signal xram_bank_select_zero    : std_logic;                        -- Set if MBC & DRAM banks 0 is selected (zero bank)
-    signal xram_bank_passthrough    : std_logic;                        -- Set if selector registers should be used to select bank, otherwise will force bank 1 
-    signal xram_bank_force_zero     : std_logic;                        -- Set to force zero bank to be selected
+    signal r_xram_bank_mbc            : std_logic_vector(6 downto 0);     -- MBC bank selector register
+    signal r_xram_bank                : std_logic_vector(0 downto 0);     -- XRAM bank selector register
+    signal n_xram_bank_select_zero    : std_logic;                        -- Set if MBC & DRAM banks 0 is selected (zero bank)
+    signal n_xram_bank_passthrough    : std_logic;                        -- Set if selector registers should be used to select bank, otherwise will force bank 1 
+    signal r_xram_bank_force_zero     : std_logic;                        -- Set to force zero bank to be selected
 
-    signal gpio_out_reg         : std_logic_vector(3 downto 0);
-    signal gpio_in_sync         : std_logic_vector(3 downto 0);
+    signal r_gpio_out         : std_logic_vector(3 downto 0);
+    signal n_gpio_in_sync         : std_logic_vector(3 downto 0);
     
-    signal register_data        : std_logic_vector(7 downto 0);
-    signal register_ack         : std_logic;
-    signal reg_selected_mbc     : std_logic_vector(2 downto 0);
-    signal bus_selector         : bus_selection_t;
-    signal soft_reset_rising    : std_logic;
+    signal r_register_data        : std_logic_vector(7 downto 0);
+    signal r_register_ack         : std_logic;
+    signal r_reg_selected_mbc     : std_logic_vector(2 downto 0);
+    signal r_bus_selector         : bus_selection_t;
+    signal r_soft_reset_rising    : std_logic;
 
 begin
 
@@ -140,8 +140,8 @@ begin
         Q => boot_rom_data
     );
     
-    boot_rom_enabled <= boot_rom_accessible and CYC_I;
-    boot_rom_we <= WE_I and DBG_ACTIVE;
+    n_boot_rom_enabled <= r_boot_rom_accessible and i_cyc;
+    n_boot_rom_we <= i_we and i_dbg_active;
 
     -- -- Cart RAM instance, for DMA buffering and reset management
     -- CARTRIDGE_RAM : component cart_ram
@@ -156,158 +156,158 @@ begin
     -- );
         
     -- GPIO input synchroniser
-    GPIO_IN_SYNCHRONISER : component synchroniser
+    inst_gpio_synchroniser : component synchroniser
     port map (
-        CLK => CLK_I,
-        RST => RST_I,
-        DAT_IN => GPIO_IN,
-        DAT_OUT => gpio_in_sync
+        i_clk => i_clk,
+        i_rst => i_rst,
+        i_datN => i_gpio,
+        o_datUT => n_gpio_in_sync
     );
 
-    GPIO_OUT <= gpio_out_reg;
+    o_gpio <= r_gpio_out;
 
-    -- Address decoder
-    process (CLK_I)
+    -- i_address decoder
+    process (i_clk)
     begin
-        if rising_edge(CLK_I) then
-            register_ack <= '0';
-            bus_selector <= BS_REGISTER;
-            xram_bank_force_zero <= '0';
-            SOFT_RESET_REQ <= '0';
+        if rising_edge(i_clk) then
+            r_register_ack <= '0';
+            r_bus_selector <= BS_REGISTER;
+            r_xram_bank_force_zero <= '0';
+            o_soft_reset_req <= '0';
 
-            if RST_I = '1' then
-                register_data <= x"00";
-                boot_rom_accessible_reg <= '1';
-                boot_rom_accessible <= '1';
-                xram_bank_mbc <= (others => '0');
-                xram_bank <= (others => '0');
-                reg_selected_mbc <= "000";
-                soft_reset_rising <= '1';
-                gpio_out_reg <= (others => '0');
+            if i_rst = '1' then
+                r_register_data <= x"00";
+                r_boot_rom_accessible_reg <= '1';
+                r_boot_rom_accessible <= '1';
+                r_xram_bank_mbc <= (others => '0');
+                r_xram_bank <= (others => '0');
+                r_reg_selected_mbc <= "000";
+                r_soft_reset_rising <= '1';
+                r_gpio_out <= (others => '0');
 
-                SELECT_MBC <= "000";
+                o_select_mbc <= "000";
             else
-                if (CYC_I and not(wb_ack)) = '1' then
-                    case? ADR_I is
+                if (i_cyc and not(n_wb_ack)) = '1' then
+                    case? i_adr is
                         -- Boot ROM or lower 4kB of bank 0
                         when b"0000_----_----_----" =>
-                            if boot_rom_accessible = '1' then
-                                bus_selector <= BS_BOOT_ROM;
-                                register_ack <= '1';
+                            if r_boot_rom_accessible = '1' then
+                                r_bus_selector <= BS_BOOT_ROM;
+                                r_register_ack <= '1';
                             else
-                                bus_selector <= BS_XRAM;
-                                xram_bank_force_zero <= '1';
+                                r_bus_selector <= BS_XRAM;
+                                r_xram_bank_force_zero <= '1';
                             end if;
 
                         -- Upper 12kB of back 0
                         when b"0001_----_----_----" | b"0010_----_----_----" | b"0011_----_----_----" =>
-                            bus_selector <= BS_XRAM;
-                            xram_bank_force_zero <= '1';
+                            r_bus_selector <= BS_XRAM;
+                            r_xram_bank_force_zero <= '1';
 
                         -- Banked DRAM
                         when b"01--_----_----_----" =>
-                            bus_selector <= BS_XRAM;
+                            r_bus_selector <= BS_XRAM;
 
                         -- Reserved (previously EFB)
                         when b"1010_0000_----_----" =>
-                            register_data <= x"00";
-                            register_ack <= '1';
+                            r_register_data <= x"00";
+                            r_register_ack <= '1';
 
                         -- MBCH Control 0 reg
                         when b"1010_0001_----_----" =>
-                            if WE_I = '1' then
-                                SOFT_RESET_REQ <= DAT_I(7);
-                                boot_rom_accessible_reg <= DAT_I(6);
-                                reg_selected_mbc <= DAT_I(2 downto 0);
+                            if i_we = '1' then
+                                o_soft_reset_req <= i_dat(7);
+                                r_boot_rom_accessible_reg <= i_dat(6);
+                                r_reg_selected_mbc <= i_dat(2 downto 0);
                             else
-                                register_data <= "0" & boot_rom_accessible_reg & boot_rom_accessible & "00" & reg_selected_mbc;
+                                r_register_data <= "0" & r_boot_rom_accessible_reg & r_boot_rom_accessible & "00" & r_reg_selected_mbc;
                             end if;
-                            register_ack <= '1';
+                            r_register_ack <= '1';
 
                         -- MBCH DRAM bank selection reg
                         when b"1010_0010_----_----" =>
-                            if WE_I = '1' then
-                                xram_bank_mbc <= DAT_I(6 downto 0);
-                                xram_bank(0) <= DAT_I(7);
+                            if i_we = '1' then
+                                r_xram_bank_mbc <= i_dat(6 downto 0);
+                                r_xram_bank(0) <= i_dat(7);
                             else
-                                register_data <= xram_bank & xram_bank_mbc;
+                                r_register_data <= r_xram_bank & r_xram_bank_mbc;
                             end if;
-                            register_ack <= '1';
+                            r_register_ack <= '1';
 
                         -- Reserved (previously MBCH DRAM bank sel 1 reg)
                         when b"1010_0011_----_----" =>
-                            register_data <= x"00";
-                            register_ack <= '1';
+                            r_register_data <= x"00";
+                            r_register_ack <= '1';
 
                         -- MBCH GPIO reg
                         when b"1010_0100_----_----" =>
-                            if WE_I = '1' then
-                                gpio_out_reg <= DAT_I(7 downto 4);
+                            if i_we = '1' then
+                                r_gpio_out <= i_dat(7 downto 4);
                             else
-                                register_data <= gpio_out_reg & gpio_in_sync;
+                                r_register_data <= r_gpio_out & n_gpio_in_sync;
                             end if;
-                            register_ack <= '1';
+                            r_register_ack <= '1';
 
                         -- Reserved (mapped to DMA registers)
                         when b"1010_0101_----_----" =>
-                            register_data <= x"00";
-                            register_ack <= '1';
+                            r_register_data <= x"00";
+                            r_register_ack <= '1';
 
                         -- Cart RAM
                         when b"1011_00--_----_----" =>
                             -- Currently not in use
-                            -- bus_selector <= BS_CART_RAM;
-                            register_data <= x"00";
-                            register_ack <= '1';
+                            -- r_bus_selector <= BS_CART_RAM;
+                            r_register_data <= x"00";
+                            r_register_ack <= '1';
 
                         -- Other regions will always read as 0x00 and ignore writes
                         when others =>
-                            register_data <= x"00";
-                            register_ack <= '1';
+                            r_register_data <= x"00";
+                            r_register_ack <= '1';
                     end case?;
                 end if;
 
                 -- Perform soft reset
-                if (SOFT_RESET_IN and soft_reset_rising) = '1' then
-                    boot_rom_accessible_reg <= '1';
-                    boot_rom_accessible <= boot_rom_accessible_reg;
-                    reg_selected_mbc <= "000";
-                    soft_reset_rising <= '0';
+                if (i_soft_reset and r_soft_reset_rising) = '1' then
+                    r_boot_rom_accessible_reg <= '1';
+                    r_boot_rom_accessible <= r_boot_rom_accessible_reg;
+                    r_reg_selected_mbc <= "000";
+                    r_soft_reset_rising <= '0';
 
-                    SELECT_MBC <= reg_selected_mbc;
-                elsif SOFT_RESET_IN = '0' then
-                    soft_reset_rising <= '1';
+                    o_select_mbc <= r_reg_selected_mbc;
+                elsif i_soft_reset = '0' then
+                    r_soft_reset_rising <= '1';
                 end if;
             end if;
         end if;
     end process;
     
     -- XRAM bank selection
-    xram_bank_select_zero <= nor_reduce(xram_bank) nor nor_reduce(xram_bank_mbc);
-    xram_bank_passthrough <= (xram_bank_select_zero nor boot_rom_accessible) or boot_rom_accessible;
+    n_xram_bank_select_zero <= nor_reduce(r_xram_bank) nor nor_reduce(r_xram_bank_mbc);
+    n_xram_bank_passthrough <= (n_xram_bank_select_zero nor r_boot_rom_accessible) or r_boot_rom_accessible;
 
     -- XRAM ports
     -- TODO: look at this again, I don't have the head for it now
-    XRAM_ADR_O(13 downto 0) <= ADR_I(13 downto 0);
-    with xram_bank_passthrough & xram_bank_force_zero select XRAM_ADR_O(21 downto 14) <=
+    o_xram_adr(13 downto 0) <= i_adr(13 downto 0);
+    with n_xram_bank_passthrough & r_xram_bank_force_zero select o_xram_adr(21 downto 14) <=
         (14 => '1', others => '0')  when "00",
-        xram_bank_mbc & xram_bank   when "10",
+        r_xram_bank_mbc & r_xram_bank   when "10",
         (others => '0')             when others;
 
     -- Bus selection data
-    with bus_selector select DAT_O <=
-        boot_rom_data   when BS_BOOT_ROM,
-        -- cart_ram_data   when BS_CART_RAM,
-        XRAM_DAT_I      when BS_XRAM,
-        register_data   when others;
+    with r_bus_selector select o_dat <=
+        n_boot_rom_data   when BS_BOOT_ROM,
+        -- n_cart_ram_data   when BS_CART_RAM,
+        i_xram_dat      when BS_XRAM,
+        r_register_data   when others;
 
     -- Bus selection ack
-    ACK_O <= wb_ack;
-    with bus_selector select wb_ack <=
-        XRAM_ACK_I      when BS_XRAM,
-        register_ack    when others;
+    o_ack <= n_wb_ack;
+    with r_bus_selector select n_wb_ack <=
+        i_xram_ack      when BS_XRAM,
+        r_register_ack    when others;
 
     -- Bus selection CYC_O
-    XRAM_CYC_O <= CYC_I when bus_selector = BS_XRAM else '0';
+    o_xram_cyc <= i_cyc when r_bus_selector = BS_XRAM else '0';
     
 end rtl;
