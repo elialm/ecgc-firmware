@@ -92,17 +92,19 @@ architecture rtl of mbch is
 
     component synchroniser is
     generic (
-        FF_COUNT : natural := 2;
-        DATA_WIDTH : natural := 4;
-        RESET_VALUE : std_logic := '0');
+        p_ff_count : natural := 2;
+        p_data_width : natural := 4;
+        p_reset_value : std_logic := '0'
+    );
     port (
         i_clk : in std_logic;
         i_rst : in std_logic;
-        i_din : in std_logic_vector(DATA_WIDTH-1 downto 0);
-        o_dout : out std_logic_vector(DATA_WIDTH-1 downto 0));
+        i_din : in std_logic_vector(p_data_width-1 downto 0);
+        o_dout : out std_logic_vector(p_data_width-1 downto 0)
+    );
     end component;
 
-    signal n_wb_ack           : std_logic;
+    signal n_wb_ack : std_logic;
 
     signal n_boot_rom_enabled         : std_logic;
     signal r_boot_rom_accessible      : std_logic;
@@ -131,13 +133,13 @@ begin
     -- ROM instance containing boot code
     CARTRIDGE_BOOTROM : component boot_ram
     port map (
-        Clock => CLK_I,
-        ClockEn => boot_rom_enabled,
-        Reset => RST_I,
-        WE => boot_rom_we,
-        Address => ADR_I(11 downto 0),
-        Data => DAT_I,
-        Q => boot_rom_data
+        Clock => i_clk,
+        ClockEn => n_boot_rom_enabled,
+        Reset => i_rst,
+        WE => n_boot_rom_we,
+        Address => i_adr(11 downto 0),
+        Data => i_dat,
+        Q => n_boot_rom_data
     );
     
     n_boot_rom_enabled <= r_boot_rom_accessible and i_cyc;
@@ -146,13 +148,13 @@ begin
     -- -- Cart RAM instance, for DMA buffering and reset management
     -- CARTRIDGE_RAM : component cart_ram
     -- port map (
-    --     Clock => CLK_I,
-    --     ClockEn => CYC_I,
-    --     Reset => RST_I,
-    --     WE => WE_I,
-    --     Address => ADR_I(9 downto 0),
-    --     Data => DAT_I,
-    --     Q => cart_ram_data
+    --     Clock => i_clk,
+    --     ClockEn => i_cyc,
+    --     Reset => i_rst,
+    --     WE => i_we,
+    --     Address => i_adr(9 downto 0),
+    --     Data => i_dat,
+    --     Q => n_cart_ram_data
     -- );
         
     -- GPIO input synchroniser
@@ -160,8 +162,8 @@ begin
     port map (
         i_clk => i_clk,
         i_rst => i_rst,
-        i_datN => i_gpio,
-        o_datUT => n_gpio_in_sync
+        i_din => i_gpio,
+        o_dout => n_gpio_in_sync
     );
 
     o_gpio <= r_gpio_out;

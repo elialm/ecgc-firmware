@@ -53,14 +53,14 @@ architecture rtl of gb_decoder is
 
     component synchroniser is
         generic (
-            FF_COUNT : natural := 2;
-            DATA_WIDTH : natural := 1;
-            RESET_VALUE : std_logic := '0');
+            p_ff_count : natural := 2;
+            p_data_width : natural := 1;
+            p_reset_value : std_logic := '0');
         port (
-            CLK     : in std_logic;
-            RST     : in std_logic;
-            DAT_IN  : in std_logic_vector(DATA_WIDTH - 1 downto 0);
-            DAT_OUT : out std_logic_vector(DATA_WIDTH - 1 downto 0));
+            i_clk  : in std_logic;
+            i_rst  : in std_logic;
+            i_din  : in std_logic_vector(p_data_width - 1 downto 0);
+            o_dout : out std_logic_vector(p_data_width - 1 downto 0));
     end component;
 
     -- Synchronised signals from GameBoy
@@ -85,29 +85,29 @@ begin
     -- processed, enough time has passed to safely read the other bits.
     inst_address_synchroniser : synchroniser
     generic map(
-        DATA_WIDTH => 3
+        p_data_width => 3
     )
     port map(
-        CLK     => i_clk,
-        RST     => i_rst,
-        DAT_IN  => i_gb_addr(15 downto 13),
-        DAT_OUT => n_gb_addr_sync
+        i_clk  => i_clk,
+        i_rst  => i_rst,
+        i_din  => i_gb_addr(15 downto 13),
+        o_dout => n_gb_addr_sync
     );
 
     inst_clk_synchroniser : synchroniser
     port map(
-        CLK        => i_clk,
-        RST        => i_rst,
-        DAT_IN(0)  => i_gb_clk,
-        DAT_OUT(0) => n_gb_clk_sync
+        i_clk     => i_clk,
+        i_rst     => i_rst,
+        i_din(0)  => i_gb_clk,
+        o_dout(0) => n_gb_clk_sync
     );
 
     inst_csn_synchroniser : synchroniser
     port map(
-        CLK        => i_clk,
-        RST        => i_rst,
-        DAT_IN(0)  => i_gb_csn,
-        DAT_OUT(0) => n_gb_csn_sync
+        i_clk     => i_clk,
+        i_rst     => i_rst,
+        i_din(0)  => i_gb_csn,
+        o_dout(0) => n_gb_csn_sync
     );
 
     -- Signals for determining type of access
@@ -134,10 +134,10 @@ begin
                 n_cyc <= '0';
 
                 o_we <= '0';
-                o_adr <= (oth => '0');
-                o_dat <= (oth => '0');
-                o_gb_dout <= hers => '0');
-                o_rd_timeout '0';
+                o_adr <= (others => '0');
+                o_dat <= (others => '0');
+                o_gb_dout <= (others => '0');
+                o_rd_timeout <= '0';
                 o_wr_timeout <= '0';
             else
                 -- Bus decoder state machine
@@ -168,9 +168,10 @@ begin
                             r_gb_bus_state <= s_await_access_finished;
                             n_cyc <= '0';
                             o_gb_dout <= i_dat;
-                        end 
-                        if n_cyc_timeout =  then
-                            o_rd_timeout '1';
+                        end if;
+
+                        if n_cyc_timeout = '1' then
+                            o_rd_timeout <= '1';
                         end if;
 
                     when s_write_await_falling_edge =>

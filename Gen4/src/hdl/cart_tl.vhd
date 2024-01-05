@@ -58,7 +58,7 @@ entity cart_tl is
         -- SPI related signals
         io_fpga_spi_clk      : inout std_logic;
         io_fpga_spi_miso     : inout std_logic;
-        io_fpga_spi_miso     : inout std_logic;
+        io_fpga_spi_mosi     : inout std_logic;
         o_fpga_spi_flash_csn : out std_logic;
         o_fpga_spi_rtc_csn   : out std_logic;
         o_fpga_spi_sd_csn    : out std_logic;
@@ -73,8 +73,8 @@ end entity cart_tl;
 architecture rtl of cart_tl is
 
     -- Frequencies used for timing calculations
-    constant c_pll_clkop_freq     : real := 99.999999;
-    constant c_pll_clkok_freq     : real := c_pll_clkop_freq / 100;
+    constant c_pll_clkop_freq : real := 99.999999;
+    constant c_pll_clkok_freq : real := c_pll_clkop_freq / 100;
     constant c_clkdivb_cdiv1_freq : real := c_pll_clkop_freq;
     constant c_clkdivb_cdiv2_freq : real := c_clkdivb_cdiv1_freq / 2;
     constant c_clkdivb_cdiv4_freq : real := c_clkdivb_cdiv1_freq / 4;
@@ -96,15 +96,15 @@ architecture rtl of cart_tl is
         );
         -- synthesis translate_on
         port (
-            clki    : in std_logic;
-            rst     : in std_logic;
+            clki : in std_logic;
+            rst  : in std_logic;
             -- synthesis translate_off
             release : in std_logic;
             -- synthesis translate_on
-            cdiv1   : out std_logic;
-            cdiv2   : out std_logic;
-            cdiv4   : out std_logic;
-            cdiv8   : out std_logic
+            cdiv1 : out std_logic;
+            cdiv2 : out std_logic;
+            cdiv4 : out std_logic;
+            cdiv8 : out std_logic
         );
     end component;
 
@@ -113,7 +113,7 @@ architecture rtl of cart_tl is
             p_aux_ff_count : positive := 9
         );
         port (
-            i_clk   : in std_logic;
+            i_clk        : in std_logic;
             i_pll_lock   : in std_logic;
             i_ext_soft   : in std_logic;
             i_aux_soft   : in std_logic;
@@ -131,125 +131,125 @@ architecture rtl of cart_tl is
             p_clk_freq : real := c_clkdivb_cdiv1_freq
         );
         port (
-            i_gb_clk      : in std_logic;
-            i_gb_addr     : in std_logic_vector(15 downto 0);
-            i_gb_din  : in std_logic_vector(7 downto 0);
-            o_gb_dout : out std_logic_vector(7 downto 0);
-            i_gb_rdn      : in std_logic;
-            i_gb_csn      : in std_logic;
-            i_clk       : in std_logic;
-            i_rst       : in std_logic;
-            o_cyc       : out std_logic;
-            o_we        : out std_logic;
-            o_adr       : out std_logic_vector(15 downto 0);
-            i_dat       : in std_logic_vector(7 downto 0);
-            o_dat       : out std_logic_vector(7 downto 0);
-            i_ack       : in std_logic;
-            o_access_rom  : out std_logic;
-            o_access_ram  : out std_logic;
-            o_wr_timeout  : out std_logic;
-            o_rd_timeout  : out std_logic
+            i_gb_clk     : in std_logic;
+            i_gb_addr    : in std_logic_vector(15 downto 0);
+            i_gb_din     : in std_logic_vector(7 downto 0);
+            o_gb_dout    : out std_logic_vector(7 downto 0);
+            i_gb_rdn     : in std_logic;
+            i_gb_csn     : in std_logic;
+            i_clk        : in std_logic;
+            i_rst        : in std_logic;
+            o_cyc        : out std_logic;
+            o_we         : out std_logic;
+            o_adr        : out std_logic_vector(15 downto 0);
+            i_dat        : in std_logic_vector(7 downto 0);
+            o_dat        : out std_logic_vector(7 downto 0);
+            i_ack        : in std_logic;
+            o_access_rom : out std_logic;
+            o_access_ram : out std_logic;
+            o_wr_timeout : out std_logic;
+            o_rd_timeout : out std_logic
         );
     end component;
 
     component wb_crossbar_decoder
         port (
-            i_clk      : in std_logic;
-            i_rst      : in std_logic;
+            i_clk        : in std_logic;
+            i_rst        : in std_logic;
             i_access_ram : in std_logic;
             i_select_mbc : in std_logic_vector(2 downto 0);
-            i_cyc      : in std_logic;
-            o_ack      : out std_logic;
-            i_we       : in std_logic;
-            i_adr      : in std_logic_vector(15 downto 0);
-            o_dat      : out std_logic_vector(7 downto 0);
-            i_dat      : in std_logic_vector(7 downto 0);
-            o_ccb_cyc  : out std_logic;
-            i_ccb_ack  : in std_logic;
-            o_ccb_we   : out std_logic;
-            o_ccb_adr  : out std_logic_vector(15 downto 0);
-            o_ccb_dat  : out std_logic_vector(7 downto 0);
-            i_ccb_dat  : in std_logic_vector(7 downto 0);
-            o_dma_cyc  : out std_logic;
-            i_dma_ack  : in std_logic;
-            o_dma_we   : out std_logic;
-            o_dma_adr  : out std_logic_vector(3 downto 0);
-            o_dma_dat  : out std_logic_vector(7 downto 0);
-            i_dma_dat  : in std_logic_vector(7 downto 0)
+            i_cyc        : in std_logic;
+            o_ack        : out std_logic;
+            i_we         : in std_logic;
+            i_adr        : in std_logic_vector(15 downto 0);
+            o_dat        : out std_logic_vector(7 downto 0);
+            i_dat        : in std_logic_vector(7 downto 0);
+            o_ccb_cyc    : out std_logic;
+            i_ccb_ack    : in std_logic;
+            o_ccb_we     : out std_logic;
+            o_ccb_adr    : out std_logic_vector(15 downto 0);
+            o_ccb_dat    : out std_logic_vector(7 downto 0);
+            i_ccb_dat    : in std_logic_vector(7 downto 0);
+            o_dma_cyc    : out std_logic;
+            i_dma_ack    : in std_logic;
+            o_dma_we     : out std_logic;
+            o_dma_adr    : out std_logic_vector(3 downto 0);
+            o_dma_dat    : out std_logic_vector(7 downto 0);
+            i_dma_dat    : in std_logic_vector(7 downto 0)
         );
     end component;
 
     component dma_controller
         port (
-            i_clk       : in std_logic;
-            i_rst       : in std_logic;
-            o_dma_cyc   : out std_logic;
-            i_dma_ack   : in std_logic;
-            o_dma_we    : out std_logic;
-            o_dma_adr   : out std_logic_vector(15 downto 0);
-            o_dma_dat   : out std_logic_vector(7 downto 0);
-            i_dma_dat   : in std_logic_vector(7 downto 0);
-            i_cfg_cyc   : in std_logic;
-            o_cfg_ack   : out std_logic;
-            i_cfg_we    : in std_logic;
-            i_cfg_adr   : in std_logic_vector(3 downto 0);
-            o_cfg_dat   : out std_logic_vector(7 downto 0);
-            i_cfg_dat   : in std_logic_vector(7 downto 0);
+            i_clk         : in std_logic;
+            i_rst         : in std_logic;
+            o_dma_cyc     : out std_logic;
+            i_dma_ack     : in std_logic;
+            o_dma_we      : out std_logic;
+            o_dma_adr     : out std_logic_vector(15 downto 0);
+            o_dma_dat     : out std_logic_vector(7 downto 0);
+            i_dma_dat     : in std_logic_vector(7 downto 0);
+            i_cfg_cyc     : in std_logic;
+            o_cfg_ack     : out std_logic;
+            i_cfg_we      : in std_logic;
+            i_cfg_adr     : in std_logic_vector(3 downto 0);
+            o_cfg_dat     : out std_logic_vector(7 downto 0);
+            i_cfg_dat     : in std_logic_vector(7 downto 0);
             o_status_busy : out std_logic
         );
     end component;
 
     component wb_crossbar_central
         port (
-            i_clk      : in std_logic;
-            i_rst      : in std_logic;
+            i_clk        : in std_logic;
+            i_rst        : in std_logic;
             i_dma_busy   : in std_logic;
             i_dbg_active : in std_logic;
-            i_dbg_cyc  : in std_logic;
-            o_dbg_ack  : out std_logic;
-            i_dbg_we   : in std_logic;
-            i_dbg_adr  : in std_logic_vector(15 downto 0);
-            o_dbg_dat  : out std_logic_vector(7 downto 0);
-            i_dbg_dat  : in std_logic_vector(7 downto 0);
-            i_gbd_cyc  : in std_logic;
-            o_gbd_ack  : out std_logic;
-            i_gbd_we   : in std_logic;
-            i_gbd_adr  : in std_logic_vector(15 downto 0);
-            o_gbd_dat  : out std_logic_vector(7 downto 0);
-            i_gbd_dat  : in std_logic_vector(7 downto 0);
-            i_dma_cyc  : in std_logic;
-            o_dma_ack  : out std_logic;
-            i_dma_we   : in std_logic;
-            i_dma_adr  : in std_logic_vector(15 downto 0);
-            o_dma_dat  : out std_logic_vector(7 downto 0);
-            i_dma_dat  : in std_logic_vector(7 downto 0);
-            o_cyc      : out std_logic;
-            i_ack      : in std_logic;
-            o_we       : out std_logic;
-            o_adr      : out std_logic_vector(15 downto 0);
-            o_dat      : out std_logic_vector(7 downto 0);
-            i_dat      : in std_logic_vector(7 downto 0)
+            i_dbg_cyc    : in std_logic;
+            o_dbg_ack    : out std_logic;
+            i_dbg_we     : in std_logic;
+            i_dbg_adr    : in std_logic_vector(15 downto 0);
+            o_dbg_dat    : out std_logic_vector(7 downto 0);
+            i_dbg_dat    : in std_logic_vector(7 downto 0);
+            i_gbd_cyc    : in std_logic;
+            o_gbd_ack    : out std_logic;
+            i_gbd_we     : in std_logic;
+            i_gbd_adr    : in std_logic_vector(15 downto 0);
+            o_gbd_dat    : out std_logic_vector(7 downto 0);
+            i_gbd_dat    : in std_logic_vector(7 downto 0);
+            i_dma_cyc    : in std_logic;
+            o_dma_ack    : out std_logic;
+            i_dma_we     : in std_logic;
+            i_dma_adr    : in std_logic_vector(15 downto 0);
+            o_dma_dat    : out std_logic_vector(7 downto 0);
+            i_dma_dat    : in std_logic_vector(7 downto 0);
+            o_cyc        : out std_logic;
+            i_ack        : in std_logic;
+            o_we         : out std_logic;
+            o_adr        : out std_logic_vector(15 downto 0);
+            o_dat        : out std_logic_vector(7 downto 0);
+            i_dat        : in std_logic_vector(7 downto 0)
         );
     end component;
 
     component mbch
         port (
-            i_clk          : in std_logic;
-            i_rst          : in std_logic;
-            i_cyc          : in std_logic;
-            i_we           : in std_logic;
-            o_ack          : out std_logic;
-            i_adr          : in std_logic_vector(15 downto 0);
-            i_dat          : in std_logic_vector(7 downto 0);
-            o_dat          : out std_logic_vector(7 downto 0);
-            o_xram_adr     : out std_logic_vector(21 downto 0);
-            i_xram_data    : in std_logic_vector(7 downto 0);
-            i_xram_ack     : in std_logic;
-            i_gpio        : in std_logic_vector(3 downto 0);
-            o_gpio       : out std_logic_vector(3 downto 0);
-            i_select_mbc     : out std_logic_vector(2 downto 0);
+            i_clk            : in std_logic;
+            i_rst            : in std_logic;
+            i_cyc            : in std_logic;
+            i_we             : in std_logic;
+            o_ack            : out std_logic;
+            i_adr            : in std_logic_vector(15 downto 0);
+            i_dat            : in std_logic_vector(7 downto 0);
+            o_dat            : out std_logic_vector(7 downto 0);
+            o_xram_adr       : out std_logic_vector(21 downto 0);
+            i_xram_dat       : in std_logic_vector(7 downto 0);
+            i_xram_ack       : in std_logic;
+            i_gpio           : in std_logic_vector(3 downto 0);
+            o_gpio           : out std_logic_vector(3 downto 0);
+            o_select_mbc     : out std_logic_vector(2 downto 0);
             o_soft_reset_req : out std_logic;
-            i_soft_reset  : in std_logic;
+            i_soft_reset     : in std_logic;
             i_dbg_active     : in std_logic
         );
     end component;
@@ -273,7 +273,7 @@ architecture rtl of cart_tl is
     signal n_aux_reset : std_logic;
 
     -- Gameboy decoder related
-    signal n_gb_dout       : std_logic_vector(7 downto 0);
+    signal n_gb_dout : std_logic_vector(7 downto 0);
     signal n_gb_access_ram : std_logic;
     signal n_gb_timeout_rd : std_logic;
     signal n_gb_timeout_wr : std_logic;
@@ -333,7 +333,7 @@ begin
         LOCK  => n_pll_lock
     );
 
-    pll_lockn <= not(pll_lock);
+    n_pll_lockn <= not(n_pll_lock);
 
     -- CLKDIVB instantiation for lower clocks
     inst_clkdiv : CLKDIVB
@@ -343,15 +343,15 @@ begin
     )
     -- synthesis translate_on
     port map(
-        CLKI    => n_pll_clk_op,
-        RST     => n_pll_lockn,
+        CLKI => n_pll_clk_op,
+        RST  => n_pll_lockn,
         -- synthesis translate_off
-        RELEASE => '1',
+        release => '1',
         -- synthesis translate_on
-        CDIV1   => n_clk_div1,
-        CDIV2   => n_clk_div2,
-        CDIV4   => n_clk_div4,
-        CDIV8   => n_clk_div8
+        CDIV1 => n_clk_div1,
+        CDIV2 => n_clk_div2,
+        CDIV4 => n_clk_div4,
+        CDIV8 => n_clk_div8
     );
 
     -- Instantiate reset controller (hard and soft resets)
@@ -387,70 +387,70 @@ begin
         i_ack => n_gbd_ack,
 
         o_access_rom => open,
-        o_access_ram => gb_access_ram,
-        o_wr_timeout => gb_timeout_rd,
-        o_rd_timeout => gb_timeout_wr
+        o_access_ram => n_gb_access_ram,
+        o_wr_timeout => n_gb_timeout_rd,
+        o_rd_timeout => n_gb_timeout_wr
     );
 
     -- Decoder crossbar instance
     inst_crossbar_decoder : wb_crossbar_decoder
     port map(
-        i_clk      => clk_div1,
-        i_rst      => hard_reset,
-        i_access_ram => gb_access_ram,
+        i_clk        => n_clk_div1,
+        i_rst        => n_hard_reset,
+        i_access_ram => n_gb_access_ram,
         i_select_mbc => n_mbch_selected_mcb,
 
-        i_cyc => gbd_cyc,
-        o_ack => gbd_ack,
-        i_we  => gbd_we,
-        i_adr => gbd_adr,
-        o_dat => gbd_dat_i,
-        i_dat => gbd_dat_o,
+        i_cyc => n_gbd_cyc,
+        o_ack => n_gbd_ack,
+        i_we  => n_gbd_we,
+        i_adr => n_gbd_adr,
+        o_dat => n_gbd_dat_i,
+        i_dat => n_gbd_dat_o,
 
-        o_ccb_cyc => dcb_ccb_cyc,
-        i_ccb_ack => dcb_ccb_ack,
-        o_ccb_we  => dcb_ccb_we,
-        o_ccb_adr => dcb_ccb_adr,
-        o_ccb_dat => dcb_ccb_dat_o,
-        i_ccb_dat => dcb_ccb_dat_i,
+        o_ccb_cyc => n_dcb_ccb_cyc,
+        i_ccb_ack => n_dcb_ccb_ack,
+        o_ccb_we  => n_dcb_ccb_we,
+        o_ccb_adr => n_dcb_ccb_adr,
+        o_ccb_dat => n_dcb_ccb_dat_o,
+        i_ccb_dat => n_dcb_ccb_dat_i,
 
-        o_dma_cyc => dcb_dma_cyc,
-        i_dma_ack => dcb_dma_ack,
-        o_dma_we  => dcb_dma_we,
-        o_dma_adr => dcb_dma_adr,
-        o_dma_dat => dcb_dma_dat_o,
-        i_dma_dat => dcb_dma_dat_i
+        o_dma_cyc => n_dcb_dma_cyc,
+        i_dma_ack => n_dcb_dma_ack,
+        o_dma_we  => n_dcb_dma_we,
+        o_dma_adr => n_dcb_dma_adr,
+        o_dma_dat => n_dcb_dma_dat_o,
+        i_dma_dat => n_dcb_dma_dat_i
     );
 
     -- DMA controller instance
     inst_dma_controller : dma_controller
     port map(
-        i_clk => clk_div1,
-        i_rst => soft_reset,
+        i_clk => n_clk_div1,
+        i_rst => n_soft_reset,
 
-        o_dma_cyc => dma_cyc,
-        i_dma_ack => dma_ack,
-        o_dma_we  => dma_we,
-        o_dma_adr => dma_adr,
-        o_dma_dat => dma_dat_o,
-        i_dma_dat => dma_dat_i,
+        o_dma_cyc => n_dma_cyc,
+        i_dma_ack => n_dma_ack,
+        o_dma_we  => n_dma_we,
+        o_dma_adr => n_dma_adr,
+        o_dma_dat => n_dma_dat_o,
+        i_dma_dat => n_dma_dat_i,
 
-        i_cfg_cyc => dcb_dma_cyc,
-        o_cfg_ack => dcb_dma_ack,
-        i_cfg_we  => dcb_dma_we,
-        i_cfg_adr => dcb_dma_adr,
-        o_cfg_dat => dcb_dma_dat_i,
-        i_cfg_dat => dcb_dma_dat_o,
+        i_cfg_cyc => n_dcb_dma_cyc,
+        o_cfg_ack => n_dcb_dma_ack,
+        i_cfg_we  => n_dcb_dma_we,
+        i_cfg_adr => n_dcb_dma_adr,
+        o_cfg_dat => n_dcb_dma_dat_i,
+        i_cfg_dat => n_dcb_dma_dat_o,
 
-        o_status_busy => dma_busy
+        o_status_busy => n_dma_busy
     );
 
     -- Central crossbar instance
     inst_crossbar_central : wb_crossbar_central
     port map(
-        i_clk      => clk_div1,
-        i_rst      => hard_reset,
-        i_dma_busy   => dma_busy,
+        i_clk        => n_clk_div1,
+        i_rst        => n_hard_reset,
+        i_dma_busy   => n_dma_busy,
         i_dbg_active => '0',
 
         i_dbg_cyc => '0',
@@ -460,51 +460,52 @@ begin
         o_dbg_dat => open,
         i_dbg_dat => (others => '0'),
 
-        i_gbd_cyc => dcb_ccb_cyc,
-        o_gbd_ack => dcb_ccb_ack,
-        i_gbd_we  => dcb_ccb_we,
-        i_gbd_adr => dcb_ccb_adr,
-        o_gbd_dat => dcb_ccb_dat_i,
-        i_gbd_dat => dcb_ccb_dat_o,
+        i_gbd_cyc => n_dcb_ccb_cyc,
+        o_gbd_ack => n_dcb_ccb_ack,
+        i_gbd_we  => n_dcb_ccb_we,
+        i_gbd_adr => n_dcb_ccb_adr,
+        o_gbd_dat => n_dcb_ccb_dat_i,
+        i_gbd_dat => n_dcb_ccb_dat_o,
 
-        i_dma_cyc => dma_cyc,
-        o_dma_ack => dma_ack,
-        i_dma_we  => dma_we,
-        i_dma_adr => dma_adr,
-        o_dma_dat => dma_dat_i,
-        i_dma_dat => dma_dat_o,
+        i_dma_cyc => n_dma_cyc,
+        o_dma_ack => n_dma_ack,
+        i_dma_we  => n_dma_we,
+        i_dma_adr => n_dma_adr,
+        o_dma_dat => n_dma_dat_i,
+        i_dma_dat => n_dma_dat_o,
 
-        o_cyc => ccb_cyc,
-        i_ack => ccb_ack,
-        o_we  => ccb_we,
-        o_adr => ccb_adr,
-        o_dat => ccb_dat_o,
-        i_dat => ccb_dat_i
+        o_cyc => n_ccb_cyc,
+        i_ack => n_ccb_ack,
+        o_we  => n_ccb_we,
+        o_adr => n_ccb_adr,
+        o_dat => n_ccb_dat_o,
+        i_dat => n_ccb_dat_i
     );
 
     inst_mbch : mbch
     port map(
-        i_clk => clk_div1,
-        i_rst => hard_reset,
-        i_cyc => ccb_cyc,
-        i_we => ccb_we,
-        o_ack => ccb_ack,
-        i_adr => ccb_adr,
-        i_dat => ccb_dat_o,
-        o_dat => ccb_dat_i,
-        o_xram_adr => open,
-        i_xram_data => (others => '0'),
-        i_xram_ack => '1',
-        i_gpio => (others => '0'),
-        o_gpio => open,
-        i_select_mbc => n_mbch_selected_mcb,
-        o_soft_reset_req => aux_reset,
-        i_soft_reset => soft_reset,
-        i_dbg_active => '0'
+        i_clk            => n_clk_div1,
+        i_rst            => n_hard_reset,
+        i_cyc            => n_ccb_cyc,
+        i_we             => n_ccb_we,
+        o_ack            => n_ccb_ack,
+        i_adr            => n_ccb_adr,
+        i_dat            => n_ccb_dat_o,
+        o_dat            => n_ccb_dat_i,
+        o_xram_adr       => open,
+        i_xram_dat       => (others => '0'),
+        i_xram_ack       => '1',
+        i_gpio           => (others => '0'),
+        o_gpio           => open,
+        o_select_mbc     => n_mbch_selected_mcb,
+        o_soft_reset_req => n_aux_reset,
+        i_soft_reset     => n_soft_reset,
+        i_dbg_active     => '0'
     );
 
     o_clk_en <= '1';
-    io_gb_data <= n_gb_dout when (i_gb_clk nor i_gb_rdn) = '1' else (others => 'Z');
+    io_gb_data <= n_gb_dout when (i_gb_clk nor i_gb_rdn) = '1' else
+        (others => 'Z');
     o_gb_bus_en <= '0';
 
     io_ram_adq <= (others => 'Z');

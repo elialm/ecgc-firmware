@@ -67,8 +67,8 @@ architecture rtl of reset is
         port (
             i_clk  : in std_logic;
             i_rst  : in std_logic;
-            i_din  : in std_logic_vector(DATA_WIDTH - 1 downto 0);
-            o_dout : out std_logic_vector(DATA_WIDTH - 1 downto 0));
+            i_din  : in std_logic_vector(p_data_width - 1 downto 0);
+            o_dout : out std_logic_vector(p_data_width - 1 downto 0));
     end component;
 
     signal r_soft_reset : std_logic;
