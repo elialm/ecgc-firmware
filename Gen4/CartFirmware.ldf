@@ -35,7 +35,7 @@
         <Source name="src/sim/gameboy_tb.vhd" type="VHDL" type_short="VHDL" syn_sim="SimOnly">
             <Options/>
         </Source>
-        <Source name="src/ip/boot_ram/boot_ram.vhd" type="VHDL" type_short="VHDL">
+        <Source name="src/ip/boot_ram/boot_ram.vhd" type="VHDL" type_short="VHDL" syn_sim="SynOnly">
             <Options/>
         </Source>
         <Source name="src/sim/as1c8m16pl_controller_tb.vhd" type="VHDL" type_short="VHDL" syn_sim="SimOnly">
