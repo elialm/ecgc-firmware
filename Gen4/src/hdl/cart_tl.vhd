@@ -110,20 +110,18 @@ architecture rtl of cart_tl is
 
     component reset
         generic (
-            GSR_FF : positive := 8;
-            AUX_FF : positive := 9;
-            SIMULATION : boolean := p_simulation
+            p_aux_ff_count : positive := 9
         );
         port (
-            SYNC_CLK   : in std_logic;
-            PLL_LOCK   : in std_logic;
-            EXT_SOFT   : in std_logic;
-            AUX_SOFT   : in std_logic;
-            DBG_ACTIVE : in std_logic;
+            i_clk   : in std_logic;
+            i_pll_lock   : in std_logic;
+            i_ext_soft   : in std_logic;
+            i_aux_soft   : in std_logic;
+            i_dbg_active : in std_logic;
 
-            GB_RESETN  : out std_logic;
-            SOFT_RESET : out std_logic;
-            HARD_RESET : out std_logic
+            o_gb_resetn  : out std_logic;
+            o_soft_reset : out std_logic;
+            o_hard_reset : out std_logic
         );
     end component;
 
@@ -359,14 +357,14 @@ begin
     -- Instantiate reset controller (hard and soft resets)
     inst_reset_controller : reset
     port map(
-        SYNC_CLK   => n_clk_div1,
-        PLL_LOCK   => n_pll_lock,
-        EXT_SOFT   => i_fpga_rstn,
-        AUX_SOFT   => n_aux_reset,
-        DBG_ACTIVE => '0',
-        GB_RESETN  => o_gb_rstn,
-        SOFT_RESET => n_soft_reset,
-        HARD_RESET => n_hard_reset
+        i_clk        => n_clk_div1,
+        i_pll_lock   => n_pll_lock,
+        i_ext_soft   => i_fpga_rstn,
+        i_aux_soft   => n_aux_reset,
+        i_dbg_active => '0',
+        o_gb_resetn  => o_gb_rstn,
+        o_soft_reset => n_soft_reset,
+        o_hard_reset => n_hard_reset
     );
 
     -- Gameboy decoder instance
