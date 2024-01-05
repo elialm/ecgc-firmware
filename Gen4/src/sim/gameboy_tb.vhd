@@ -57,7 +57,7 @@ architecture rtl of gameboy_tb is
             o_ram_wen            : out std_logic;
             io_fpga_spi_clk       : inout std_logic;
             io_fpga_spi_miso      : inout std_logic;
-            io_fpga_spi_miso      : inout std_logic;
+            io_fpga_spi_mosi      : inout std_logic;
             o_fpga_spi_flash_csn : out std_logic;
             o_fpga_spi_rtc_csn   : out std_logic;
             o_fpga_spi_sd_csn    : out std_logic;
@@ -140,7 +140,7 @@ architecture rtl of gameboy_tb is
 begin
 
     -- 33.333333 MHz clock
-    fpga_clk33m <= not(fpga_clk33m) after 15 ns;
+    n_fpga_clk33m <= not(n_fpga_clk33m) after 15 ns;
 
     inst_cart : cart_tl
     port map(
@@ -169,7 +169,7 @@ begin
         o_ram_wen => n_ram_wen,
         io_fpga_spi_clk => n_fpga_spi_clk,
         io_fpga_spi_miso => n_fpga_spi_miso,
-        io_fpga_spi_miso => n_fpga_spi_mosi,
+        io_fpga_spi_mosi => n_fpga_spi_mosi,
         o_fpga_spi_flash_csn => n_fpga_spi_flash_csn,
         o_fpga_spi_rtc_csn => n_fpga_spi_rtc_csn,
         o_fpga_spi_sd_csn => n_fpga_spi_sd_csn,

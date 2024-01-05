@@ -74,11 +74,11 @@ architecture rtl of cart_tl is
 
     -- Frequencies used for timing calculations
     constant c_pll_clkop_freq : real := 99.999999;
-    constant c_pll_clkok_freq : real := c_pll_clkop_freq / 100;
+    constant c_pll_clkok_freq : real := c_pll_clkop_freq / 100.0;
     constant c_clkdivb_cdiv1_freq : real := c_pll_clkop_freq;
-    constant c_clkdivb_cdiv2_freq : real := c_clkdivb_cdiv1_freq / 2;
-    constant c_clkdivb_cdiv4_freq : real := c_clkdivb_cdiv1_freq / 4;
-    constant c_clkdivb_cdiv8_freq : real := c_clkdivb_cdiv1_freq / 8;
+    constant c_clkdivb_cdiv2_freq : real := c_clkdivb_cdiv1_freq / 2.0;
+    constant c_clkdivb_cdiv4_freq : real := c_clkdivb_cdiv1_freq / 4.0;
+    constant c_clkdivb_cdiv8_freq : real := c_clkdivb_cdiv1_freq / 8.0;
 
     component pll
         port (
