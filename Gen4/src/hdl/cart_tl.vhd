@@ -89,24 +89,24 @@ architecture rtl of cart_tl is
         );
     end component;
 
-    component CLKDIVB
-        -- synthesis translate_off
-        generic (
-            gsr : in string
-        );
-        -- synthesis translate_on
-        port (
-            clki : in std_logic;
-            rst  : in std_logic;
-            -- synthesis translate_off
-            release : in std_logic;
-            -- synthesis translate_on
-            cdiv1 : out std_logic;
-            cdiv2 : out std_logic;
-            cdiv4 : out std_logic;
-            cdiv8 : out std_logic
-        );
-    end component;
+    -- component CLKDIVB
+    --     -- synthesis translate_off
+    --     generic (
+    --         gsr : in string
+    --     );
+    --     -- synthesis translate_on
+    --     port (
+    --         clki : in std_logic;
+    --         rst  : in std_logic;
+    --         -- synthesis translate_off
+    --         release : in std_logic;
+    --         -- synthesis translate_on
+    --         cdiv1 : out std_logic;
+    --         cdiv2 : out std_logic;
+    --         cdiv4 : out std_logic;
+    --         cdiv8 : out std_logic
+    --     );
+    -- end component;
 
     component reset
         generic (
@@ -254,8 +254,8 @@ architecture rtl of cart_tl is
         );
     end component;
 
-    attribute GSR : string;
-    attribute GSR of inst_clkdiv : label is "DISABLED";
+    -- attribute GSR : string;
+    -- attribute GSR of inst_clkdiv : label is "DISABLED";
 
     -- Clocks
     signal n_pll_clk_op : std_logic;
@@ -322,7 +322,7 @@ architecture rtl of cart_tl is
     -- MBCH related signals
     signal n_mbch_selected_mcb : std_logic_vector(2 downto 0);
 
-    signal r_led_divider : std_logic_vector(21 downto 0);
+    signal r_led_divider : std_logic_vector(24 downto 0);
 
 begin
 
@@ -337,24 +337,29 @@ begin
 
     n_pll_lockn <= not(n_pll_lock);
 
-    -- CLKDIVB instantiation for lower clocks
-    inst_clkdiv : CLKDIVB
-    -- synthesis translate_off
-    generic map(
-        GSR => "disabled"
-    )
-    -- synthesis translate_on
-    port map(
-        CLKI => n_pll_clk_op,
-        RST  => n_pll_lockn,
-        -- synthesis translate_off
-        release => '1',
-        -- synthesis translate_on
-        CDIV1 => n_clk_div1,
-        CDIV2 => n_clk_div2,
-        CDIV4 => n_clk_div4,
-        CDIV8 => n_clk_div8
-    );
+    -- -- CLKDIVB instantiation for lower clocks
+    -- inst_clkdiv : CLKDIVB
+    -- -- synthesis translate_off
+    -- generic map(
+    --     GSR => "disabled"
+    -- )
+    -- -- synthesis translate_on
+    -- port map(
+    --     CLKI => n_pll_clk_op,
+    --     RST  => n_pll_lockn,
+    --     -- synthesis translate_off
+    --     release => '1',
+    --     -- synthesis translate_on
+    --     CDIV1 => n_clk_div1,
+    --     CDIV2 => n_clk_div2,
+    --     CDIV4 => n_clk_div4,
+    --     CDIV8 => n_clk_div8
+    -- );
+
+    n_clk_div1 <= n_pll_clk_op;
+    n_clk_div2 <= n_pll_clk_op;
+    n_clk_div4 <= n_pll_clk_op;
+    n_clk_div8 <= n_pll_clk_op;
 
     -- Instantiate reset controller (hard and soft resets)
     inst_reset_controller : reset
@@ -517,9 +522,8 @@ begin
     end process proc_led_blinker;
 
     o_clk_en <= '1';
-    io_gb_data <= n_gb_dout when (i_gb_clk nor i_gb_rdn) = '1' else
-        (others => 'Z');
-    o_gb_bus_en <= '0';
+    io_gb_data <= n_gb_dout when (i_gb_clk nor i_gb_rdn) = '1' else (others => 'Z');
+    o_gb_bus_en <= not(n_soft_reset);
 
     io_ram_adq <= (others => 'Z');
     o_ram_a <= "000000";
