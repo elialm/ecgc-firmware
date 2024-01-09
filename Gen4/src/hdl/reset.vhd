@@ -71,9 +71,10 @@ architecture rtl of reset is
             o_dout : out std_logic_vector(p_data_width - 1 downto 0));
     end component;
 
-    signal r_soft_reset : std_logic;
+    signal n_soft_reset : std_logic;
     signal n_hard_reset : std_logic := '1';
     signal n_ext_softn_sync : std_logic;
+    signal r_hard_extender : std_logic_vector(3 downto 0) := (others => '1');
     signal r_soft_extender : std_logic_vector(p_aux_ff_count - 1 downto 0);
     signal r_gb_rst_extender : std_logic_vector(8 downto 0);
 
@@ -82,12 +83,14 @@ architecture rtl of reset is
 
 begin
 
-    -- Provide GSR while PLL is not locked
+    -- Provide hard reset when PLL is not locked
     process (i_clk)
     begin
         if rising_edge(i_clk) then
-            if i_pll_lock = '1' then
-                n_hard_reset <= '0';
+            if i_pll_lock = '0' then
+                r_hard_extender <= (others => '1');
+            else
+                r_hard_extender <= r_hard_extender(r_hard_extender'high - 1 downto 0) & '0';
             end if;
         end if;
     end process;
@@ -105,7 +108,7 @@ begin
     process (i_clk)
     begin
         if rising_edge(i_clk) then
-            if (n_hard_reset or i_aux_soft or r_aux_internal or not(n_ext_softn_sync)) = '1' then
+            if (n_hard_reset or i_aux_soft or r_aux_internal or not(n_ext_softn_sync) or not(i_pll_lock)) = '1' then
                 r_soft_extender <= (others => '1');
             else
                 r_soft_extender <= r_soft_extender(r_soft_extender'high - 1 downto 0) & '0';
@@ -113,11 +116,11 @@ begin
         end if;
     end process;
 
-    -- Extend the Gameboy reset
+    -- Extend the Gameboy reset to be slow enough for the gameboy
     process (i_clk)
     begin
         if rising_edge(i_clk) then
-            if (n_hard_reset or r_soft_reset) = '1' then
+            if (n_hard_reset or n_soft_reset) = '1' then
                 r_gb_rst_extender <= (r_gb_rst_extender'high => '1', others => '0');
             else
                 if r_gb_rst_extender(r_gb_rst_extender'high) = '1' then
@@ -141,10 +144,11 @@ begin
         end if;
     end process;
 
-    r_soft_reset <= r_soft_extender(r_soft_extender'high);
+    n_soft_reset <= r_soft_extender(r_soft_extender'high);
+    n_hard_reset <= r_hard_extender(r_hard_extender'high);
 
     o_gb_resetn <= not(r_gb_rst_extender(r_gb_rst_extender'high)) and not(i_dbg_active);
-    o_soft_reset <= r_soft_reset;
+    o_soft_reset <= n_soft_reset;
     o_hard_reset <= n_hard_reset;
 
 end rtl;
