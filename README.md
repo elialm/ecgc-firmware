@@ -22,10 +22,7 @@ The [Gen4](/Gen4) directory has the firmware for the current cart iteration.
 
 # Development tools
 
-The FPGA used is the [LCMXO3D-9400HC-5BG256C](https://nl.mouser.com/ProductDetail/Lattice/LCMXO3D-9400HC-5BG256C?qs=P1JMDcb91o6QDVkyLV%2FaZw%3D%3D).
-This FPGA is developed by Lattice.
-
-Lattice has their own [Lattice Diamond Software](https://www.latticesemi.com/latticediamond)
+Lattice (manufacturer of used FPGA) has their own [Lattice Diamond Software](https://www.latticesemi.com/latticediamond)
 For development on their FPGAs and CLPDs.
 This software is needed to open the `.ldf` file, which is the project root.
 The software has toolchains for building and uploading the firmware to the
