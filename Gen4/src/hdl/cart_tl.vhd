@@ -115,7 +115,7 @@ architecture rtl of cart_tl is
         port (
             i_clk        : in std_logic;
             i_pll_lock   : in std_logic;
-            i_ext_soft   : in std_logic;
+            i_ext_softn  : in std_logic;
             i_aux_soft   : in std_logic;
             i_dbg_active : in std_logic;
 
@@ -322,6 +322,8 @@ architecture rtl of cart_tl is
     -- MBCH related signals
     signal n_mbch_selected_mcb : std_logic_vector(2 downto 0);
 
+    signal r_led_divider : std_logic_vector(21 downto 0);
+
 begin
 
     -- PLL instantiation for frequency synthesis from i_fpga_clk33m
@@ -359,7 +361,7 @@ begin
     port map(
         i_clk        => n_clk_div1,
         i_pll_lock   => n_pll_lock,
-        i_ext_soft   => i_fpga_rstn,
+        i_ext_softn  => i_fpga_rstn,
         i_aux_soft   => n_aux_reset,
         i_dbg_active => '0',
         o_gb_resetn  => o_gb_rstn,
@@ -503,6 +505,17 @@ begin
         i_dbg_active     => '0'
     );
 
+    proc_led_blinker : process(n_clk_div8)
+    begin
+        if rising_edge(n_clk_div8) then
+            if n_hard_reset = '1' then
+                r_led_divider <= (others => '0');
+            else
+                r_led_divider <= std_logic_vector(unsigned(r_led_divider) + 1);
+            end if;
+        end if;
+    end process proc_led_blinker;
+
     o_clk_en <= '1';
     io_gb_data <= n_gb_dout when (i_gb_clk nor i_gb_rdn) = '1' else
         (others => 'Z');
@@ -527,6 +540,12 @@ begin
     o_fpga_spi_rtc_csn <= '1';
     o_fpga_spi_sd_csn <= '1';
 
-    io_fpga_user <= "ZZZZZZ";
+    -- io_fpga_user(5) <= 'Z';
+    io_fpga_user(5) <= r_led_divider(r_led_divider'high);
+    io_fpga_user(4) <= 'Z';
+    io_fpga_user(3) <= 'Z';
+    io_fpga_user(2) <= 'Z';
+    io_fpga_user(1) <= 'Z';
+    io_fpga_user(0) <= 'Z';
 
 end architecture rtl;

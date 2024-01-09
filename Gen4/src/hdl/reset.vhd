@@ -47,7 +47,7 @@ entity reset is
     port (
         i_clk        : in std_logic;
         i_pll_lock   : in std_logic;
-        i_ext_soft   : in std_logic; -- Connected to reset button
+        i_ext_softn  : in std_logic; -- Connected to reset button
         i_aux_soft   : in std_logic; -- Connected to hypervisor reset
         i_dbg_active : in std_logic; -- Indicates debug core active
 
@@ -73,7 +73,7 @@ architecture rtl of reset is
 
     signal r_soft_reset : std_logic;
     signal n_hard_reset : std_logic := '1';
-    signal n_ext_soft_sync : std_logic;
+    signal n_ext_softn_sync : std_logic;
     signal r_soft_extender : std_logic_vector(p_aux_ff_count - 1 downto 0);
     signal r_gb_rst_extender : std_logic_vector(8 downto 0);
 
@@ -92,20 +92,20 @@ begin
         end if;
     end process;
 
-    -- Sychronise i_ext_soft
+    -- Sychronise i_ext_softn
     EXT_SOFT_SYNCHRONISER : synchroniser
     port map(
         i_clk     => i_clk,
         i_rst     => n_hard_reset,
-        i_din(0)  => i_ext_soft,
-        o_dout(0) => n_ext_soft_sync
+        i_din(0)  => i_ext_softn,
+        o_dout(0) => n_ext_softn_sync
     );
 
     -- Extend soft reset to be some clock cycles long
     process (i_clk)
     begin
         if rising_edge(i_clk) then
-            if (n_hard_reset or i_aux_soft or r_aux_internal or n_ext_soft_sync) = '1' then
+            if (n_hard_reset or i_aux_soft or r_aux_internal or not(n_ext_softn_sync)) = '1' then
                 r_soft_extender <= (others => '1');
             else
                 r_soft_extender <= r_soft_extender(r_soft_extender'high - 1 downto 0) & '0';
