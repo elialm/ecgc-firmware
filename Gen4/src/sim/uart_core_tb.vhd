@@ -83,7 +83,7 @@ begin
 
         assert n_tx_rdy = '1' report "Unexpected initial condition: n_tx_rdy /= '1'" severity ERROR;
         assert n_rx_rdy = '0' report "Unexpected initial condition: n_rx_rdy /= '0'" severity ERROR;
-        assert n_serial_tx = '0' report "Unexpected initial condition: n_serial_tx /= '0'" severity ERROR;
+        assert n_serial_tx = '1' report "Unexpected initial condition: n_serial_tx /= '1'" severity ERROR;
 
         -- write data to send to tx
         wait for 20 us;
