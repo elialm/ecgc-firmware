@@ -29,13 +29,12 @@ architecture rtl of uart_core_tb is
         port (
             i_clk       : in std_logic;
             i_rst       : in std_logic;
-            i_cyc       : in std_logic;
-            i_we        : in std_logic;
-            i_dat       : in std_logic_vector(p_data_bits - 1 downto 0);
-            o_dat       : out std_logic_vector(p_data_bits - 1 downto 0);
-            o_ack       : out std_logic;
-            o_tx_ready  : out std_logic;
-            o_rx_ready  : out std_logic;
+            i_tx_wr     : in std_logic;
+            i_tx_dat    : in std_logic_vector(p_data_bits - 1 downto 0);
+            o_tx_rdy    : out std_logic;
+            i_rx_rd     : in std_logic;
+            o_rx_dat    : out std_logic_vector(p_data_bits - 1 downto 0);
+            o_rx_rdy    : out std_logic;
             o_serial_tx : out std_logic;
             i_serial_rx : in std_logic
         );
@@ -62,15 +61,14 @@ architecture rtl of uart_core_tb is
         wait for c_baud_period;
     end procedure;
 
-    signal n_clk : std_logic := '0';
-    signal n_rst : std_logic;
-    signal n_cyc : std_logic := '0';
-    signal n_we : std_logic;
-    signal n_din : std_logic_vector(7 downto 0);
-    signal n_dout : std_logic_vector(7 downto 0);
-    signal n_ack : std_logic;
-    signal n_tx_ready : std_logic;
-    signal n_rx_ready : std_logic;
+    signal n_clk       : std_logic := '0';
+    signal n_rst       : std_logic;
+    signal n_tx_wr     : std_logic := '0';
+    signal n_tx_dat    : std_logic_vector(7 downto 0);
+    signal n_tx_rdy    : std_logic;
+    signal n_rx_rd     : std_logic := '0';
+    signal n_rx_dat    : std_logic_vector(7 downto 0);
+    signal n_rx_rdy    : std_logic;
     signal n_serial_tx : std_logic;
     signal n_serial_rx : std_logic := '1';
 
@@ -83,21 +81,18 @@ begin
     begin
         wait on n_clk until n_clk = '1' and n_rst = '0';
 
-        assert n_ack = '0' report "Unexpected initial condition: n_ack /= '0'" severity ERROR;
-        assert n_tx_ready = '1' report "Unexpected initial condition: n_tx_ready /= '1'" severity ERROR;
-        assert n_rx_ready = '0' report "Unexpected initial condition: n_rx_ready /= '0'" severity ERROR;
+        assert n_tx_rdy = '1' report "Unexpected initial condition: n_tx_rdy /= '1'" severity ERROR;
+        assert n_rx_rdy = '0' report "Unexpected initial condition: n_rx_rdy /= '0'" severity ERROR;
         assert n_serial_tx = '0' report "Unexpected initial condition: n_serial_tx /= '0'" severity ERROR;
 
         -- write data to send to tx
         wait for 20 us;
-        n_cyc <= '1';
-        n_we <= '1';
-        n_din <= x"55";
-        wait on n_clk until n_clk = '1' and n_ack = '1';
-        n_din <= x"AA";
-        wait on n_clk until n_clk = '1' and n_ack = '1';
-        n_cyc <= '0';
-        n_we <= '0';
+        n_tx_wr <= '1';
+        n_tx_dat <= x"55";
+        wait on n_clk until n_clk = '1';
+        n_tx_dat <= x"AA";
+        wait on n_clk until n_clk = '1' and n_tx_rdy = '1';
+        n_tx_wr <= '0';
         wait on n_clk until n_clk = '1';
 
         -- transmit data over serial
@@ -108,11 +103,11 @@ begin
         );
 
         -- attempt to read said data
-        wait on n_clk until n_clk = '1' and n_serial_rx = '1';
-        n_cyc <= '1';
-        wait on n_clk until n_clk = '1' and n_ack = '1';
-        assert n_dout = x"55" report "Unexpected rx data: expected = 0x55, actual = 0x" & to_hstring(to_bitvector(n_dout)) severity ERROR;
-        n_cyc <= '0';
+        wait on n_clk until n_clk = '1' and n_rx_rdy = '1';
+        assert n_rx_dat = x"55" report "Unexpected rx data: expected = 0x55, actual = 0x" & to_hstring(to_bitvector(n_rx_dat)) severity ERROR;
+        n_rx_rd <= '1';
+        wait on n_clk until n_clk = '1';
+        n_rx_rd <= '0';
         wait on n_clk until n_clk = '1';
 
         -- transmit data over serial
@@ -122,11 +117,11 @@ begin
         );
 
         -- attempt to read said data
-        wait on n_clk until n_clk = '1' and n_serial_rx = '1';
-        n_cyc <= '1';
-        wait on n_clk until n_clk = '1' and n_ack = '1';
-        assert n_dout = x"F0" report "Unexpected rx data: expected = 0xF0, actual = 0x" & to_hstring(to_bitvector(n_dout)) severity ERROR;
-        n_cyc <= '0';
+        wait on n_clk until n_clk = '1' and n_rx_rdy = '1';
+        assert n_rx_dat = x"F0" report "Unexpected rx data: expected = 0xF0, actual = 0x" & to_hstring(to_bitvector(n_rx_dat)) severity ERROR;
+        n_rx_rd <= '1';
+        wait on n_clk until n_clk = '1';
+        n_rx_rd <= '0';
         wait on n_clk until n_clk = '1';
 
         wait;
@@ -136,13 +131,12 @@ begin
     port map(
         i_clk       => n_clk,
         i_rst       => n_rst,
-        i_cyc       => n_cyc,
-        i_we        => n_we,
-        i_dat       => n_din,
-        o_dat       => n_dout,
-        o_ack       => n_ack,
-        o_tx_ready  => n_tx_ready,
-        o_rx_ready  => n_rx_ready,
+        i_tx_wr     => n_tx_wr,
+        i_tx_dat    => n_tx_dat,
+        o_tx_rdy    => n_tx_rdy,
+        i_rx_rd     => n_rx_rd,
+        o_rx_dat    => n_rx_dat,
+        o_rx_rdy    => n_rx_rdy,
         o_serial_tx => n_serial_tx,
         i_serial_rx => n_serial_rx
     );

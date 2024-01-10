@@ -27,18 +27,19 @@ entity uart_core is
         p_stop_bits : natural := 1
     );
     port (
-        -- Wishbone signals
+        -- Clocking and reset
         i_clk : in std_logic;
         i_rst : in std_logic;
-        i_cyc : in std_logic;
-        i_we  : in std_logic;
-        i_dat : in std_logic_vector(p_data_bits - 1 downto 0);
-        o_dat : out std_logic_vector(p_data_bits - 1 downto 0);
-        o_ack : out std_logic;
 
-        -- Status flags
-        o_tx_ready : out std_logic;     -- indicates that the tx buffer is empty (tx is ready to send data)
-        o_rx_ready : out std_logic;     -- indicates that the rx buffer is not empty (data has been received)
+        -- Master port for rx data
+        i_tx_wr  : in std_logic;
+        i_tx_dat : in std_logic_vector(p_data_bits - 1 downto 0);
+        o_tx_rdy : out std_logic;
+
+        -- Slave port for tx data
+        i_rx_rd  : in std_logic;
+        o_rx_dat : out std_logic_vector(p_data_bits - 1 downto 0);
+        o_rx_rdy : out std_logic;
 
         -- Serial signals
         o_serial_tx : out std_logic;
@@ -116,9 +117,8 @@ architecture rtl of uart_core is
     signal r_rx_data_present : std_logic;
     signal r_tx_bits : std_logic_vector(p_data_bits + p_stop_bits downto 0);
 
-    signal r_wb_ack : std_logic;
-    signal r_wb_tx_data : std_logic_vector(p_data_bits - 1 downto 0);
-    signal r_wb_tx_ready : std_logic;
+    signal r_tx_data : std_logic_vector(p_data_bits - 1 downto 0);
+    signal r_tx_ready : std_logic;
 
 begin
 
@@ -150,7 +150,7 @@ begin
             else
                 if r_tx_bit_counter = 0 then
                     -- set r_tx_bit_counter when write data has been received
-                    if r_wb_tx_ready = '0' then
+                    if r_tx_ready = '0' then
                         -- + 1 for the start bit
                         r_tx_bit_counter <= p_data_bits + p_stop_bits + 1;
                         r_tx_read_data <= '1';
@@ -230,6 +230,11 @@ begin
                 r_rx_data_present <= '0';
                 r_tx_bits <= (others => '1');
             else
+                -- on rx read
+                if i_rx_rd = '1' then
+                    r_rx_data_present <= '0';
+                end if;
+
                 -- on rx sample event, sample serial rx
                 if r_rx_event_sample = '1' then
                     r_rx_samples <= r_rx_samples(1 downto 0) & n_serial_rx_sync;
@@ -265,49 +270,36 @@ begin
 
                 -- on new tx data
                 if r_tx_read_data = '1' then
-                    r_tx_bits <= create_slv_with_value(p_stop_bits, '1') & r_wb_tx_data & '0';
+                    r_tx_bits <= create_slv_with_value(p_stop_bits, '1') & r_tx_data & '0';
                 end if;
             end if;
         end if;
     end process proc_serial_processing;
 
-    proc_wishbone_bus_handler: process(i_clk)
+    proc_tx_port : process(i_clk)
     begin
         if rising_edge(i_clk) then
             if i_rst = '1' then
-                r_wb_ack <= '0';
-                r_wb_tx_data <= (others => '0');
-                r_wb_tx_ready <= '1';
+                r_tx_data <= (others => '0');
+                r_tx_ready <= '1';
             else
                 -- handle tx ready clear
                 if r_tx_read_data = '1' then
-                    r_wb_tx_ready <= '1';
+                    r_tx_ready <= '1';
                 end if;
 
-                -- handle wishbone bus
-                if r_wb_ack = '1' then
-                    r_wb_ack <= '0';
-                else
-                    if i_cyc = '1' then
-                        if i_we = '1' then
-                            if r_wb_tx_ready = '1' then
-                                r_wb_tx_ready <= '0';
-                                r_wb_tx_data <= i_dat;
-                                r_wb_ack <= '1';
-                            end if;
-                        else
-                            r_wb_ack <= r_rx_data_present;
-                        end if;
-                    end if;
+                -- handle tx wr port
+                if (i_tx_wr and r_tx_ready) = '1' then
+                    r_tx_ready <= '0';
+                    r_tx_data <= i_tx_dat;
                 end if;
             end if;
         end if;
-    end process proc_wishbone_bus_handler;
+    end process proc_tx_port;
 
-    o_dat <= r_rx_data;
-    o_ack <= r_wb_ack;
-    o_tx_ready <= r_wb_tx_ready;
-    o_rx_ready <= r_rx_data_present;
+    o_tx_rdy <= r_tx_ready;
+    o_rx_dat <= r_rx_data;
+    o_rx_rdy <= r_rx_data_present;
     o_serial_tx <= r_tx_bits(0);
 
 end architecture rtl;
