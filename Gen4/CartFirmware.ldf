@@ -4,7 +4,7 @@
         <Option name="HDL type" value="VHDL"/>
     </Options>
     <Implementation title="impl1" dir="impl1" description="impl1" synthesis="lse" default_strategy="Strategy1">
-        <Options def_top="as1c8m16pl_controller" top="cart_tl"/>
+        <Options def_top="uart_core" top="cart_tl"/>
         <Source name="src/ip/pll/pll.vhd" type="VHDL" type_short="VHDL">
             <Options/>
         </Source>
@@ -44,7 +44,22 @@
         <Source name="src/hdl/as1c8m16pl_controller.vhd" type="VHDL" type_short="VHDL">
             <Options/>
         </Source>
+        <Source name="src/hdl/uart_core.vhd" type="VHDL" type_short="VHDL">
+            <Options/>
+        </Source>
+        <Source name="src/sim/uart_core_tb.vhd" type="VHDL" type_short="VHDL" syn_sim="SimOnly">
+            <Options/>
+        </Source>
         <Source name="CartFirmware.lpf" type="Logic Preference" type_short="LPF">
+            <Options/>
+        </Source>
+        <Source name="impl1/impl1.xcf" type="Programming Project File" type_short="Programming">
+            <Options/>
+        </Source>
+        <Source name="reveal.rva" type="Reveal Analyzer Project File" type_short="RVA">
+            <Options/>
+        </Source>
+        <Source name="reveal.rvl" type="Reveal" type_short="Reveal" excluded="TRUE">
             <Options/>
         </Source>
         <Source name="sim/gameboy_sim/gameboy_sim.spf" type="Simulation Project File" type_short="SPF">
