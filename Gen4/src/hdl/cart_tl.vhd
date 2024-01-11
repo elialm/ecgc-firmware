@@ -254,6 +254,28 @@ architecture rtl of cart_tl is
         );
     end component;
 
+    component uart_core
+        generic (
+            p_clk_freq : real := 100.0;
+            p_baud_rate : natural := 115200;
+            p_parity : string := "NONE";
+            p_data_bits : natural := 8;
+            p_stop_bits : natural := 1
+        );
+        port (
+            i_clk       : in std_logic;
+            i_rst       : in std_logic;
+            i_tx_wr     : in std_logic;
+            i_tx_dat    : in std_logic_vector(p_data_bits - 1 downto 0);
+            o_tx_rdy    : out std_logic;
+            i_rx_rd     : in std_logic;
+            o_rx_dat    : out std_logic_vector(p_data_bits - 1 downto 0);
+            o_rx_rdy    : out std_logic;
+            o_serial_tx : out std_logic;
+            i_serial_rx : in std_logic
+        );
+    end component;
+
     -- attribute GSR : string;
     -- attribute GSR of inst_clkdiv : label is "DISABLED";
 
@@ -323,6 +345,9 @@ architecture rtl of cart_tl is
     signal n_mbch_selected_mcb : std_logic_vector(2 downto 0);
 
     signal r_led_divider : std_logic_vector(24 downto 0);
+    signal n_serial_data : std_logic_vector(7 downto 0);
+    signal n_serial_wr : std_logic;
+    signal n_serial_rd : std_logic;
 
 begin
 
@@ -510,6 +535,20 @@ begin
         i_dbg_active     => '0'
     );
 
+    inst_uart_core : uart_core
+    port map(
+        i_clk       => n_clk_div1,
+        i_rst       => n_hard_reset,
+        i_tx_wr     => n_serial_wr,
+        i_tx_dat    => n_serial_data,
+        o_tx_rdy    => n_serial_rd,
+        i_rx_rd     => n_serial_rd,
+        o_rx_dat    => n_serial_data,
+        o_rx_rdy    => n_serial_wr,
+        o_serial_tx => io_fpga_user(1),
+        i_serial_rx => io_fpga_user(0)
+    );
+
     proc_led_blinker : process(n_clk_div8)
     begin
         if rising_edge(n_clk_div8) then
@@ -549,7 +588,7 @@ begin
     io_fpga_user(4) <= 'Z';
     io_fpga_user(3) <= 'Z';
     io_fpga_user(2) <= 'Z';
-    io_fpga_user(1) <= 'Z';
-    io_fpga_user(0) <= 'Z';
+    -- io_fpga_user(1) <= 'Z';
+    -- io_fpga_user(0) <= 'Z';
 
 end architecture rtl;
