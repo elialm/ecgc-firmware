@@ -545,8 +545,8 @@ begin
         i_rx_rd     => n_serial_rd,
         o_rx_dat    => n_serial_data,
         o_rx_rdy    => n_serial_wr,
-        o_serial_tx => io_fpga_user(1),
-        i_serial_rx => io_fpga_user(0)
+        o_serial_tx => io_fpga_user(5),
+        i_serial_rx => io_fpga_user(4)
     );
 
     proc_led_blinker : process(n_clk_div8)
@@ -584,10 +584,11 @@ begin
     o_fpga_spi_sd_csn <= '1';
 
     -- io_fpga_user(5) <= 'Z';
-    io_fpga_user(5) <= r_led_divider(r_led_divider'high);
-    io_fpga_user(4) <= 'Z';
+    -- io_fpga_user(4) <= 'Z';
     io_fpga_user(3) <= 'Z';
     io_fpga_user(2) <= 'Z';
+    io_fpga_user(1) <= r_led_divider(r_led_divider'high);
+    io_fpga_user(0) <= n_soft_reset;
     -- io_fpga_user(1) <= 'Z';
     -- io_fpga_user(0) <= 'Z';
 
