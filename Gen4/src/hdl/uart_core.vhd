@@ -112,7 +112,7 @@ architecture rtl of uart_core is
     signal n_serial_rx_sync : std_logic;
 
     signal r_rx_samples : std_logic_vector(2 downto 0);
-    signal r_rx_bits : std_logic_vector(p_data_bits - 1 downto 0);
+    signal r_rx_bits : std_logic_vector(p_data_bits - 2 downto 0);
     signal r_rx_data : std_logic_vector(p_data_bits - 1 downto 0);
     signal r_rx_data_present : std_logic;
     signal r_tx_bits : std_logic_vector(p_data_bits + p_stop_bits downto 0);
@@ -176,7 +176,7 @@ begin
             if i_rst = '1' then
                 r_rx_baud_divider <= c_rounded_baud_divider_div4;
                 r_rx_event_counter <= 3;
-                r_rx_bit_counter <= p_data_bits + p_stop_bits;
+                r_rx_bit_counter <= p_data_bits;
                 r_rx_in_progress <= '0';
                 r_rx_event_sample <= '0';
                 r_rx_event_shift <= '0';
@@ -208,7 +208,7 @@ begin
                                 r_rx_bit_counter <= r_rx_bit_counter - 1;
                                 r_rx_event_data <= '0';
                             else
-                                r_rx_bit_counter <= p_data_bits + p_stop_bits;
+                                r_rx_bit_counter <= p_data_bits;
                                 r_rx_event_data <= '1';
                                 r_rx_in_progress <= '0';
                             end if;
@@ -257,7 +257,7 @@ begin
 
                         -- on data event, write contents of bit shift register into wb dout register
                         if r_rx_event_data = '1' then
-                            r_rx_data <= r_rx_bits;
+                            r_rx_data <= v_filtered_bit & r_rx_bits;
                             r_rx_data_present <= '1';
                         end if;
                     end if;

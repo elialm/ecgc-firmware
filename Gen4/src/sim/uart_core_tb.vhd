@@ -124,6 +124,17 @@ begin
         n_rx_rd <= '0';
         wait on n_clk until n_clk = '1';
 
+        -- spam transmit data to debug issue with bit misallignment
+        n_rx_rd <= '1';
+        for i in 0 to 15 loop
+            transmit_serial(
+                c_data => x"55",
+                o_serial_tx => n_serial_rx
+            );
+        end loop;
+        wait on n_clk until n_clk = '1';
+        n_rx_rd <= '0';
+
         wait;
     end process;
 
