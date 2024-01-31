@@ -46,7 +46,16 @@ The address can be configured using the `SET_ADDR` command.
 
 The core also includes a way for the address to be automatically incremented.
 This allows for performant reads and writes of large sections of memory.
-The control for enabling and disabling this feature is in the control register.
+When enabled, the address will incremented after each byte operation during a
+read or write.
+The control for enabling and disabling the auto increment feature is in the control register.
+
+For example, if the address is set to `0x4000` and a `READ` command for 1 byte is performed,
+the next `READ` command will read from address `0x4001`.
+Burst operations also increment the address with each data byte,
+so if started on address `0x4000` with a burst size of 16,
+a `WRITE` operation will write to addresses `0x4000` to `0x400F`
+and the next operation will operate on address `0x4010`.
 
 ## Command overview
 
