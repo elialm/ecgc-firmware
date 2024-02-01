@@ -93,7 +93,7 @@ some of the status bits might have changed.
 Write to the control register.
 
 **Arguments:**  
-The value to which the control register is set.
+The single byte to which the control register is set.
 Read-only bits will be ignored.
 For future compatibility and consistency sake,
 these bits should always be set to `'0'`.
@@ -114,8 +114,32 @@ None.
 
 ### READ - 0x20
 
-**TODO: write**
+**Description:**  
+Read a specified number of bytes from the debug address.
+If the auto increment feature is enabled,
+the debug address will increment upon each byte read.
+
+**Arguments:**  
+Single byte value specifying how many bytes are to be read.
+The number of bytes to be read follow the formula `bytes read = val + 1`.
+This gives an effective range of 1 to 256 bytes.
+
+**Response:**  
+Data read from the debug address.
+The number of bytes will be the value specified in the argument.
 
 ### WRITE - 0x30
 
-**TODO: write**
+**Description:**  
+Write a specified number of bytes to the debug address.
+If the auto increment feature is enabled,
+the debug address will increment upon each byte written.
+
+**Arguments:**  
+Single byte value specifying how many bytes are to be written,
+followed by the data to be written.
+The number of bytes to be written follow the formula `bytes written = val + 1`.
+This gives an effective range of 1 to 256 bytes.
+
+**Response:**  
+None.
