@@ -2,7 +2,7 @@
 -- Engineer: Elijah Almeida Coimbra
 -- 
 -- Create Date: 01/03/2024 14:38:20 PM
--- Design Name: Serial Transmitter
+-- Design Name: UART core
 -- Module Name: uart_core - rtl
 -- 
 ----------------------------------------------------------------------------------
