@@ -31,11 +31,75 @@ the exception being the aforementioned ack bit.
 
 The controller has an 8-bit control register.
 This register controls the controller and provides status information for the command issuer.
-The register bits are explained in the table below.
-
-**TODO: insert table**
-
+The register bits are explained in the table and text below.
 The contents of the control register can be read and set using the `CTRL_READ` and `CTRL_WRITE` commands respectively.
+
+<table class="bitfield-description">
+    <thead>
+        <tr>
+            <th class="center-text" colspan="32">Control register</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="bitfield-bits">
+            <th>Bit index</th>
+            <td>7</td>
+            <td>6</td>
+            <td>5</td>
+            <td>4</td>
+            <td>3</td>
+            <td>2</td>
+            <td>1</td>
+            <td>0</td>
+        </tr>
+        <tr>
+            <th>Name</th>
+            <td class="center-text" colspan="2">Reserved</td>
+            <td class="center-text">AUTO_INC</td>
+            <td class="center-text">DBG_EN</td>
+            <td class="center-text" colspan="4">Reserved</td>
+        </tr>
+        <tr>
+            <th>Access</th>
+            <td class="center-text" colspan="2">R</td>
+            <td class="center-text">R/W</td>
+            <td class="center-text">R/W</td>
+            <td class="center-text" colspan="4">R</td>
+        </tr>
+        <tr>
+            <th>Reset value</th>
+            <td class="center-text" colspan="2"><code>"00"</code></td>
+            <td class="center-text"><code>'0'</code></td>
+            <td class="center-text"><code>'0'</code></td>
+            <td class="center-text" colspan="4"><code>"0000"</code></td>
+        </tr>
+    </tbody>
+</table>
+
+<style>
+    .center-text {
+        text-align: center;
+    }
+
+    .bitfield-description td {
+        border-style: solid;
+        text-align: center;
+        min-width: 3rem;
+    }
+
+    .bitfield-bits td {
+        padding: 0.2rem;
+    }
+</style>
+
+**AUTO_INC**  
+Enable auto increment feature described in [Debug address](#debug-address).
+
+**DBG_EN**  
+Enable debug core.
+This bit needs to be set for any of the commands to work as expected.
+The only exception to this are the `CTRL_READ` and `CTRL_WRITE` commands,
+which always work.
 
 ## Debug address
 
