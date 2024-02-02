@@ -286,7 +286,7 @@ begin
         end if;
     end process proc_debug_fsm;
 
-    n_zero_count <= or_reduce(r_byte_count);
+    n_zero_count <= nor_reduce(r_byte_count);
 
     o_cyc        <= r_cyc;
     o_we         <= r_we;

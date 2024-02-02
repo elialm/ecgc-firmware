@@ -180,6 +180,33 @@ begin
         -- wait to receive resent high byte of the debug address
         wait for 85 us;
 
+        -- setup reader
+        v_serial_data(0) := x"21";
+        v_serial_data(1) := x"00";
+        v_serial_data(2) := x"55";
+        v_serial_index := 0;
+        v_serial_length := 3;
+
+        -- initiate read of 1 byte
+        transmit_serial(
+            c_data => x"20",
+            o_serial_tx => n_serial_rx
+        );
+        transmit_serial(
+            c_data => x"00",
+            o_serial_tx => n_serial_rx
+        );
+        
+        -- handle wishbone read
+        wait on n_clk until n_clk = '1' and n_cyc = '1';
+        n_ack <= '1';
+        n_dat_i <= x"55";
+        wait on n_clk until n_clk = '1';
+        n_ack <= '0';
+
+        -- wait to receive read data
+        wait for 85 us;
+
         wait;
     end process;
 
