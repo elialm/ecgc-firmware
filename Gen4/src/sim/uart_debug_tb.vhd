@@ -120,6 +120,23 @@ begin
         -- wait to receive sent command + control register contents
         wait for 170 us;
 
+        -- set debug address
+        transmit_serial(
+            c_data => x"10",
+            o_serial_tx => n_serial_rx
+        );
+        transmit_serial(
+            c_data => x"50",
+            o_serial_tx => n_serial_rx
+        );
+        transmit_serial(
+            c_data => x"01",
+            o_serial_tx => n_serial_rx
+        );
+
+        -- wait to receive resent high byte of the debug address
+        wait for 85 us;
+
         wait;
     end process;
 

@@ -70,11 +70,12 @@ architecture rtl of uart_debug is
         );
     end component;
 
-    type t_debug_state is (s_await_command, s_await_ctrl_value, s_send_ctrl_value, s_await_resend_request);
+    type t_debug_state is (s_await_command, s_await_ctrl_value, s_send_ctrl_value, s_await_adr_value, s_await_resend_request);
 
     signal r_debug_state : t_debug_state;
     signal r_cmd_ack : std_logic;
     signal r_resend_request : std_logic;
+    signal r_adr_byte_sel : std_logic;
     signal r_auto_inc : std_logic;
     signal r_dbg_active : std_logic;
 
@@ -113,6 +114,7 @@ begin
                 r_debug_state <= s_await_command;
                 r_cmd_ack <= '0';
                 r_resend_request <= '0';
+                r_adr_byte_sel <= '0';
                 r_auto_inc <= '0';
                 r_dbg_active <= '0';
                 r_tx_wr <= '0';
@@ -147,7 +149,7 @@ begin
 
                                 -- SET_ADDR
                                 when "0001000" =>
-                                    null;
+                                    r_debug_state <= s_await_adr_value;
 
                                 -- READ
                                 when "0010000" =>
@@ -179,6 +181,22 @@ begin
                             r_dbg_active <= n_rx_dat(4);
                             r_resend_request <= '1';
                             r_debug_state <= s_await_resend_request;
+                        end if;
+
+                    when s_await_adr_value =>
+                        if n_rx_rdy = '1' and r_resend_request = '0' then
+                            r_rx_rd <= '1';
+                            r_resend_request <= '1';
+
+                            -- select low or high byte of address
+                            if r_adr_byte_sel = '0' then
+                                r_adr(7 downto 0) <= n_rx_dat;
+                                r_adr_byte_sel <= '1';
+                            else
+                                r_adr(15 downto 8) <= n_rx_dat;
+                                r_adr_byte_sel <= '0';
+                                r_debug_state <= s_await_resend_request;
+                            end if;
                         end if;
 
                     when s_await_resend_request =>
