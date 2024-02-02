@@ -16,6 +16,7 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
+use IEEE.std_logic_misc.all;
 
 entity uart_debug is
     generic (
@@ -70,14 +71,17 @@ architecture rtl of uart_debug is
         );
     end component;
 
-    type t_debug_state is (s_await_command, s_await_ctrl_value, s_send_ctrl_value, s_await_adr_value, s_await_resend_request);
+    type t_debug_state is (s_await_command, s_await_ctrl_value, s_send_ctrl_value, s_await_adr_value, s_await_byte_count, s_await_wb_read, s_send_read_data, s_await_write_data, s_await_wb_write, s_await_resend_request);
 
     signal r_debug_state : t_debug_state;
     signal r_cmd_ack : std_logic;
     signal r_resend_request : std_logic;
     signal r_adr_byte_sel : std_logic;
+    signal r_cmd_rnw : std_logic;
     signal r_auto_inc : std_logic;
     signal r_dbg_active : std_logic;
+    signal r_byte_count : std_logic_vector(7 downto 0);
+    signal n_zero_count : std_logic;
 
     signal r_tx_wr  : std_logic;
     signal r_tx_dat : std_logic_vector(7 downto 0);
@@ -115,8 +119,10 @@ begin
                 r_cmd_ack <= '0';
                 r_resend_request <= '0';
                 r_adr_byte_sel <= '0';
+                -- r_cmd_rnw <= '0';
                 r_auto_inc <= '0';
                 r_dbg_active <= '0';
+                -- r_byte_count <= (others => '0');
                 r_tx_wr <= '0';
                 r_rx_rd <= '0';
                 -- r_tx_dat <= (others => '0');
@@ -153,11 +159,13 @@ begin
 
                                 -- READ
                                 when "0010000" =>
-                                    null;
+                                    r_cmd_rnw <= '1';
+                                    r_debug_state <= s_await_byte_count;
 
                                 -- WRITE
                                 when "0011000" =>
-                                    null;
+                                    r_cmd_rnw <= '0';
+                                    r_debug_state <= s_await_byte_count;
 
                                 when others =>
                                     r_cmd_ack <= '0';
@@ -199,6 +207,56 @@ begin
                             end if;
                         end if;
 
+                    when s_await_byte_count =>
+                        if n_rx_rdy = '1' and r_resend_request = '0' then
+                            r_rx_rd <= '1';
+                            r_resend_request <= '1';
+                            r_byte_count <= n_rx_dat;
+
+                            -- select read or write command
+                            if r_cmd_rnw = '1' then
+                                r_debug_state <= s_await_wb_read;
+                            else
+                                r_debug_state <= s_await_write_data;
+                            end if;
+                        end if;
+
+                    when s_await_wb_read =>
+                        r_cyc <= '1';
+                        r_we <= '0';
+
+                        -- await wb handshake
+                        if i_ack = '1' then
+                            r_cyc <= '0';
+                            r_tx_dat <= i_dat;
+                            r_tx_wr <= '1';
+                            r_debug_state <= s_send_read_data;
+
+                            -- increment address if enabled
+                            if r_auto_inc = '1' then
+                                r_adr <= std_logic_vector(unsigned(r_adr) + 1);
+                            end if;
+                        end if;
+
+                    when s_send_read_data =>
+                        -- await uart core tx handshake
+                        if n_tx_rdy = '1' then
+                            r_byte_count <= std_logic_vector(unsigned(r_byte_count) - 1);
+
+                            -- check whether to keep reading or stop and look for next command
+                            if n_zero_count = '0' then
+                                r_debug_state <= s_await_wb_read;
+                            else
+                                r_debug_state <= s_await_command;
+                            end if;
+                        end if;
+
+                    when s_await_write_data =>
+                        null;
+
+                    when s_await_wb_write =>
+                        null;
+
                     when s_await_resend_request =>
                         if r_resend_request = '0' then
                             r_debug_state <= s_await_command;
@@ -227,6 +285,8 @@ begin
             end if;
         end if;
     end process proc_debug_fsm;
+
+    n_zero_count <= or_reduce(r_byte_count);
 
     o_cyc        <= r_cyc;
     o_we         <= r_we;
