@@ -199,6 +199,28 @@ architecture rtl of cart_tl is
         );
     end component;
 
+    component uart_debug
+        generic (
+            p_clk_freq : real := c_clkdivb_cdiv1_freq;
+            p_baud_rate : natural := 115200;
+            p_parity : string := "NONE";
+            p_stop_bits : natural := 1
+        );
+        port (
+            i_clk        : in std_logic;
+            i_rst        : in std_logic;
+            o_cyc        : out std_logic;
+            i_ack        : in std_logic;
+            o_we         : out std_logic;
+            o_adr        : out std_logic_vector(15 downto 0);
+            o_dat        : out std_logic_vector(7 downto 0);
+            i_dat        : in std_logic_vector(7 downto 0);
+            o_serial_tx  : out std_logic;
+            i_serial_rx  : in std_logic;
+            o_dbg_active : out std_logic
+        );
+    end component;
+
     component wb_crossbar_central
         port (
             i_clk        : in std_logic;
@@ -293,6 +315,7 @@ architecture rtl of cart_tl is
     signal n_soft_reset : std_logic;
     signal n_hard_reset : std_logic;
     signal n_aux_reset : std_logic;
+    signal n_dbg_active : std_logic;
 
     -- Gameboy decoder related
     signal n_gb_dout : std_logic_vector(7 downto 0);
@@ -333,6 +356,14 @@ architecture rtl of cart_tl is
     signal n_dma_dat_o : std_logic_vector(7 downto 0);
     signal n_dma_busy : std_logic;
 
+    -- Wishbone bus from debug core to central crossbar
+    signal n_dbg_cyc : std_logic;
+    signal n_dbg_we : std_logic;
+    signal n_dbg_adr : std_logic_vector(15 downto 0);
+    signal n_dbg_dat_i : std_logic_vector(7 downto 0);
+    signal n_dbg_dat_o : std_logic_vector(7 downto 0);
+    signal n_dbg_ack : std_logic;
+
     -- Wisbone bus from central crossbar
     signal n_ccb_adr : std_logic_vector(15 downto 0);
     signal n_ccb_we : std_logic;
@@ -345,9 +376,6 @@ architecture rtl of cart_tl is
     signal n_mbch_selected_mcb : std_logic_vector(2 downto 0);
 
     signal r_led_divider : std_logic_vector(24 downto 0);
-    signal n_serial_data : std_logic_vector(7 downto 0);
-    signal n_serial_wr : std_logic;
-    signal n_serial_rd : std_logic;
 
 begin
 
@@ -393,7 +421,7 @@ begin
         i_pll_lock   => n_pll_lock,
         i_ext_softn  => i_fpga_rstn,
         i_aux_soft   => n_aux_reset,
-        i_dbg_active => '0',
+        i_dbg_active => n_dbg_active,
         o_gb_resetn  => o_gb_rstn,
         o_soft_reset => n_soft_reset,
         o_hard_reset => n_hard_reset
@@ -477,20 +505,35 @@ begin
         o_status_busy => n_dma_busy
     );
 
+    inst_uart_debug : uart_debug
+    port map(
+        i_clk        => n_clk_div1,
+        i_rst        => n_hard_reset,
+        o_cyc        => n_dbg_cyc,
+        i_ack        => n_dbg_ack,
+        o_we         => n_dbg_we,
+        o_adr        => n_dbg_adr,
+        o_dat        => n_dbg_dat_o,
+        i_dat        => n_dbg_dat_i,
+        o_serial_tx  => io_fpga_user(5),
+        i_serial_rx  => io_fpga_user(4),
+        o_dbg_active => n_dbg_active
+    );
+
     -- Central crossbar instance
     inst_crossbar_central : wb_crossbar_central
     port map(
         i_clk        => n_clk_div1,
         i_rst        => n_hard_reset,
         i_dma_busy   => n_dma_busy,
-        i_dbg_active => '0',
+        i_dbg_active => n_dbg_active,
 
-        i_dbg_cyc => '0',
-        o_dbg_ack => open,
-        i_dbg_we  => '0',
-        i_dbg_adr => (others => '0'),
-        o_dbg_dat => open,
-        i_dbg_dat => (others => '0'),
+        i_dbg_cyc => n_dbg_cyc,
+        o_dbg_ack => n_dbg_ack,
+        i_dbg_we  => n_dbg_we,
+        i_dbg_adr => n_dbg_adr,
+        o_dbg_dat => n_dbg_dat_o,
+        i_dbg_dat => n_dbg_dat_i,
 
         i_gbd_cyc => n_dcb_ccb_cyc,
         o_gbd_ack => n_dcb_ccb_ack,
@@ -532,21 +575,7 @@ begin
         o_select_mbc     => n_mbch_selected_mcb,
         o_soft_reset_req => n_aux_reset,
         i_soft_reset     => n_soft_reset,
-        i_dbg_active     => '0'
-    );
-
-    inst_uart_core : uart_core
-    port map(
-        i_clk       => n_clk_div1,
-        i_rst       => n_hard_reset,
-        i_tx_wr     => n_serial_wr,
-        i_tx_dat    => n_serial_data,
-        o_tx_rdy    => n_serial_rd,
-        i_rx_rd     => n_serial_rd,
-        o_rx_dat    => n_serial_data,
-        o_rx_rdy    => n_serial_wr,
-        o_serial_tx => io_fpga_user(5),
-        i_serial_rx => io_fpga_user(4)
+        i_dbg_active     => n_dbg_active
     );
 
     proc_led_blinker : process(n_clk_div8)

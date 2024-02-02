@@ -267,6 +267,7 @@ begin
                         if i_ack = '1' then
                             r_cyc <= '0';
                             r_we <= '0';
+                            r_byte_count <= std_logic_vector(unsigned(r_byte_count) - 1);
 
                             -- increment address if enabled
                             if r_auto_inc = '1' then

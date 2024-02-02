@@ -1,4 +1,4 @@
-rvl_alias "n_clk_div1" "n_clk_div1";
+RVL_ALIAS "n_clk_div1" "n_clk_div1"; 
 BLOCK RESETPATHS ;
 BLOCK ASYNCPATHS ;
 BANK 0 VCCIO 1.8 V;
@@ -161,4 +161,9 @@ LOCATE COMP "o_fpga_spi_rtc_csn" SITE "B1" ;
 LOCATE COMP "o_fpga_spi_sd_csn" SITE "B2" ;
 LOCATE COMP "i_fpga_rstn" SITE "F1" ;
 LOCATE COMP "o_fpga_spi_flash_csn" SITE "E3" ;
-BLOCK JTAGPATHS;
+BLOCK JTAGPATHS ;
+USE PRIMARY NET "n_pll_clk_op" ;
+USE PRIMARY NET "i_fpga_clk33m_c" ;
+USE PRIMARY NET "inst_pll/PLLInst_0/CLKOS" ;
+FREQUENCY NET "n_pll_clk_op" 99.999999 MHz ;
+FREQUENCY NET "i_fpga_clk33m_c" 33.333333 MHz ;
