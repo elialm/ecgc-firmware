@@ -64,7 +64,7 @@ architecture rtl of uart_debug_tb is
     signal n_clk        : std_logic := '0';
     signal n_rst        : std_logic;
     signal n_cyc        : std_logic;
-    signal n_ack        : std_logic;
+    signal n_ack        : std_logic := '0';
     signal n_we         : std_logic;
     signal n_adr        : std_logic_vector(15 downto 0);
     signal n_dat_o      : std_logic_vector(7 downto 0);
@@ -86,7 +86,39 @@ begin
         assert n_serial_tx = '1' report "Unexpected initial condition: n_serial_tx /= '1'" severity ERROR;
         assert n_dbg_active = '0' report "Unexpected initial condition: n_dbg_active /= '0'" severity ERROR;
 
-        -- insert testing steps here
+        -- read control register
+        transmit_serial(
+            c_data => x"02",
+            o_serial_tx => n_serial_rx
+        );
+
+        -- wait to receive sent command + control register contents
+        wait for 170 us;
+
+        -- write control register
+        transmit_serial(
+            c_data => x"04",
+            o_serial_tx => n_serial_rx
+        );
+        transmit_serial(
+            c_data => x"10",
+            o_serial_tx => n_serial_rx
+        );
+
+        -- wait to receive sent register value
+        wait for 85 us;
+
+        -- assert debug enabled
+        assert n_dbg_active = '1' report "n_dbg_active is disasserted after core enable bit set" severity ERROR;
+
+        -- read control register
+        transmit_serial(
+            c_data => x"02",
+            o_serial_tx => n_serial_rx
+        );
+
+        -- wait to receive sent command + control register contents
+        wait for 170 us;
 
         wait;
     end process;

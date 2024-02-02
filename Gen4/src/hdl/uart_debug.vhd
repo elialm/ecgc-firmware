@@ -70,10 +70,11 @@ architecture rtl of uart_debug is
         );
     end component;
 
-    type t_debug_state is (s_await_command, s_await_ctrl_value, s_send_ctrl_value);
+    type t_debug_state is (s_await_command, s_await_ctrl_value, s_send_ctrl_value, s_await_resend_request);
 
     signal r_debug_state : t_debug_state;
     signal r_cmd_ack : std_logic;
+    signal r_resend_request : std_logic;
     signal r_auto_inc : std_logic;
     signal r_dbg_active : std_logic;
 
@@ -111,6 +112,7 @@ begin
             if i_rst = '1' then
                 r_debug_state <= s_await_command;
                 r_cmd_ack <= '0';
+                r_resend_request <= '0';
                 r_auto_inc <= '0';
                 r_dbg_active <= '0';
                 r_tx_wr <= '0';
@@ -131,6 +133,7 @@ begin
                         if n_rx_rdy = '1' and r_rx_rd = '0' then
                             r_rx_rd <= '1';
                             r_cmd_ack <= '1';
+                            r_resend_request <= '1';
 
                             -- command decoding
                             case n_rx_dat(7 downto 1) is
@@ -140,7 +143,7 @@ begin
 
                                 -- CTRL_WRITE
                                 when "0000010" =>
-                                    null;
+                                    r_debug_state <= s_await_ctrl_value;
 
                                 -- SET_ADDR
                                 when "0001000" =>
@@ -164,30 +167,43 @@ begin
                         r_tx_dat <= "00" & r_auto_inc & r_dbg_active & "0000";
 
                         -- await write handshake
-                        -- only need to check the rdy flag since this is done after command resend
-                        if n_tx_rdy = '1' then
+                        if n_tx_rdy = '1' and r_resend_request = '0' then
                             r_tx_wr <= '0';
                             r_debug_state <= s_await_command;
                         end if;
 
                     when s_await_ctrl_value =>
-                        if n_rx_rdy = '1' and r_rx_rd = '0' then
+                        if n_rx_rdy = '1' and r_resend_request = '0' then
                             r_rx_rd <= '1';
                             r_auto_inc <= n_rx_dat(5);
                             r_dbg_active <= n_rx_dat(4);
+                            r_resend_request <= '1';
+                            r_debug_state <= s_await_resend_request;
+                        end if;
+
+                    when s_await_resend_request =>
+                        if r_resend_request = '0' then
                             r_debug_state <= s_await_command;
                         end if;
                 end case;
 
                 -- byte resending
-                if n_rx_rdy = '1' and r_rx_rd = '0' then
-                    r_tx_wr <= '1';
-                    r_tx_dat(7 downto 1) <= n_rx_dat(7 downto 1);
+                if r_resend_request = '1' then
 
-                    if r_cmd_ack = '1' then
-                        r_tx_dat(0) <= '1';
+                    -- await tx handshake
+                    if (n_tx_rdy and r_tx_wr) = '1' then
+                        r_tx_wr <= '0';
+                        r_resend_request <= '0';
                     else
-                        r_tx_dat(0) <= n_rx_dat(0);
+                        r_tx_wr <= '1';
+                        r_tx_dat(7 downto 1) <= n_rx_dat(7 downto 1);
+
+                        -- set ack bit if specified
+                        if r_cmd_ack = '1' then
+                            r_tx_dat(0) <= '1';
+                        else
+                            r_tx_dat(0) <= n_rx_dat(0);
+                        end if;
                     end if;
                 end if;
             end if;
