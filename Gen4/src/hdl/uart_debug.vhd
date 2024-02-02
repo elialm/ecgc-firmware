@@ -252,10 +252,34 @@ begin
                         end if;
 
                     when s_await_write_data =>
-                        null;
+                        if n_rx_rdy = '1' and r_resend_request = '0' then
+                            r_rx_rd <= '1';
+                            r_resend_request <= '1';
+                            r_dat <= n_rx_dat;
+                            r_debug_state <= s_await_wb_write;
+                        end if;
 
                     when s_await_wb_write =>
-                        null;
+                        r_cyc <= '1';
+                        r_we <= '1';
+
+                        -- await wb handshake
+                        if i_ack = '1' then
+                            r_cyc <= '0';
+                            r_we <= '0';
+
+                            -- increment address if enabled
+                            if r_auto_inc = '1' then
+                                r_adr <= std_logic_vector(unsigned(r_adr) + 1);
+                            end if;
+
+                            -- check whether to keep writing or stop and look for next command
+                            if n_zero_count = '0' then
+                                r_debug_state <= s_await_write_data;
+                            else
+                                r_debug_state <= s_await_command;
+                            end if;
+                        end if;
 
                     when s_await_resend_request =>
                         if r_resend_request = '0' then

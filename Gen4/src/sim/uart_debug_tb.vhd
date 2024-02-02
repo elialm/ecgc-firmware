@@ -201,11 +201,60 @@ begin
         wait on n_clk until n_clk = '1' and n_cyc = '1';
         n_ack <= '1';
         n_dat_i <= x"55";
+        assert n_we = '0' report "n_we /= '0' on wishbone read" severity ERROR;
         wait on n_clk until n_clk = '1';
         n_ack <= '0';
 
-        -- wait to receive read data
-        wait for 85 us;
+        -- wait to receive resent byte count + read data
+        wait for 170 us;
+
+        -- setup reader
+        v_serial_data(0) := x"31";
+        v_serial_data(1) := x"01";
+        v_serial_data(2) := x"EF";
+        v_serial_data(3) := x"AC";
+        v_serial_index := 0;
+        v_serial_length := 4;
+
+        -- initiate write of 2 bytes
+        transmit_serial(
+            c_data => x"30",
+            o_serial_tx => n_serial_rx
+        );
+        transmit_serial(
+            c_data => x"01",
+            o_serial_tx => n_serial_rx
+        );
+
+        -- write byte
+        transmit_serial(
+            c_data => x"EF",
+            o_serial_tx => n_serial_rx
+        );
+
+        -- handle wishbone write
+        wait on n_clk until n_clk = '1' and n_cyc = '1';
+        n_ack <= '1';
+        assert n_we = '1' report "n_we /= '1' on wishbone write" severity ERROR;
+        assert n_dat_o = x"EF" report "n_dat_o /= 0xEF on wishbone write" severity ERROR;
+        wait on n_clk until n_clk = '1';
+        n_ack <= '0';
+
+        -- write byte
+        transmit_serial(
+            c_data => x"AC",
+            o_serial_tx => n_serial_rx
+        );
+
+        -- handle wishbone write
+        wait on n_clk until n_clk = '1' and n_cyc = '1';
+        n_ack <= '1';
+        assert n_we = '1' report "n_we /= '1' on wishbone write" severity ERROR;
+        assert n_dat_o = x"AC" report "n_dat_o /= 0xAC on wishbone write" severity ERROR;
+        wait on n_clk until n_clk = '1';
+        n_ack <= '0';
+
+        wait for 85 ns;
 
         wait;
     end process;
