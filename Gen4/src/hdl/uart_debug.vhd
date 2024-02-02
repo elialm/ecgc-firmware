@@ -112,6 +112,7 @@ begin
                 r_debug_state <= s_await_command;
                 r_cmd_ack <= '0';
                 r_auto_inc <= '0';
+                r_dbg_active <= '0';
                 r_tx_wr <= '0';
                 r_rx_rd <= '0';
                 -- r_tx_dat <= (others => '0');
@@ -182,7 +183,12 @@ begin
                 if n_rx_rdy = '1' and r_rx_rd = '0' then
                     r_tx_wr <= '1';
                     r_tx_dat(7 downto 1) <= n_rx_dat(7 downto 1);
-                    r_tx_dat(0) <= '1' when r_cmd_ack = '1' else n_rx_dat(0);
+
+                    if r_cmd_ack = '1' then
+                        r_tx_dat(0) <= '1';
+                    else
+                        r_tx_dat(0) <= n_rx_dat(0);
+                    end if;
                 end if;
             end if;
         end if;

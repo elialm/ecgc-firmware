@@ -61,16 +61,17 @@ architecture rtl of uart_debug_tb is
         wait for c_baud_period;
     end procedure;
 
-    signal n_clk       : std_logic := '0';
-    signal n_rst       : std_logic;
-    signal n_cyc       : std_logic;
-    signal n_ack       : std_logic;
-    signal n_we        : std_logic;
-    signal n_adr       : std_logic_vector(15 downto 0);
-    signal n_dat_o     : std_logic_vector(7 downto 0);
-    signal n_dat_i     : std_logic_vector(7 downto 0);
-    signal n_serial_tx : std_logic;
-    signal n_serial_rx : std_logic := '1';
+    signal n_clk        : std_logic := '0';
+    signal n_rst        : std_logic;
+    signal n_cyc        : std_logic;
+    signal n_ack        : std_logic;
+    signal n_we         : std_logic;
+    signal n_adr        : std_logic_vector(15 downto 0);
+    signal n_dat_o      : std_logic_vector(7 downto 0);
+    signal n_dat_i      : std_logic_vector(7 downto 0);
+    signal n_serial_tx  : std_logic;
+    signal n_serial_rx  : std_logic := '1';
+    signal n_dbg_active : std_logic;
 
 begin
 
