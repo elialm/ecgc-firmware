@@ -125,6 +125,7 @@ and the next operation will operate on address `0x4010`.
 
 | Name       | Value  | Description                    |
 | ---------- | ------ | ------------------------------ |
+| NOP        | `0x00` | No operation                   |
 | CTRL_READ  | `0x02` | Read from the control register |
 | CTRL_WRITE | `0x04` | Write to the control register  |
 | SET_ADDR   | `0x10` | Set the of the debug address   |
@@ -137,6 +138,20 @@ A quick note on the command documentation.
 The **Response** section for every command only refers to extra data sent by the command.
 This does not include the resending of received bytes,
 as this always happens.
+
+### NOP - 0x00
+
+**Description:**  
+No operation command.
+Can be used to check whether the core acknowledges and resends commands properly.
+It also shows that the state machine is in an idle state,
+as after acknowledging the debug core is in an idle state.
+
+**Arguments:**  
+None.
+
+**Response:**  
+None.
 
 ### CTRL_READ - 0x02
 
