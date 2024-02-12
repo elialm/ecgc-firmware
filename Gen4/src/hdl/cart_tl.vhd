@@ -532,8 +532,8 @@ begin
         o_dbg_ack => n_dbg_ack,
         i_dbg_we  => n_dbg_we,
         i_dbg_adr => n_dbg_adr,
-        o_dbg_dat => n_dbg_dat_o,
-        i_dbg_dat => n_dbg_dat_i,
+        o_dbg_dat => n_dbg_dat_i,
+        i_dbg_dat => n_dbg_dat_o,
 
         i_gbd_cyc => n_dcb_ccb_cyc,
         o_gbd_ack => n_dcb_ccb_ack,

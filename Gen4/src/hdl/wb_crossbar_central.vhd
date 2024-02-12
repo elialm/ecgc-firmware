@@ -45,7 +45,7 @@ entity wb_crossbar_central is
         i_dma_busy        : in std_logic;
         i_dbg_active      : in std_logic;
 
-        -- SPI debug master connection
+        -- Debug master connection
         i_dbg_cyc   : in std_logic;
         o_dbg_ack   : out std_logic;
         i_dbg_we    : in std_logic;

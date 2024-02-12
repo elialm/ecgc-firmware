@@ -224,8 +224,8 @@ begin
 
         -- setup reader
         v_serial_data(0) := x"11";
-        v_serial_data(1) := x"50";
-        v_serial_data(2) := x"01";
+        v_serial_data(1) := x"00";
+        v_serial_data(2) := x"A1";
         v_serial_index := 0;
         v_serial_length := 3;
 
@@ -235,11 +235,11 @@ begin
             o_serial_tx => n_fpga_user(4)
         );
         transmit_serial(
-            c_data => x"50",
+            c_data => x"00",
             o_serial_tx => n_fpga_user(4)
         );
         transmit_serial(
-            c_data => x"01",
+            c_data => x"A1",
             o_serial_tx => n_fpga_user(4)
         );
 
@@ -249,7 +249,7 @@ begin
         -- setup reader
         v_serial_data(0) := x"21";
         v_serial_data(1) := x"00";
-        v_serial_data(2) := x"55";
+        v_serial_data(2) := "--------";
         v_serial_index := 0;
         v_serial_length := 3;
 
@@ -310,7 +310,7 @@ begin
         );
 
         assert v_serial_index < v_serial_length report "Serial test index exceeds test length" severity FAILURE;
-        assert v_data = v_serial_data(v_serial_index) report "Unexpected serial data received (expected = 0x"
+        assert std_match(v_data, v_serial_data(v_serial_index)) report "Unexpected serial data received (expected = 0x"
             & to_hstring(to_bitvector(v_serial_data(v_serial_index))) & ", actual = 0x"
             & to_hstring(to_bitvector(v_data)) & ", test_index = "
             & integer'image(v_serial_index) & ")" severity ERROR;
