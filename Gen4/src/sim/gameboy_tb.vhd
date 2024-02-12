@@ -34,16 +34,16 @@ architecture rtl of gameboy_tb is
         port (
             i_fpga_clk33m        : in std_logic;
             o_clk_en             : out std_logic;
-            i_fpga_rstn     : in std_logic;
+            i_fpga_rstn          : in std_logic;
             i_gb_addr            : in std_logic_vector(15 downto 0);
-            io_gb_data            : inout std_logic_vector(7 downto 0);
+            io_gb_data           : inout std_logic_vector(7 downto 0);
             o_gb_bus_en          : out std_logic;
             i_gb_clk             : in std_logic;
             i_gb_csn             : in std_logic;
             i_gb_rdn             : in std_logic;
             i_gb_wrn             : in std_logic;
             o_gb_rstn            : out std_logic;
-            io_ram_adq            : inout std_logic_vector(15 downto 0);
+            io_ram_adq           : inout std_logic_vector(15 downto 0);
             o_ram_a              : out std_logic_vector(5 downto 0);
             o_ram_advn           : out std_logic;
             o_ram_ce0n           : out std_logic;
@@ -55,13 +55,13 @@ architecture rtl of gameboy_tb is
             o_ram_oen            : out std_logic;
             i_ram_wait           : in std_logic;
             o_ram_wen            : out std_logic;
-            io_fpga_spi_clk       : inout std_logic;
-            io_fpga_spi_miso      : inout std_logic;
-            io_fpga_spi_mosi      : inout std_logic;
+            io_fpga_spi_clk      : inout std_logic;
+            io_fpga_spi_miso     : inout std_logic;
+            io_fpga_spi_mosi     : inout std_logic;
             o_fpga_spi_flash_csn : out std_logic;
             o_fpga_spi_rtc_csn   : out std_logic;
             o_fpga_spi_sd_csn    : out std_logic;
-            io_fpga_user          : inout std_logic_vector(5 downto 0);
+            io_fpga_user         : inout std_logic_vector(5 downto 0);
             i_rtc_rstn           : in std_logic;
             i_sd_card_detect     : in std_logic
         );

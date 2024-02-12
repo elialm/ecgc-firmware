@@ -145,6 +145,10 @@ begin
 
                             -- command decoding
                             case n_rx_dat(7 downto 1) is
+                                -- NOP
+                                when "0000000" =>
+                                    null;
+
                                 -- CTRL_READ
                                 when "0000001" =>
                                     r_debug_state <= s_send_ctrl_value;
@@ -239,9 +243,12 @@ begin
                         end if;
 
                     when s_send_read_data =>
+                        r_tx_wr <= '1';
+                    
                         -- await uart core tx handshake
                         if n_tx_rdy = '1' then
                             r_byte_count <= std_logic_vector(unsigned(r_byte_count) - 1);
+                            r_tx_wr <= '0';
 
                             -- check whether to keep reading or stop and look for next command
                             if n_zero_count = '0' then
