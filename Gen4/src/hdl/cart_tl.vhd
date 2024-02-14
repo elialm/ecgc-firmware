@@ -264,9 +264,13 @@ architecture rtl of cart_tl is
             i_adr            : in std_logic_vector(15 downto 0);
             i_dat            : in std_logic_vector(7 downto 0);
             o_dat            : out std_logic_vector(7 downto 0);
-            o_xram_adr       : out std_logic_vector(21 downto 0);
-            i_xram_dat       : in std_logic_vector(7 downto 0);
+            o_xram_cyc       : out std_logic;
+            o_xram_we        : out std_logic;
             i_xram_ack       : in std_logic;
+            o_xram_adr       : out std_logic_vector(23 downto 0);
+            o_xram_tga       : out std_logic;
+            i_xram_dat       : in std_logic_vector(7 downto 0);
+            o_xram_dat       : out std_logic_vector(7 downto 0);
             i_gpio           : in std_logic_vector(3 downto 0);
             o_gpio           : out std_logic_vector(3 downto 0);
             o_select_mbc     : out std_logic_vector(2 downto 0);
@@ -295,6 +299,35 @@ architecture rtl of cart_tl is
             o_rx_rdy    : out std_logic;
             o_serial_tx : out std_logic;
             i_serial_rx : in std_logic
+        );
+    end component;
+
+    component as1c8m16pl_controller
+        generic (
+            p_clk_freq : real := 100.0
+        );
+        port (
+            i_clk      : in std_logic;
+            i_rst      : in std_logic;
+            i_cyc      : in std_logic;
+            i_we       : in std_logic;
+            o_ack      : out std_logic;
+            i_adr      : in std_logic_vector(23 downto 0);
+            i_tga      : in std_logic_vector(0 downto 0);
+            i_dat      : in std_logic_vector(7 downto 0);
+            o_dat      : out std_logic_vector(7 downto 0);
+            io_ram_adq : inout std_logic_vector(15 downto 0);
+            o_ram_a    : out std_logic_vector(5 downto 0);
+            o_ram_advn : out std_logic;
+            o_ram_ce0n : out std_logic;
+            o_ram_ce1n : out std_logic;
+            o_ram_clk  : out std_logic;
+            o_ram_cre  : out std_logic;
+            o_ram_lbn  : out std_logic;
+            o_ram_ubn  : out std_logic;
+            o_ram_oen  : out std_logic;
+            i_ram_wait : in std_logic;
+            o_ram_wen  : out std_logic
         );
     end component;
 
@@ -371,6 +404,15 @@ architecture rtl of cart_tl is
     signal n_ccb_dat_i : std_logic_vector(7 downto 0);
     signal n_ccb_dat_o : std_logic_vector(7 downto 0);
     signal n_ccb_ack : std_logic;
+
+    -- Wishbone bus from MBCH to XRAM
+    signal n_xram_cyc : std_logic;
+    signal n_xram_we : std_logic;
+    signal n_xram_ack : std_logic;
+    signal n_xram_adr : std_logic_vector(23 downto 0);
+    signal n_xram_tga : std_logic;
+    signal n_xram_dat_i : std_logic_vector(7 downto 0);
+    signal n_xram_dat_o : std_logic_vector(7 downto 0);
 
     -- MBCH related signals
     signal n_mbch_selected_mcb : std_logic_vector(2 downto 0);
@@ -505,21 +547,6 @@ begin
         o_status_busy => n_dma_busy
     );
 
-    inst_uart_debug : uart_debug
-    port map(
-        i_clk        => n_clk_div1,
-        i_rst        => n_hard_reset,
-        o_cyc        => n_dbg_cyc,
-        i_ack        => n_dbg_ack,
-        o_we         => n_dbg_we,
-        o_adr        => n_dbg_adr,
-        o_dat        => n_dbg_dat_o,
-        i_dat        => n_dbg_dat_i,
-        o_serial_tx  => io_fpga_user(5),
-        i_serial_rx  => io_fpga_user(4),
-        o_dbg_active => n_dbg_active
-    );
-
     -- Central crossbar instance
     inst_crossbar_central : wb_crossbar_central
     port map(
@@ -567,15 +594,59 @@ begin
         i_adr            => n_ccb_adr,
         i_dat            => n_ccb_dat_o,
         o_dat            => n_ccb_dat_i,
-        o_xram_adr       => open,
-        i_xram_dat       => (others => '0'),
-        i_xram_ack       => '1',
+        o_xram_cyc       => n_xram_cyc,
+        o_xram_we        => n_xram_we,
+        i_xram_ack       => n_xram_ack,
+        o_xram_adr       => n_xram_adr,
+        o_xram_tga       => n_xram_tga,
+        i_xram_dat       => n_xram_dat_o,
+        o_xram_dat       => n_xram_dat_i,
         i_gpio           => (others => '0'),
         o_gpio           => open,
         o_select_mbc     => n_mbch_selected_mcb,
         o_soft_reset_req => n_aux_reset,
         i_soft_reset     => n_soft_reset,
         i_dbg_active     => n_dbg_active
+    );
+
+    inst_uart_debug : uart_debug
+    port map(
+        i_clk        => n_clk_div1,
+        i_rst        => n_hard_reset,
+        o_cyc        => n_dbg_cyc,
+        i_ack        => n_dbg_ack,
+        o_we         => n_dbg_we,
+        o_adr        => n_dbg_adr,
+        o_dat        => n_dbg_dat_o,
+        i_dat        => n_dbg_dat_i,
+        o_serial_tx  => io_fpga_user(5),
+        i_serial_rx  => io_fpga_user(4),
+        o_dbg_active => n_dbg_active
+    );
+
+    inst_ram_controller : as1c8m16pl_controller
+    port map(
+        i_clk      => n_clk_div1,
+        i_rst      => n_hard_reset,
+        i_cyc      => n_xram_cyc,
+        i_we       => n_xram_we,
+        o_ack      => n_xram_ack,
+        i_adr      => n_xram_adr,
+        i_tga(0)   => n_xram_tga,
+        i_dat      => n_xram_dat_i,
+        o_dat      => n_xram_dat_o,
+        io_ram_adq => io_ram_adq,
+        o_ram_a    => o_ram_a,
+        o_ram_advn => o_ram_advn,
+        o_ram_ce0n => o_ram_ce0n,
+        o_ram_ce1n => o_ram_ce1n,
+        o_ram_clk  => o_ram_clk,
+        o_ram_cre  => o_ram_cre,
+        o_ram_lbn  => o_ram_lbn,
+        o_ram_ubn  => o_ram_ubn,
+        o_ram_oen  => o_ram_oen,
+        i_ram_wait => i_ram_wait,
+        o_ram_wen  => o_ram_wen
     );
 
     proc_led_blinker : process(n_clk_div8)
@@ -592,18 +663,6 @@ begin
     o_clk_en <= '1';
     io_gb_data <= n_gb_dout when (i_gb_clk nor i_gb_rdn) = '1' else (others => 'Z');
     o_gb_bus_en <= not(n_soft_reset);
-
-    io_ram_adq <= (others => 'Z');
-    o_ram_a <= "000000";
-    o_ram_advn <= '0';
-    o_ram_ce0n <= '0';
-    o_ram_ce1n <= '0';
-    o_ram_clk <= '0';
-    o_ram_cre <= '0';
-    o_ram_lbn <= '0';
-    o_ram_ubn <= '0';
-    o_ram_oen <= '0';
-    o_ram_wen <= '0';
 
     io_fpga_spi_clk <= 'Z';
     io_fpga_spi_miso <= 'Z';

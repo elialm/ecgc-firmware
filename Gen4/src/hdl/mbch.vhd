@@ -11,12 +11,12 @@
 -- Documentation
 --
 -- MBCH (Memory Bank Controller Hypervisor) is the base MBC used by the system.
--- It has access to the entire system, including DRAM, SPI and Flash. It also provides
+-- It has access to the entire system, including XRAM, SPI and Flash. It also provides
 -- access to the boot ROM, which initialised the system using this hypervisor level
 -- access.
 --
 -- The MBCH is also used to access the MBCH control registers. These include functions
--- such as DRAM banking and soft reset control. The control registers are further
+-- such as XRAM banking and soft reset control. The control registers are further
 -- documented in /doc/register.md. 
 --
 -- It also uses the o_select_mbc to override itself and switch to a different MBC
@@ -49,17 +49,22 @@ entity mbch is
         o_dat   : out std_logic_vector(7 downto 0);
 
         -- Master interface to external RAM controller
-        o_xram_adr  : out std_logic_vector(21 downto 0);
-        i_xram_dat  : in std_logic_vector(7 downto 0);
-        i_xram_ack  : in std_logic;
         o_xram_cyc  : out std_logic;
+        o_xram_we   : out std_logic;
+        i_xram_ack  : in std_logic;
+        o_xram_adr  : out std_logic_vector(23 downto 0);
+        o_xram_tga  : out std_logic;
+        i_xram_dat  : in std_logic_vector(7 downto 0);
+        o_xram_dat  : out std_logic_vector(7 downto 0);
 
-        i_gpio     : in std_logic_vector(3 downto 0);
-        o_gpio    : out std_logic_vector(3 downto 0);
+        -- General I/O
+        i_gpio : in std_logic_vector(3 downto 0);
+        o_gpio : out std_logic_vector(3 downto 0);
 
+        -- Miscellaneous signals
         o_select_mbc      : out std_logic_vector(2 downto 0);
         o_soft_reset_req  : out std_logic;
-        i_soft_reset   : in std_logic;
+        i_soft_reset      : in std_logic;
         i_dbg_active      : in std_logic
     );
 end mbch;
@@ -113,13 +118,12 @@ architecture rtl of mbch is
     signal n_boot_rom_we              : std_logic;
     signal n_cart_ram_data            : std_logic_vector(7 downto 0);
 
-    signal r_xram_bank_mbc            : std_logic_vector(6 downto 0);     -- MBC bank selector register
-    signal r_xram_bank                : std_logic_vector(0 downto 0);     -- XRAM bank selector register
-    signal n_xram_bank_select_zero    : std_logic;                        -- Set if MBC & DRAM banks 0 is selected (zero bank)
+    signal r_xram_bank                : std_logic_vector(9 downto 0);     -- XRAM bank selector register
+    signal n_xram_bank_select_zero    : std_logic;                        -- Set if MBC & XRAM banks 0 is selected (zero bank)
     signal n_xram_bank_passthrough    : std_logic;                        -- Set if selector registers should be used to select bank, otherwise will force bank 1 
     signal r_xram_bank_force_zero     : std_logic;                        -- Set to force zero bank to be selected
 
-    signal r_gpio_out         : std_logic_vector(3 downto 0);
+    signal r_gpio_out             : std_logic_vector(3 downto 0);
     signal n_gpio_in_sync         : std_logic_vector(3 downto 0);
     
     signal r_register_data        : std_logic_vector(7 downto 0);
@@ -127,6 +131,7 @@ architecture rtl of mbch is
     signal r_reg_selected_mbc     : std_logic_vector(2 downto 0);
     signal r_bus_selector         : bus_selection_t;
     signal r_soft_reset_rising    : std_logic;
+    signal r_xram_tga             : std_logic;
 
 begin
 
@@ -181,11 +186,11 @@ begin
                 r_register_data <= x"00";
                 r_boot_rom_accessible_reg <= '1';
                 r_boot_rom_accessible <= '1';
-                r_xram_bank_mbc <= (others => '0');
                 r_xram_bank <= (others => '0');
                 r_reg_selected_mbc <= "000";
                 r_soft_reset_rising <= '1';
                 r_gpio_out <= (others => '0');
+                r_xram_tga <= '0';
 
                 o_select_mbc <= "000";
             else
@@ -206,7 +211,7 @@ begin
                             r_bus_selector <= BS_XRAM;
                             r_xram_bank_force_zero <= '1';
 
-                        -- Banked DRAM
+                        -- Banked XRAM
                         when b"01--_----_----_----" =>
                             r_bus_selector <= BS_XRAM;
 
@@ -215,7 +220,7 @@ begin
                             r_register_data <= x"00";
                             r_register_ack <= '1';
 
-                        -- MBCH Control 0 reg
+                        -- MBCH control 0 reg
                         when b"1010_0001_----_----" =>
                             if i_we = '1' then
                                 o_soft_reset_req <= i_dat(7);
@@ -226,19 +231,23 @@ begin
                             end if;
                             r_register_ack <= '1';
 
-                        -- MBCH DRAM bank selection reg
+                        -- XRAM control 0 reg
                         when b"1010_0010_----_----" =>
                             if i_we = '1' then
-                                r_xram_bank_mbc <= i_dat(6 downto 0);
-                                r_xram_bank(0) <= i_dat(7);
+                                r_xram_bank(9 downto 8) <= i_dat(5 downto 4);
+                                r_xram_tga <= i_dat(0);
                             else
-                                r_register_data <= r_xram_bank & r_xram_bank_mbc;
+                                r_register_data <= "00" & i_dat(5 downto 4) & "000" & r_xram_tga;
                             end if;
                             r_register_ack <= '1';
 
-                        -- Reserved (previously MBCH DRAM bank sel 1 reg)
+                        -- XRAM control 1 reg
                         when b"1010_0011_----_----" =>
-                            r_register_data <= x"00";
+                            if i_we = '1' then
+                                r_xram_bank(7 downto 0) <= i_dat;
+                            else
+                                r_register_data <= r_xram_bank(7 downto 0);
+                            end if;
                             r_register_ack <= '1';
 
                         -- MBCH GPIO reg
@@ -285,15 +294,15 @@ begin
     end process;
     
     -- XRAM bank selection
-    n_xram_bank_select_zero <= nor_reduce(r_xram_bank) nor nor_reduce(r_xram_bank_mbc);
+    n_xram_bank_select_zero <= nor_reduce(r_xram_bank);
     n_xram_bank_passthrough <= (n_xram_bank_select_zero nor r_boot_rom_accessible) or r_boot_rom_accessible;
 
     -- XRAM ports
     -- TODO: look at this again, I don't have the head for it now
     o_xram_adr(13 downto 0) <= i_adr(13 downto 0);
-    with n_xram_bank_passthrough & r_xram_bank_force_zero select o_xram_adr(21 downto 14) <=
+    with n_xram_bank_passthrough & r_xram_bank_force_zero select o_xram_adr(23 downto 14) <=
         (14 => '1', others => '0')  when "00",
-        r_xram_bank_mbc & r_xram_bank   when "10",
+        r_xram_bank                 when "10",
         (others => '0')             when others;
 
     -- Bus selection data
@@ -311,5 +320,10 @@ begin
 
     -- Bus selection CYC_O
     o_xram_cyc <= i_cyc when r_bus_selector = BS_XRAM else '0';
-    
+
+    -- Passthrough and other wishbone
+    o_xram_we <= i_we;
+    o_xram_tga <= r_xram_tga;
+    o_xram_dat <= i_dat;
+
 end rtl;
