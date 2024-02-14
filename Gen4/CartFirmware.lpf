@@ -163,7 +163,6 @@ LOCATE COMP "i_fpga_rstn" SITE "F1" ;
 LOCATE COMP "o_fpga_spi_flash_csn" SITE "E3" ;
 BLOCK JTAGPATHS ;
 USE PRIMARY NET "n_pll_clk_op" ;
-USE PRIMARY NET "i_fpga_clk33m_c" ;
 USE PRIMARY NET "inst_pll/PLLInst_0/CLKOS" ;
 FREQUENCY NET "n_pll_clk_op" 99.999999 MHz ;
 FREQUENCY NET "i_fpga_clk33m_c" 33.333333 MHz ;

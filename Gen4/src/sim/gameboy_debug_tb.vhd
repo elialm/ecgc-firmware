@@ -179,15 +179,28 @@ begin
         i_sd_card_detect => n_sd_card_detect
     );
     
+    -- simulate ram driving ADQ on OE#
+    process
+        variable v_low_address : std_logic_vector(15 downto 0);
+    begin
+        n_ram_adq <= (others => 'Z');
+
+        wait on n_ram_oen until n_ram_oen = '0';
+        wait for 20 ns - 1 ps;
+        n_ram_adq <= x"1234";
+        wait on n_ram_oen until n_ram_oen = '1';
+        wait for 7 ns;
+    end process;
+
     proc_testbench : process
     begin
         -- setup reader
         v_serial_data(0) := x"03";
         v_serial_data(1) := x"00";
         v_serial_data(2) := x"05";
-        v_serial_data(3) := x"10";
+        v_serial_data(3) := x"30";
         v_serial_data(4) := x"03";
-        v_serial_data(5) := x"10";
+        v_serial_data(5) := x"30";
         v_serial_index := 0;
         v_serial_length := 6;
 
@@ -201,12 +214,13 @@ begin
         wait for 170 us;
 
         -- write control register
+        -- enable core, enable auto increment
         transmit_serial(
             c_data => x"04",
             o_serial_tx => n_fpga_user(4)
         );
         transmit_serial(
-            c_data => x"10",
+            c_data => x"30",
             o_serial_tx => n_fpga_user(4)
         );
 
@@ -225,7 +239,7 @@ begin
         -- setup reader
         v_serial_data(0) := x"11";
         v_serial_data(1) := x"00";
-        v_serial_data(2) := x"A1";
+        v_serial_data(2) := x"40";
         v_serial_index := 0;
         v_serial_length := 3;
 
@@ -239,7 +253,7 @@ begin
             o_serial_tx => n_fpga_user(4)
         );
         transmit_serial(
-            c_data => x"A1",
+            c_data => x"40",
             o_serial_tx => n_fpga_user(4)
         );
 
@@ -248,23 +262,27 @@ begin
 
         -- setup reader
         v_serial_data(0) := x"21";
-        v_serial_data(1) := x"00";
+        v_serial_data(1) := x"01";
         v_serial_data(2) := "--------";
+        v_serial_data(3) := "--------";
         v_serial_index := 0;
-        v_serial_length := 3;
+        v_serial_length := 4;
 
-        -- initiate read of 1 byte
+        -- initiate read of 2 byte
         transmit_serial(
             c_data => x"20",
             o_serial_tx => n_fpga_user(4)
         );
         transmit_serial(
-            c_data => x"00",
+            c_data => x"01",
             o_serial_tx => n_fpga_user(4)
         );
         
         -- wait to receive resent byte count + read data
-        wait for 170 us;
+        wait for 85 us;
+        for i in 0 to 1 loop
+            wait for 85 us;
+        end loop;
 
         -- setup reader
         v_serial_data(0) := x"31";

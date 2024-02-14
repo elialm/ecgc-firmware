@@ -110,6 +110,9 @@ architecture rtl of mbch is
     end component;
 
     signal n_wb_ack : std_logic;
+    signal r_wb_adr : std_logic_vector(15 downto 0);
+    signal r_wb_we  : std_logic;
+    signal r_wb_dat : std_logic_vector(7 downto 0);
 
     signal n_boot_rom_enabled         : std_logic;
     signal r_boot_rom_accessible      : std_logic;
@@ -181,6 +184,9 @@ begin
             r_bus_selector <= BS_REGISTER;
             r_xram_bank_force_zero <= '0';
             o_soft_reset_req <= '0';
+            r_wb_adr <= i_adr;
+            r_wb_we <= i_we;
+            r_wb_dat <= i_dat;
 
             if i_rst = '1' then
                 r_register_data <= x"00";
@@ -298,12 +304,11 @@ begin
     n_xram_bank_passthrough <= (n_xram_bank_select_zero nor r_boot_rom_accessible) or r_boot_rom_accessible;
 
     -- XRAM ports
-    -- TODO: look at this again, I don't have the head for it now
-    o_xram_adr(13 downto 0) <= i_adr(13 downto 0);
+    o_xram_adr(13 downto 0) <= r_wb_adr(13 downto 0);
     with n_xram_bank_passthrough & r_xram_bank_force_zero select o_xram_adr(23 downto 14) <=
-        (14 => '1', others => '0')  when "00",
-        r_xram_bank                 when "10",
-        (others => '0')             when others;
+        (14 => '1', others => '0') when "00",
+        r_xram_bank                when "10",
+        (others => '0')            when others;
 
     -- Bus selection data
     with r_bus_selector select o_dat <=
@@ -322,8 +327,8 @@ begin
     o_xram_cyc <= i_cyc when r_bus_selector = BS_XRAM else '0';
 
     -- Passthrough and other wishbone
-    o_xram_we <= i_we;
+    o_xram_we <= r_wb_we;
     o_xram_tga <= r_xram_tga;
-    o_xram_dat <= i_dat;
+    o_xram_dat <= r_wb_dat;
 
 end rtl;

@@ -64,7 +64,7 @@ end entity as1c8m16pl_controller;
 
 architecture rtl of as1c8m16pl_controller is
 
-    type t_ram_state is (s_idle, s_buffer_reg_wr, s_oe_mem_rd, s_await_rd_handshake, s_await_counter);
+    type t_ram_state is (s_idle, s_drive_write_data, s_buffer_reg_wr, s_oe_mem_rd, s_await_rd_handshake, s_await_counter);
     type t_ram_reg_buffer_state is (s_adq7_0, s_adq15_8, s_a21_16);
 
     -- Number of bits in counter based on maximum counter value needed
@@ -94,6 +94,16 @@ architecture rtl of as1c8m16pl_controller is
         return real(clock_cycles) * c_t_clk;
     end to_ns_tcomp;
 
+    -- CE# LOW to ADV# HIGH
+    -- Is only 1 clock cycle, since the ADV# work independantly and will ensure proper timing
+    -- We need to stop earlier to immediately drive ADQ with the write data after the write pulse
+    constant c_t_comp_cvs : std_logic_vector(c_ram_counter_bits - 1 downto 0) := to_tcomp_ns(c_t_clk, c_ram_counter_bits);
+
+    -- Data setup to end of write
+    -- 70 - 2 = ADV# rising edge to write data latch (on CE# and WE# rising edge)
+    -- Also take one clock cycle to compensate for c_t_comp_cvs adress hold cycle
+    constant c_t_comp_dsew : std_logic_vector(c_ram_counter_bits - 1 downto 0) := to_tcomp_ns(70.0 - 2.0 - c_t_clk, c_ram_counter_bits);
+
     -- Chip enable to end of WRITE
     constant c_t_comp_cw : std_logic_vector(c_ram_counter_bits - 1 downto 0) := to_tcomp_ns(70.0, c_ram_counter_bits);
 
@@ -107,11 +117,13 @@ architecture rtl of as1c8m16pl_controller is
 
     signal r_ram_state_current : t_ram_state;
     signal r_ram_state_next : t_ram_state;
-    signal r_ram_drive_adq : std_logic;
-    signal r_ram_drive_adq_d : std_logic;
+    signal r_ram_pulse_adq : std_logic;
+    signal r_ram_pulse_adq_d : std_logic;
+    signal r_ram_force_adq : std_logic;
     signal r_ram_release : std_logic;
     signal r_ram_adq_out : std_logic_vector(15 downto 0);
     signal r_ram_adq_in : std_logic_vector(15 downto 0);
+    signal r_ram_wr_data : std_logic_vector(7 downto 0);
     signal r_ram_reg_buff_sel : std_logic;
     signal r_ram_cen_oe : std_logic;
     signal r_ram_cen_sel : std_logic;
@@ -129,10 +141,10 @@ begin
     assert c_t_clk >= 5.0 report "c_t_clk is smaller than Tavs, which could lead to undefined behaviour with the current implementation" severity ERROR;
 
     o_ack <= r_ack;
-    o_dat <= r_ram_adq_in(7 downto 0) when r_ram_rw_sel = '0' else r_ram_adq_in(15 downto 8);
+    o_dat <= r_ram_adq_in(7 downto 0) when i_adr(0) = '0' else r_ram_adq_in(15 downto 8);
 
     o_ram_clk <= '0';
-    io_ram_adq <= r_ram_adq_out when r_ram_drive_adq_d = '1' else (others => 'Z');
+    io_ram_adq <= r_ram_adq_out when (r_ram_pulse_adq_d or r_ram_force_adq) = '1' else (others => 'Z');
     o_ram_ce0n <= r_ram_cen_sel when r_ram_cen_oe = '1' else '1';
     o_ram_ce1n <= not(r_ram_cen_sel) when r_ram_cen_oe = '1' else '1';
     o_ram_wen <= not(r_ram_rw_sel) when r_ram_rw_oe = '1' else '1';
@@ -142,16 +154,18 @@ begin
     begin
         if rising_edge(i_clk) then
             r_ack <= '0';
-            r_ram_drive_adq <= '0';
-            r_ram_drive_adq_d <= r_ram_drive_adq;
+            r_ram_pulse_adq <= '0';
+            r_ram_pulse_adq_d <= r_ram_pulse_adq;
             o_ram_advn <= '1';
 
             if i_rst = '1' then
                 r_ram_state_current <= s_idle;
                 r_ram_state_next <= s_idle;
+                r_ram_force_adq <= '0';
                 r_ram_release <= '0';
-                r_ram_adq_out <= (others => '0');
-                r_ram_adq_in <= (others => '0');
+                -- r_ram_adq_out <= (others => '0');
+                -- r_ram_adq_in <= (others => '0');
+                -- r_ram_wr_data <= (others => '0');
                 r_ram_reg_buff_sel <= '1';
                 r_ram_cen_oe <= '0';
                 r_ram_cen_sel <= '0';
@@ -175,22 +189,19 @@ begin
                                 -- memory operation
                                 if i_we = '1' then
                                     r_ram_state_current <= s_await_counter;
-                                    r_ram_state_next <= s_idle;
+                                    r_ram_state_next <= s_drive_write_data;
 
                                     -- Start ADNV pulse (in the next clock cycle, address will be latched)
                                     o_ram_advn <= '0';
-                                    r_ram_drive_adq <= '1';
-                                    r_ram_drive_adq_d <= '1';
+                                    r_ram_pulse_adq <= '1';
+                                    r_ram_pulse_adq_d <= '1';
                                     r_ram_cen_oe <= '1';
                                     r_ram_rw_oe <= '1';
                                     o_ram_lbn <= i_adr(0);
                                     o_ram_ubn <= not(i_adr(0));
 
-                                    -- Initialise counter to idle after write finished
-                                    r_ram_counter <= c_t_comp_cw;
-
-                                    -- release ram bus after timer elapsed
-                                    r_ram_release <= '1';
+                                    -- Initialise counter to idle till end of ADV# pulse
+                                    r_ram_counter <= c_t_comp_cvs;
 
                                     -- acknowledge to release the bus
                                     r_ack <= '1';
@@ -200,8 +211,8 @@ begin
 
                                     -- Start ADNV pulse (in the next clock cycle, address will be latched)
                                     o_ram_advn <= '0';
-                                    r_ram_drive_adq <= '1';
-                                    r_ram_drive_adq_d <= '1';
+                                    r_ram_pulse_adq <= '1';
+                                    r_ram_pulse_adq_d <= '1';
                                     r_ram_cen_oe <= '1';
                                     o_ram_lbn <= i_adr(0);
                                     o_ram_ubn <= not(i_adr(0));
@@ -220,8 +231,8 @@ begin
 
                                     -- Start ADNV pulse (in the next clock cycle, address will be latched)
                                     o_ram_advn <= '0';
-                                    r_ram_drive_adq <= '1';
-                                    r_ram_drive_adq_d <= '1';
+                                    r_ram_pulse_adq <= '1';
+                                    r_ram_pulse_adq_d <= '1';
                                     o_ram_cre <= '1';
                                     r_ram_cen_oe <= '1';
                                     o_ram_lbn <= '0';
@@ -236,6 +247,9 @@ begin
                             o_ram_a <= i_adr(22 downto 17);
                             r_ram_adq_out <= i_adr(16 downto 1);
 
+                            -- latch input data (only actually needed when writing)
+                            r_ram_wr_data <= i_dat;
+
                             -- latch correct chip select
                             r_ram_cen_sel <= i_adr(23);
 
@@ -245,6 +259,22 @@ begin
                             -- latch we for later use
                             r_ram_rw_sel <= i_we;
                         end if;
+
+                    -- drive write data on ADQ after adress pulse
+                    when s_drive_write_data =>
+                        r_ram_state_current <= s_await_counter;
+                        r_ram_state_next <= s_idle;
+
+                        -- force write data on ADQ
+                        r_ram_adq_out(7 downto 0) <= r_ram_wr_data;
+                        r_ram_adq_out(15 downto 8) <= r_ram_wr_data;
+                        r_ram_force_adq <= '1';
+
+                        -- Initialise counter to idle after write finished
+                        r_ram_counter <= c_t_comp_dsew;
+
+                        -- release ram bus after timer elapsed
+                        r_ram_release <= '1';
 
                     -- buffer the bytes for writing value to a register
                     when s_buffer_reg_wr =>
@@ -267,8 +297,8 @@ begin
 
                                     -- Start ADNV pulse (in the next clock cycle, address will be latched)
                                     o_ram_advn <= '0';
-                                    r_ram_drive_adq <= '1';
-                                    r_ram_drive_adq_d <= '1';
+                                    r_ram_pulse_adq <= '1';
+                                    r_ram_pulse_adq_d <= '1';
                                     o_ram_cre <= '1';
                                     r_ram_cen_oe <= '1';
                                     r_ram_rw_oe <= '1';
@@ -312,6 +342,7 @@ begin
                         if n_ram_counter_elapsed = '1' then
                             r_ram_state_current <= r_ram_state_next;
                             if r_ram_release = '1' then
+                                r_ram_force_adq <= '0';
                                 r_ram_release <= '0';
                                 r_ram_cen_oe <= '0';
                                 r_ram_rw_oe <= '0';
