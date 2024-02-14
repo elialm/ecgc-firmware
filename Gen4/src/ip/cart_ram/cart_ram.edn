@@ -1,0 +1,503 @@
+(edif cart_ram
+  (edifVersion 2 0 0)
+  (edifLevel 0)
+  (keywordMap (keywordLevel 0))
+  (status
+    (written
+      (timestamp 2024 2 15 0 12 7)
+      (program "SCUBA" (version "Diamond (64-bit) 3.13.0.56.2"))))
+      (comment "E:\Programs\lscc\diamond\3.13\ispfpga\bin\nt64\scuba.exe -w -n cart_ram -lang vhdl -synth lse -bus_exp 7 -bb -arch mg5a00 -type bram -wp 10 -rp 1000 -addr_width 11 -data_width 8 -num_rows 2048 -writemode NORMAL -resetmode SYNC -cascade -1 ")
+  (library ORCLIB
+    (edifLevel 0)
+    (technology
+      (numberDefinition))
+    (cell VHI
+      (cellType GENERIC)
+      (view view1
+        (viewType NETLIST)
+        (interface
+          (port Z
+            (direction OUTPUT)))))
+    (cell VLO
+      (cellType GENERIC)
+      (view view1
+        (viewType NETLIST)
+        (interface
+          (port Z
+            (direction OUTPUT)))))
+    (cell DP16KB
+      (cellType GENERIC)
+      (view view1
+        (viewType NETLIST)
+        (interface
+          (port DIA0
+            (direction INPUT))
+          (port DIA1
+            (direction INPUT))
+          (port DIA2
+            (direction INPUT))
+          (port DIA3
+            (direction INPUT))
+          (port DIA4
+            (direction INPUT))
+          (port DIA5
+            (direction INPUT))
+          (port DIA6
+            (direction INPUT))
+          (port DIA7
+            (direction INPUT))
+          (port DIA8
+            (direction INPUT))
+          (port DIA9
+            (direction INPUT))
+          (port DIA10
+            (direction INPUT))
+          (port DIA11
+            (direction INPUT))
+          (port DIA12
+            (direction INPUT))
+          (port DIA13
+            (direction INPUT))
+          (port DIA14
+            (direction INPUT))
+          (port DIA15
+            (direction INPUT))
+          (port DIA16
+            (direction INPUT))
+          (port DIA17
+            (direction INPUT))
+          (port ADA0
+            (direction INPUT))
+          (port ADA1
+            (direction INPUT))
+          (port ADA2
+            (direction INPUT))
+          (port ADA3
+            (direction INPUT))
+          (port ADA4
+            (direction INPUT))
+          (port ADA5
+            (direction INPUT))
+          (port ADA6
+            (direction INPUT))
+          (port ADA7
+            (direction INPUT))
+          (port ADA8
+            (direction INPUT))
+          (port ADA9
+            (direction INPUT))
+          (port ADA10
+            (direction INPUT))
+          (port ADA11
+            (direction INPUT))
+          (port ADA12
+            (direction INPUT))
+          (port ADA13
+            (direction INPUT))
+          (port CEA
+            (direction INPUT))
+          (port CLKA
+            (direction INPUT))
+          (port WEA
+            (direction INPUT))
+          (port CSA0
+            (direction INPUT))
+          (port CSA1
+            (direction INPUT))
+          (port CSA2
+            (direction INPUT))
+          (port RSTA
+            (direction INPUT))
+          (port DIB0
+            (direction INPUT))
+          (port DIB1
+            (direction INPUT))
+          (port DIB2
+            (direction INPUT))
+          (port DIB3
+            (direction INPUT))
+          (port DIB4
+            (direction INPUT))
+          (port DIB5
+            (direction INPUT))
+          (port DIB6
+            (direction INPUT))
+          (port DIB7
+            (direction INPUT))
+          (port DIB8
+            (direction INPUT))
+          (port DIB9
+            (direction INPUT))
+          (port DIB10
+            (direction INPUT))
+          (port DIB11
+            (direction INPUT))
+          (port DIB12
+            (direction INPUT))
+          (port DIB13
+            (direction INPUT))
+          (port DIB14
+            (direction INPUT))
+          (port DIB15
+            (direction INPUT))
+          (port DIB16
+            (direction INPUT))
+          (port DIB17
+            (direction INPUT))
+          (port ADB0
+            (direction INPUT))
+          (port ADB1
+            (direction INPUT))
+          (port ADB2
+            (direction INPUT))
+          (port ADB3
+            (direction INPUT))
+          (port ADB4
+            (direction INPUT))
+          (port ADB5
+            (direction INPUT))
+          (port ADB6
+            (direction INPUT))
+          (port ADB7
+            (direction INPUT))
+          (port ADB8
+            (direction INPUT))
+          (port ADB9
+            (direction INPUT))
+          (port ADB10
+            (direction INPUT))
+          (port ADB11
+            (direction INPUT))
+          (port ADB12
+            (direction INPUT))
+          (port ADB13
+            (direction INPUT))
+          (port CEB
+            (direction INPUT))
+          (port CLKB
+            (direction INPUT))
+          (port WEB
+            (direction INPUT))
+          (port CSB0
+            (direction INPUT))
+          (port CSB1
+            (direction INPUT))
+          (port CSB2
+            (direction INPUT))
+          (port RSTB
+            (direction INPUT))
+          (port DOA0
+            (direction OUTPUT))
+          (port DOA1
+            (direction OUTPUT))
+          (port DOA2
+            (direction OUTPUT))
+          (port DOA3
+            (direction OUTPUT))
+          (port DOA4
+            (direction OUTPUT))
+          (port DOA5
+            (direction OUTPUT))
+          (port DOA6
+            (direction OUTPUT))
+          (port DOA7
+            (direction OUTPUT))
+          (port DOA8
+            (direction OUTPUT))
+          (port DOA9
+            (direction OUTPUT))
+          (port DOA10
+            (direction OUTPUT))
+          (port DOA11
+            (direction OUTPUT))
+          (port DOA12
+            (direction OUTPUT))
+          (port DOA13
+            (direction OUTPUT))
+          (port DOA14
+            (direction OUTPUT))
+          (port DOA15
+            (direction OUTPUT))
+          (port DOA16
+            (direction OUTPUT))
+          (port DOA17
+            (direction OUTPUT))
+          (port DOB0
+            (direction OUTPUT))
+          (port DOB1
+            (direction OUTPUT))
+          (port DOB2
+            (direction OUTPUT))
+          (port DOB3
+            (direction OUTPUT))
+          (port DOB4
+            (direction OUTPUT))
+          (port DOB5
+            (direction OUTPUT))
+          (port DOB6
+            (direction OUTPUT))
+          (port DOB7
+            (direction OUTPUT))
+          (port DOB8
+            (direction OUTPUT))
+          (port DOB9
+            (direction OUTPUT))
+          (port DOB10
+            (direction OUTPUT))
+          (port DOB11
+            (direction OUTPUT))
+          (port DOB12
+            (direction OUTPUT))
+          (port DOB13
+            (direction OUTPUT))
+          (port DOB14
+            (direction OUTPUT))
+          (port DOB15
+            (direction OUTPUT))
+          (port DOB16
+            (direction OUTPUT))
+          (port DOB17
+            (direction OUTPUT)))))
+    (cell cart_ram
+      (cellType GENERIC)
+      (view view1
+        (viewType NETLIST)
+        (interface
+          (port Clock
+            (direction INPUT))
+          (port ClockEn
+            (direction INPUT))
+          (port Reset
+            (direction INPUT))
+          (port WE
+            (direction INPUT))
+          (port (array (rename Address "Address(10:0)") 11)
+            (direction INPUT))
+          (port (array (rename Data "Data(7:0)") 8)
+            (direction INPUT))
+          (port (array (rename Q "Q(7:0)") 8)
+            (direction OUTPUT)))
+        (property NGD_DRC_MASK (integer 1))
+        (contents
+          (instance scuba_vhi_inst
+            (viewRef view1 
+              (cellRef VHI)))
+          (instance scuba_vlo_inst
+            (viewRef view1 
+              (cellRef VLO)))
+          (instance cart_ram_0_0_0
+            (viewRef view1 
+              (cellRef DP16KB))
+            (property MEM_LPC_FILE
+              (string "cart_ram.lpc"))
+            (property MEM_INIT_FILE
+              (string ""))
+            (property CSDECODE_B
+              (string "0b111"))
+            (property CSDECODE_A
+              (string "0b000"))
+            (property WRITEMODE_B
+              (string "NORMAL"))
+            (property WRITEMODE_A
+              (string "NORMAL"))
+            (property GSR
+              (string "DISABLED"))
+            (property RESETMODE
+              (string "SYNC"))
+            (property REGMODE_B
+              (string "NOREG"))
+            (property REGMODE_A
+              (string "NOREG"))
+            (property DATA_WIDTH_B
+              (string "9"))
+            (property DATA_WIDTH_A
+              (string "9")))
+          (net scuba_vhi
+            (joined
+              (portRef Z (instanceRef scuba_vhi_inst))
+              (portRef CEB (instanceRef cart_ram_0_0_0))))
+          (net scuba_vlo
+            (joined
+              (portRef Z (instanceRef scuba_vlo_inst))
+              (portRef CSB2 (instanceRef cart_ram_0_0_0))
+              (portRef CSA2 (instanceRef cart_ram_0_0_0))
+              (portRef CSB1 (instanceRef cart_ram_0_0_0))
+              (portRef CSA1 (instanceRef cart_ram_0_0_0))
+              (portRef CSB0 (instanceRef cart_ram_0_0_0))
+              (portRef CSA0 (instanceRef cart_ram_0_0_0))
+              (portRef RSTB (instanceRef cart_ram_0_0_0))
+              (portRef WEB (instanceRef cart_ram_0_0_0))
+              (portRef CLKB (instanceRef cart_ram_0_0_0))
+              (portRef ADB13 (instanceRef cart_ram_0_0_0))
+              (portRef ADB12 (instanceRef cart_ram_0_0_0))
+              (portRef ADB11 (instanceRef cart_ram_0_0_0))
+              (portRef ADB10 (instanceRef cart_ram_0_0_0))
+              (portRef ADB9 (instanceRef cart_ram_0_0_0))
+              (portRef ADB8 (instanceRef cart_ram_0_0_0))
+              (portRef ADB7 (instanceRef cart_ram_0_0_0))
+              (portRef ADB6 (instanceRef cart_ram_0_0_0))
+              (portRef ADB5 (instanceRef cart_ram_0_0_0))
+              (portRef ADB4 (instanceRef cart_ram_0_0_0))
+              (portRef ADB3 (instanceRef cart_ram_0_0_0))
+              (portRef ADB2 (instanceRef cart_ram_0_0_0))
+              (portRef ADA2 (instanceRef cart_ram_0_0_0))
+              (portRef ADB1 (instanceRef cart_ram_0_0_0))
+              (portRef ADA1 (instanceRef cart_ram_0_0_0))
+              (portRef ADB0 (instanceRef cart_ram_0_0_0))
+              (portRef ADA0 (instanceRef cart_ram_0_0_0))
+              (portRef DIB17 (instanceRef cart_ram_0_0_0))
+              (portRef DIA17 (instanceRef cart_ram_0_0_0))
+              (portRef DIB16 (instanceRef cart_ram_0_0_0))
+              (portRef DIA16 (instanceRef cart_ram_0_0_0))
+              (portRef DIB15 (instanceRef cart_ram_0_0_0))
+              (portRef DIA15 (instanceRef cart_ram_0_0_0))
+              (portRef DIB14 (instanceRef cart_ram_0_0_0))
+              (portRef DIA14 (instanceRef cart_ram_0_0_0))
+              (portRef DIB13 (instanceRef cart_ram_0_0_0))
+              (portRef DIA13 (instanceRef cart_ram_0_0_0))
+              (portRef DIB12 (instanceRef cart_ram_0_0_0))
+              (portRef DIA12 (instanceRef cart_ram_0_0_0))
+              (portRef DIB11 (instanceRef cart_ram_0_0_0))
+              (portRef DIA11 (instanceRef cart_ram_0_0_0))
+              (portRef DIB10 (instanceRef cart_ram_0_0_0))
+              (portRef DIA10 (instanceRef cart_ram_0_0_0))
+              (portRef DIB9 (instanceRef cart_ram_0_0_0))
+              (portRef DIA9 (instanceRef cart_ram_0_0_0))
+              (portRef DIB8 (instanceRef cart_ram_0_0_0))
+              (portRef DIA8 (instanceRef cart_ram_0_0_0))
+              (portRef DIB7 (instanceRef cart_ram_0_0_0))
+              (portRef DIB6 (instanceRef cart_ram_0_0_0))
+              (portRef DIB5 (instanceRef cart_ram_0_0_0))
+              (portRef DIB4 (instanceRef cart_ram_0_0_0))
+              (portRef DIB3 (instanceRef cart_ram_0_0_0))
+              (portRef DIB2 (instanceRef cart_ram_0_0_0))
+              (portRef DIB1 (instanceRef cart_ram_0_0_0))
+              (portRef DIB0 (instanceRef cart_ram_0_0_0))))
+          (net dataout7
+            (joined
+              (portRef (member Q 0))
+              (portRef DOA7 (instanceRef cart_ram_0_0_0))))
+          (net dataout6
+            (joined
+              (portRef (member Q 1))
+              (portRef DOA6 (instanceRef cart_ram_0_0_0))))
+          (net dataout5
+            (joined
+              (portRef (member Q 2))
+              (portRef DOA5 (instanceRef cart_ram_0_0_0))))
+          (net dataout4
+            (joined
+              (portRef (member Q 3))
+              (portRef DOA4 (instanceRef cart_ram_0_0_0))))
+          (net dataout3
+            (joined
+              (portRef (member Q 4))
+              (portRef DOA3 (instanceRef cart_ram_0_0_0))))
+          (net dataout2
+            (joined
+              (portRef (member Q 5))
+              (portRef DOA2 (instanceRef cart_ram_0_0_0))))
+          (net dataout1
+            (joined
+              (portRef (member Q 6))
+              (portRef DOA1 (instanceRef cart_ram_0_0_0))))
+          (net dataout0
+            (joined
+              (portRef (member Q 7))
+              (portRef DOA0 (instanceRef cart_ram_0_0_0))))
+          (net datain7
+            (joined
+              (portRef (member Data 0))
+              (portRef DIA7 (instanceRef cart_ram_0_0_0))))
+          (net datain6
+            (joined
+              (portRef (member Data 1))
+              (portRef DIA6 (instanceRef cart_ram_0_0_0))))
+          (net datain5
+            (joined
+              (portRef (member Data 2))
+              (portRef DIA5 (instanceRef cart_ram_0_0_0))))
+          (net datain4
+            (joined
+              (portRef (member Data 3))
+              (portRef DIA4 (instanceRef cart_ram_0_0_0))))
+          (net datain3
+            (joined
+              (portRef (member Data 4))
+              (portRef DIA3 (instanceRef cart_ram_0_0_0))))
+          (net datain2
+            (joined
+              (portRef (member Data 5))
+              (portRef DIA2 (instanceRef cart_ram_0_0_0))))
+          (net datain1
+            (joined
+              (portRef (member Data 6))
+              (portRef DIA1 (instanceRef cart_ram_0_0_0))))
+          (net datain0
+            (joined
+              (portRef (member Data 7))
+              (portRef DIA0 (instanceRef cart_ram_0_0_0))))
+          (net addr10
+            (joined
+              (portRef (member Address 0))
+              (portRef ADA13 (instanceRef cart_ram_0_0_0))))
+          (net addr9
+            (joined
+              (portRef (member Address 1))
+              (portRef ADA12 (instanceRef cart_ram_0_0_0))))
+          (net addr8
+            (joined
+              (portRef (member Address 2))
+              (portRef ADA11 (instanceRef cart_ram_0_0_0))))
+          (net addr7
+            (joined
+              (portRef (member Address 3))
+              (portRef ADA10 (instanceRef cart_ram_0_0_0))))
+          (net addr6
+            (joined
+              (portRef (member Address 4))
+              (portRef ADA9 (instanceRef cart_ram_0_0_0))))
+          (net addr5
+            (joined
+              (portRef (member Address 5))
+              (portRef ADA8 (instanceRef cart_ram_0_0_0))))
+          (net addr4
+            (joined
+              (portRef (member Address 6))
+              (portRef ADA7 (instanceRef cart_ram_0_0_0))))
+          (net addr3
+            (joined
+              (portRef (member Address 7))
+              (portRef ADA6 (instanceRef cart_ram_0_0_0))))
+          (net addr2
+            (joined
+              (portRef (member Address 8))
+              (portRef ADA5 (instanceRef cart_ram_0_0_0))))
+          (net addr1
+            (joined
+              (portRef (member Address 9))
+              (portRef ADA4 (instanceRef cart_ram_0_0_0))))
+          (net addr0
+            (joined
+              (portRef (member Address 10))
+              (portRef ADA3 (instanceRef cart_ram_0_0_0))))
+          (net wren
+            (joined
+              (portRef WE)
+              (portRef WEA (instanceRef cart_ram_0_0_0))))
+          (net Reset
+            (joined
+              (portRef Reset)
+              (portRef RSTA (instanceRef cart_ram_0_0_0))))
+          (net ClockEn
+            (joined
+              (portRef ClockEn)
+              (portRef CEA (instanceRef cart_ram_0_0_0))))
+          (net clk
+            (joined
+              (portRef Clock)
+              (portRef CLKA (instanceRef cart_ram_0_0_0))))))))
+  (design cart_ram
+    (cellRef cart_ram
+      (libraryRef ORCLIB)))
+)
