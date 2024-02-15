@@ -285,32 +285,49 @@ begin
         end loop;
 
         -- setup reader
-        v_serial_data(0) := x"31";
-        v_serial_data(1) := x"01";
-        v_serial_data(2) := x"EF";
-        v_serial_data(3) := x"AC";
+        v_serial_data(0) := x"11";
+        v_serial_data(1) := x"00";
+        v_serial_data(2) := x"A1";
         v_serial_index := 0;
-        v_serial_length := 4;
+        v_serial_length := 3;
 
-        -- initiate write of 2 bytes
+        -- set debug address
+        transmit_serial(
+            c_data => x"10",
+            o_serial_tx => n_fpga_user(4)
+        );
+        transmit_serial(
+            c_data => x"00",
+            o_serial_tx => n_fpga_user(4)
+        );
+        transmit_serial(
+            c_data => x"A1",
+            o_serial_tx => n_fpga_user(4)
+        );
+
+        -- wait to receive resent high byte of the debug address
+        wait for 85 us;
+
+        -- setup reader
+        v_serial_data(0) := x"31";
+        v_serial_data(1) := x"00";
+        v_serial_data(2) := x"80";
+        v_serial_index := 0;
+        v_serial_length := 3;
+
+        -- initiate write
         transmit_serial(
             c_data => x"30",
             o_serial_tx => n_fpga_user(4)
         );
         transmit_serial(
-            c_data => x"01",
+            c_data => x"00",
             o_serial_tx => n_fpga_user(4)
         );
 
         -- write byte
         transmit_serial(
-            c_data => x"EF",
-            o_serial_tx => n_fpga_user(4)
-        );
-
-        -- write byte
-        transmit_serial(
-            c_data => x"AC",
+            c_data => x"80",
             o_serial_tx => n_fpga_user(4)
         );
 

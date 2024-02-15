@@ -326,6 +326,7 @@ begin
                     r_current_mbc <= r_next_mbc;
                     r_next_mbc <= "000";
                     r_soft_reset_rising <= '0';
+                    r_boot_rom_accessible <= '1';
                 elsif i_soft_reset = '0' then
                     r_soft_reset_rising <= '1';
                 end if;

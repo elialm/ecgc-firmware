@@ -78,7 +78,7 @@ architecture rtl of reset is
     signal n_ext_softn_sync : std_logic;
     signal r_hard_extender : std_logic_vector(3 downto 0) := (others => '1');
     signal r_soft_extender : std_logic_vector(p_aux_ff_count - 1 downto 0);
-    signal r_gb_rst_extender : std_logic_vector(8 downto 0);
+    signal r_gb_rst_extender : std_logic_vector(10 downto 0);
 
     signal r_dbg_active : std_logic;
     signal r_aux_internal : std_logic;
