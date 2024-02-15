@@ -75,45 +75,74 @@ entity wb_crossbar_central is
         o_we    : out std_logic;
         o_adr   : out std_logic_vector(15 downto 0);
         o_dat   : out std_logic_vector(7 downto 0);
-        i_dat   : in std_logic_vector(7 downto 0));
+        i_dat   : in std_logic_vector(7 downto 0)
+    );
 end wb_crossbar_central;
 
 architecture rtl of wb_crossbar_central is
 
-    signal n_master_is_dma    : std_logic;
-    signal n_master_is_dbg    : std_logic;
-
-    signal n_cart_cyc_o   : std_logic;
-    signal n_cart_we_o    : std_logic;
-    signal n_cart_adr_o   : std_logic_vector(15 downto 0);
-    signal n_cart_dat_o   : std_logic_vector(7 downto 0);
+    alias n_master_is_dbg : std_logic is i_dbg_active;
+    alias n_master_is_dma : std_logic is i_dma_busy;
+    signal n_master_is_gbd : std_logic;
+    signal r_ack_d : std_logic;
 
 begin
 
-    -- Master selection
-    n_master_is_dma <= i_dma_busy;
-    n_master_is_dbg <= i_dbg_active;
+    n_master_is_gbd <= n_master_is_dbg nor n_master_is_dma;
 
-    -- o_dat signals
-    o_dbg_dat <= i_dat;
-    o_gbd_dat <= x"00" when n_master_is_dma = '1' else i_dat;
-    o_dma_dat <= i_dat;
+    inst_crossbar: process(i_clk)
+    begin
+        if rising_edge(i_clk) then
+            if i_rst = '1' then
+                -- o_dbg_dat <= (others => '0');
+                -- o_dma_dat <= (others => '0');
+                -- o_gbd_dat <= (others => '0');
+                o_dbg_ack <= '0';
+                o_dma_ack <= '0';
+                o_gbd_ack <= '0';
+                o_cyc <= '0';
+                -- o_we <= '0';
+                -- o_adr <= (others => '0');
+                -- o_dat <= (others => '0');
+                r_ack_d <= '0';
+            else
+                -- delayed ack
+                r_ack_d <= i_ack;
 
-    -- ACK_O signals
-    o_dbg_ack <= i_ack;
-    o_gbd_ack <= '1' when n_master_is_dma = '1' else i_ack;
-    o_dma_ack <= i_ack;
+                -- assign slave o_dat lines
+                o_dbg_dat <= i_dat;
+                o_dma_dat <= i_dat;
+                o_gbd_dat <= i_dat;
 
-    -- DMA and GBD output multiplexers
-    n_cart_cyc_o <= i_dma_cyc when n_master_is_dma = '1' else i_gbd_cyc;
-    n_cart_we_o <= i_dma_we when n_master_is_dma = '1' else i_gbd_we;
-    n_cart_adr_o <= i_dma_adr when n_master_is_dma = '1' else i_gbd_adr;
-    n_cart_dat_o <= i_dma_dat when n_master_is_dma = '1' else i_gbd_dat;
+                -- assign slave o_ack lines
+                o_dbg_ack <= i_ack when n_master_is_dbg = '1' else '0';
+                o_dma_ack <= i_ack when n_master_is_dma = '1' else '0';
+                o_gbd_ack <= i_ack when n_master_is_gbd = '1' else '0';
 
-    -- Master output multiplexers
-    o_cyc <= i_dbg_cyc when n_master_is_dbg = '1' else n_cart_cyc_o;
-    o_we <= i_dbg_we when n_master_is_dbg = '1' else n_cart_we_o;
-    o_adr <= i_dbg_adr when n_master_is_dbg = '1' else n_cart_adr_o;
-    o_dat <= i_dbg_dat when n_master_is_dbg = '1' else n_cart_dat_o;
+                -- select bus master
+                if n_master_is_dbg = '1' then
+                    o_cyc <= i_dbg_cyc;
+                    o_we <= i_dbg_we;
+                    o_adr <= i_dbg_adr;
+                    o_dat <= i_dbg_dat;
+                elsif n_master_is_dma = '1' then
+                    o_cyc <= i_dma_cyc;
+                    o_we <= i_dma_we;
+                    o_adr <= i_dma_adr;
+                    o_dat <= i_dma_dat;
+                else
+                    o_cyc <= i_gbd_cyc;
+                    o_we <= i_gbd_we;
+                    o_adr <= i_gbd_adr;
+                    o_dat <= i_gbd_dat;
+                end if;
+
+                -- drive o_cyc low to compensate for FF delay
+                if (i_ack or r_ack_d) = '1' then
+                    o_cyc <= '0';
+                end if;
+            end if;
+        end if;
+    end process inst_crossbar;
 
 end rtl;

@@ -70,9 +70,7 @@ begin
     n_mbch_is_active <= '1' when i_select_mbc = "000" else '0';
     -- DMA is accessible at address range 0xA500 to 0xA5FF
     -- Though, only last nibble is relavant due to the address being 4-bit
-    n_dma_reg_addr <= '1'
-        when i_access_ram = '1' and i_adr(12 downto 8) = "00101"
-        else '0';
+    n_dma_reg_addr <= '1' when i_access_ram = '1' and i_adr(12 downto 8) = "00101" else '0';
     n_valid_dma_access <= n_mbch_is_active and n_dma_reg_addr;
 
     -- Master output (central crossbar)
