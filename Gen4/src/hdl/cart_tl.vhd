@@ -498,7 +498,7 @@ begin
     inst_crossbar_decoder : wb_crossbar_decoder
     port map(
         i_clk        => n_clk_div1,
-        i_rst        => n_hard_reset,
+        i_rst        => n_soft_reset,
         i_access_ram => n_gb_access_ram,
         i_select_mbc => n_mbch_selected_mcb,
 
@@ -551,7 +551,7 @@ begin
     inst_crossbar_central : wb_crossbar_central
     port map(
         i_clk        => n_clk_div1,
-        i_rst        => n_hard_reset,
+        i_rst        => n_soft_reset,
         i_dma_busy   => n_dma_busy,
         i_dbg_active => n_dbg_active,
 
@@ -627,7 +627,7 @@ begin
     inst_ram_controller : as1c8m16pl_controller
     port map(
         i_clk      => n_clk_div1,
-        i_rst      => n_hard_reset,
+        i_rst      => n_soft_reset,
         i_cyc      => n_xram_cyc,
         i_we       => n_xram_we,
         o_ack      => n_xram_ack,
