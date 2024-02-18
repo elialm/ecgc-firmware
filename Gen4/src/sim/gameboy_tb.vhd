@@ -69,7 +69,7 @@ architecture rtl of gameboy_tb is
 
     signal n_fpga_clk33m : std_logic := '0';
     signal n_clk_en : std_logic;
-    signal n_fpga_soft_rstn : std_logic := '0';
+    signal n_fpga_soft_rstn : std_logic := '1';
     signal n_gb_addr : std_logic_vector(15 downto 0);
     signal n_gb_data : std_logic_vector(7 downto 0);
     signal n_gb_bus_en : std_logic;

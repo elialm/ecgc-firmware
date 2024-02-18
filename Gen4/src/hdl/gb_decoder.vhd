@@ -27,27 +27,39 @@ entity gb_decoder is
         i_gb_rdn  : in std_logic;
         i_gb_csn  : in std_logic;
 
-        -- Wishbone signals
+        -- Global signals
         i_clk : in std_logic;
         i_rst : in std_logic;
-        o_cyc : out std_logic;
-        o_we  : out std_logic;
-        o_adr : out std_logic_vector(15 downto 0);
-        i_dat : in std_logic_vector(7 downto 0);
-        o_dat : out std_logic_vector(7 downto 0);
-        i_ack : in std_logic;
 
-        o_access_rom : out std_logic;  -- Indicates when address range 0x0000-0x7FFF is being accessed. Only valid when n_cyc = 1.
-        o_access_ram : out std_logic;  -- Indicates when address range 0xA000-0xBFFF is being accessed. Only valid when n_cyc = 1.
-        o_wr_timeout : out std_logic;  -- Indicates that a write timeout has occurred. Asserting i_rst will reset this back to 0.
-        o_rd_timeout : out std_logic   -- Indicates that a read timeout has occurred. Asserting i_rst will reset this back to 0.
+        -- Wishbone DMA master signals
+        o_dma_cyc : out std_logic;
+        o_dma_we : out std_logic;
+        o_dma_adr : out std_logic_vector(3 downto 0);
+        o_dma_dat : out std_logic_vector(7 downto 0);
+        i_dma_dat : in std_logic_vector(7 downto 0);
+        i_dma_ack : in std_logic;
+
+        -- Wishbone MBCH master signals
+        o_mbch_cyc : out std_logic;
+        o_mbch_we : out std_logic;
+        o_mbch_adr : out std_logic_vector(15 downto 0);
+        o_mbch_dat : out std_logic_vector(7 downto 0);
+        i_mbch_dat : in std_logic_vector(7 downto 0);
+        i_mbch_ack : in std_logic;
+
+        -- Miscellaneous signals
+        i_dma_busy     : in std_logic;
+        i_selected_mbc : in std_logic_vector(2 downto 0);
+        o_wr_timeout   : out std_logic;  -- Indicates that a write timeout has occurred. Asserting i_rst will reset this back to 0.
+        o_rd_timeout   : out std_logic   -- Indicates that a read timeout has occurred. Asserting i_rst will reset this back to 0.
     );
-    end gb_decoder;
+end gb_decoder;
 
 architecture rtl of gb_decoder is
 
     type t_gb_bus_state is (s_await_access_finished, s_idle, s_read_await_ack, s_write_await_falling_edge, s_write_await_ack);
 
+    -- TODO: update with new clock frequency
     constant c_cyc_counter_read : std_logic_vector(3 downto 0) := "1000"; -- 9 cycles
     constant c_cyc_counter_write : std_logic_vector(3 downto 0) := "1000"; -- 9 cycles (I think)
 
@@ -68,15 +80,20 @@ architecture rtl of gb_decoder is
     signal n_gb_csn_sync : std_logic;
     signal n_gb_addr_sync : std_logic_vector(2 downto 0);
 
-    -- Access signals (combinatorial)
+    -- Access signals
     signal n_gb_access_rom : std_logic;
     signal n_gb_access_ram : std_logic;
     signal n_gb_access_cart : std_logic;
+    signal n_gb_access_dma : std_logic;
 
     signal r_gb_bus_state : t_gb_bus_state;
-    signal r_cyc_counter  : std_logic_vector(3 downto 0);
-    signal n_cyc_timeout  : std_logic;
-    signal n_cyc          : std_logic;
+    signal r_cyc_counter : std_logic_vector(3 downto 0);
+    signal n_cyc_timeout : std_logic;
+    signal n_ack : std_logic;
+    signal n_dat : std_logic_vector(7 downto 0);
+    signal r_we : std_logic;
+    signal r_dat : std_logic_vector(7 downto 0);
+    signal r_adr : std_logic_vector(15 downto 0);
 
 begin
 
@@ -120,9 +137,27 @@ begin
         and not(n_gb_addr_sync(1))
         and n_gb_addr_sync(0);
 
-    o_access_rom <= n_gb_access_rom;
-    o_access_ram <= n_gb_access_ram;
-    o_cyc <= n_cyc;
+    -- or all ack signals, since only one slave is active at any time
+    n_ack <= i_dma_ack or i_mbch_ack;
+
+    -- or all dat signals, since only one slave is active at any time
+    -- connected slaves must then set their dat_o signals to all zeros, otherwise this won't work
+    n_dat <= i_dma_dat or i_mbch_dat;
+
+    -- only valid when n_gb_access_cart = '1' and i_selected_mbc = "000"
+    n_gb_access_dma <= '1' when n_gb_access_ram = '1' and i_gb_addr(12 downto 8) = "00101" else '0';
+
+    -- we is for all slaves the same
+    o_dma_we <= r_we;
+    o_mbch_we <= r_we;
+
+    -- dat is for all slaves the same
+    o_dma_dat <= r_dat;
+    o_mbch_dat <= r_dat;
+
+    -- adr is for all slaves the same
+    o_dma_adr <= r_adr(3 downto 0);
+    o_mbch_adr <= r_adr;
 
     -- Control Wishbone cycles
     process (i_clk)
@@ -131,14 +166,15 @@ begin
             if i_rst = '1' then
                 r_gb_bus_state <= s_await_access_finished;
                 r_cyc_counter <= (others => '1');
-                n_cyc <= '0';
 
-                o_we <= '0';
-                o_adr <= (others => '0');
-                o_dat <= (others => '0');
                 o_gb_dout <= (others => '0');
+                o_dma_cyc <= '0';
+                o_mbch_cyc <= '0';
                 o_rd_timeout <= '0';
                 o_wr_timeout <= '0';
+                r_we <= '0';
+                -- r_dat <= (others => '0');
+                -- r_adr <= (others => '0');
             else
                 -- Bus decoder state machine
                 case r_gb_bus_state is
@@ -149,25 +185,34 @@ begin
 
                     when s_idle =>
                         if n_gb_access_cart = '1' then
-                            if i_gb_rdn = '0' then
-                                -- Initiate read from cart
-                                r_gb_bus_state <= s_read_await_ack;
-                                n_cyc <= '1';
-                                o_we <= '0';
-                                r_cyc_counter <= c_cyc_counter_read;
+                            -- block cart access when DMA is busy
+                            if i_dma_busy = '1' and n_gb_access_dma = '0' then
+                                o_gb_dout <= x"00";
+                                r_gb_bus_state <= s_await_access_finished;
                             else
-                                -- Initiate write to cart
-                                r_gb_bus_state <= s_write_await_falling_edge;
-                            end if;
+                                if i_gb_rdn = '0' then
+                                    r_gb_bus_state <= s_read_await_ack;
+                                    r_we <= '0';
+                                    r_cyc_counter <= c_cyc_counter_read;
 
-                            o_adr <= i_gb_addr;
+                                    -- select cyc
+                                    o_dma_cyc <= '1' when n_gb_access_dma = '1' and i_selected_mbc = "000" else '0';
+                                    o_mbch_cyc <= '1' when n_gb_access_dma = '0' and i_selected_mbc = "000" and i_dma_busy = '0' else '0';
+                                else
+                                    -- Initiate write to cart
+                                    r_gb_bus_state <= s_write_await_falling_edge;
+                                end if;
+
+                                r_adr <= i_gb_addr;
+                            end if;
                         end if;
 
                     when s_read_await_ack =>
-                        if i_ack = '1' then
+                        if n_ack = '1' then
                             r_gb_bus_state <= s_await_access_finished;
-                            n_cyc <= '0';
-                            o_gb_dout <= i_dat;
+                            o_dma_cyc <= '0';
+                            o_mbch_cyc <= '0';
+                            o_gb_dout <= n_dat;
                         end if;
 
                         if n_cyc_timeout = '1' then
@@ -177,25 +222,25 @@ begin
                     when s_write_await_falling_edge =>
                         if n_gb_clk_sync = '0' then
                             r_gb_bus_state <= s_write_await_ack;
-                            n_cyc <= '1';
-                            o_we <= '1';
-                            o_dat <= i_gb_din;
+                            r_we <= '1';
+                            r_dat <= i_gb_din;
                             r_cyc_counter <= c_cyc_counter_write;
+
+                            -- select cyc
+                            o_dma_cyc <= '1' when n_gb_access_dma = '1' and i_selected_mbc = "000" else '0';
+                            o_mbch_cyc <= '1' when n_gb_access_dma = '0' and i_selected_mbc = "000" else '0';
                         end if;
 
                     when s_write_await_ack =>
-                        if i_ack = '1' then
+                        if n_ack = '1' then
                             r_gb_bus_state <= s_await_access_finished;
-                            n_cyc <= '0';
+                            o_dma_cyc <= '0';
+                            o_mbch_cyc <= '0';
                         end if;
 
                         if n_cyc_timeout = '1' then
                             o_wr_timeout <= '1';
                         end if;
-
-                    when others =>
-                        r_gb_bus_state <= s_await_access_finished;
-                        n_cyc <= '0';
                 end case;
             end if;
 
