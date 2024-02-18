@@ -258,10 +258,10 @@ begin
                         -- XRAM control 0 reg
                         when b"1010_0010" =>
                             if i_we = '1' then
-                                r_xram_bank(9 downto 8) <= i_dat(5 downto 4);
-                                r_xram_tga <= i_dat(0);
+                                r_xram_bank(9 downto 8) <= i_dat(1 downto 0);
+                                r_xram_tga <= i_dat(7);
                             end if;
-                            r_dat <= "00" & r_xram_bank(9 downto 8) & "000" & r_xram_tga;
+                            r_dat <= r_xram_tga & "000_00" & r_xram_bank(9 downto 8);
                             r_ack <= '1';
 
                         -- XRAM control 1 reg
