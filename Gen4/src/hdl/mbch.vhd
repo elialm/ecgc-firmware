@@ -138,13 +138,13 @@ architecture rtl of mbch is
     signal r_bus_selector : t_bus_selector;
     signal r_busy : std_logic;
     signal r_ack : std_logic;
-    signal r_dat : std_logic_vector(7 downto 0);
+    signal r_dat_o : std_logic_vector(7 downto 0);
 
     -- wishbone selection
-    signal n_cyc : std_logic;
-    signal n_we : std_logic;
-    signal n_adr : std_logic_vector(15 downto 0);
-    signal n_dat : std_logic_vector(7 downto 0);
+    signal r_cyc : std_logic;
+    signal r_we : std_logic;
+    signal r_adr : std_logic_vector(15 downto 0);
+    signal r_dat_i : std_logic_vector(7 downto 0);
 
     -- xram signals
     signal r_xram_cyc : std_logic;
@@ -173,68 +173,77 @@ begin
         ClockEn => n_boot_rom_enabled,
         Reset   => i_rst,
         WE      => n_boot_rom_we,
-        Address => n_adr(11 downto 0),
-        Data    => n_dat,
+        Address => r_adr(11 downto 0),
+        Data    => r_dat_i,
         Q       => n_boot_rom_data
     );
 
-    n_boot_rom_enabled <= r_boot_rom_accessible and n_cyc;
-    n_boot_rom_we <= n_we and i_dbg_active;
+    n_boot_rom_enabled <= r_boot_rom_accessible and r_cyc;
+    n_boot_rom_we <= r_we and i_dbg_active;
 
     -- Cart RAM instance, for DMA buffering and reset management
     inst_cart_ram : cart_ram
     port map (
         Clock   => i_clk,
-        ClockEn => n_cyc,
+        ClockEn => r_cyc,
         Reset   => i_rst,
-        WE      => n_we,
-        Address => n_adr(10 downto 0),
-        Data    => n_dat,
+        WE      => r_we,
+        Address => r_adr(10 downto 0),
+        Data    => r_dat_i,
         Q       => n_cart_ram_data
     );
 
     -- slave wishbone bus
+    -- since only one slave is active at any one time, r_ack can just be routed to all
     o_dbg_ack <= r_ack;
     o_dma_ack <= r_ack;
     o_gbd_ack <= r_ack;
-    o_dbg_dat <= r_dat;
-    o_dma_dat <= r_dat;
-    o_gbd_dat <= r_dat;
+    o_dbg_dat <= r_dat_o;
+    o_dma_dat <= r_dat_o;
+    o_gbd_dat <= r_dat_o;
 
-    -- select cyc
-    with i_dbg_active & i_dma_busy select? n_cyc <=
-        i_dbg_cyc when "1-",
-        i_dma_cyc when "01",
-        i_gbd_cyc when others;  -- "00"
-
-    -- select we
-    with i_dbg_active & i_dma_busy select? n_we <=
-        i_dbg_we when "1-",
-        i_dma_we when "01",
-        i_gbd_we when others;  -- "00"
-
-    -- select adr
-    with i_dbg_active & i_dma_busy select? n_adr <=
-        i_dbg_adr when "1-",
-        i_dma_adr when "01",
-        i_gbd_adr when others;  -- "00"
-
-    -- select dat
-    with i_dbg_active & i_dma_busy select? n_dat <=
-        i_dbg_dat when "1-",
-        i_dma_dat when "01",
-        i_gbd_dat when others;  -- "00"
+    proc_wb_registers : process(i_clk)
+    begin
+        if rising_edge(i_clk) then
+            if i_rst = '1' then
+                r_cyc <= '0';
+                -- r_we <= '0';
+                -- r_adr <= (others => '0');
+                -- r_dat_i <= (others => '0');
+            else
+                if i_dbg_active = '1' then
+                    -- select dbg as master
+                    r_cyc <= i_dbg_cyc when r_ack = '0' else '0';
+                    r_we <= i_dbg_we;
+                    r_adr <= i_dbg_adr;
+                    r_dat_i <= i_dbg_dat;
+                elsif i_dma_busy = '1' then
+                    -- select dma as master
+                    r_cyc <= i_dma_cyc when r_ack = '0' else '0';
+                    r_we <= i_dma_we;
+                    r_adr <= i_dma_adr;
+                    r_dat_i <= i_dma_dat;
+                else
+                    -- select gbd as master
+                    r_cyc <= i_gbd_cyc when r_ack = '0' else '0';
+                    r_we <= i_gbd_we;
+                    r_adr <= i_gbd_adr;
+                    r_dat_i <= i_gbd_dat;
+                end if;
+            end if;
+        end if;
+    end process proc_wb_registers;
 
     -- XRAM wishbone bus
     o_xram_cyc <= r_xram_cyc;
     o_xram_we  <= r_xram_we;
     o_xram_adr <= r_xram_adr;
     o_xram_tga <= r_xram_tga;
-    o_xram_dat <= r_dat;
+    o_xram_dat <= r_dat_i;
 
     -- address decoder and wishbone handler
     -- also handle soft reset routine
-    process (i_clk)
+    proc_mbch_decoder : process (i_clk)
     begin
         if rising_edge(i_clk) then
             r_soft_reset_req <= '0';
@@ -243,7 +252,7 @@ begin
                 -- r_bus_selector <= s_boot_rom;
                 r_busy <= '0';
                 r_ack <= '0';
-                -- r_dat <= (others => '0');
+                -- r_dat_o <= (others => '0');
                 r_xram_cyc <= '0';
                 -- r_xram_we <= '0';
                 r_xram_adr(23 downto 16) <= (others => '0');
@@ -256,13 +265,13 @@ begin
                 r_next_mbc <= "000";
                 r_xram_bank <= (others => '0');
             else
-                -- initiate wishbone transaction on n_cyc rising edge or after a successfull handshake
-                if (n_cyc and not(r_busy)) = '1' then
+                -- initiate wishbone transaction on r_cyc rising edge or after a successfull handshake
+                if (r_cyc and not(r_busy)) = '1' then
                     -- mark busy to indicate that decoding has been done
                     r_busy <= '1';
 
                     -- address decoder
-                    case? n_adr(15 downto 8) is
+                    case? r_adr(15 downto 8) is
                         -- Boot ROM or lower 4kB of bank 0
                         when b"0000_----" =>
                             if r_boot_rom_accessible = '1' then
@@ -270,29 +279,26 @@ begin
                             else
                                 r_bus_selector <= s_xram;
                                 r_xram_cyc <= '1';
-                                r_xram_we <= n_we;
+                                r_xram_we <= r_we;
                                 r_xram_adr(23 downto 14) <= "00" & x"00";
-                                r_xram_adr(13 downto 0) <= n_adr(13 downto 0);
-                                r_dat <= n_dat;
+                                r_xram_adr(13 downto 0) <= r_adr(13 downto 0);
                             end if;
 
                         -- Upper 12kB of back 0
                         when b"0001_----" | b"0010_----" | b"0011_----" =>
                             r_bus_selector <= s_xram;
                             r_xram_cyc <= '1';
-                            r_xram_we <= n_we;
+                            r_xram_we <= r_we;
                             r_xram_adr(23 downto 14) <= "00" & x"00";
-                            r_xram_adr(13 downto 0) <= n_adr(13 downto 0);
-                            r_dat <= n_dat;
+                            r_xram_adr(13 downto 0) <= r_adr(13 downto 0);
 
                         -- Banked XRAM
                         when b"01--_----" =>
                             r_bus_selector <= s_xram;
                             r_xram_cyc <= '1';
-                            r_xram_we <= n_we;
+                            r_xram_we <= r_we;
                             r_xram_adr(23 downto 14) <= r_xram_bank;
-                            r_xram_adr(13 downto 0) <= n_adr(13 downto 0);
-                            r_dat <= n_dat;
+                            r_xram_adr(13 downto 0) <= r_adr(13 downto 0);
 
                         -- Reserved (previously EFB)
                         when b"1010_0000" =>
@@ -300,37 +306,37 @@ begin
 
                         -- MBCH control 0 reg
                         when b"1010_0001" =>
-                            if n_we = '1' then
-                                r_soft_reset_req <= n_dat(7);
-                                r_boot_rom_accessible <= n_dat(6);
-                                r_next_mbc <= n_dat(2 downto 0);
+                            if r_we = '1' then
+                                r_soft_reset_req <= r_dat_i(7);
+                                r_boot_rom_accessible <= r_dat_i(6);
+                                r_next_mbc <= r_dat_i(2 downto 0);
                             end if;
-                            r_dat <= '0' & r_boot_rom_accessible & "000" & r_next_mbc;
+                            r_dat_o <= '0' & r_boot_rom_accessible & "000" & r_next_mbc;
                             r_ack <= '1';
 
                         -- XRAM control 0 reg
                         when b"1010_0010" =>
-                            if n_we = '1' then
-                                r_xram_bank(9 downto 8) <= n_dat(1 downto 0);
-                                r_xram_tga <= n_dat(7);
+                            if r_we = '1' then
+                                r_xram_bank(9 downto 8) <= r_dat_i(1 downto 0);
+                                r_xram_tga <= r_dat_i(7);
                             end if;
-                            r_dat <= r_xram_tga & "00000" & r_xram_bank(9 downto 8);
+                            r_dat_o <= r_xram_tga & "00000" & r_xram_bank(9 downto 8);
                             r_ack <= '1';
 
                         -- XRAM control 1 reg
                         when b"1010_0011" =>
-                            if n_we = '1' then
-                                r_xram_bank(7 downto 0) <= n_dat;
+                            if r_we = '1' then
+                                r_xram_bank(7 downto 0) <= r_dat_i;
                             end if;
-                            r_dat <= r_xram_bank(7 downto 0);
+                            r_dat_o <= r_xram_bank(7 downto 0);
                             r_ack <= '1';
 
                         -- MBCH GPIO reg
                         when b"1010_0100" =>
-                            if n_we = '1' then
-                                r_gpio_out <= n_dat(7 downto 4);
+                            if r_we = '1' then
+                                r_gpio_out <= r_dat_i(7 downto 4);
                             end if;
-                            r_dat <= r_gpio_out & n_gpio_in_sync;
+                            r_dat_o <= r_gpio_out & n_gpio_in_sync;
                             r_ack <= '1';
 
                         -- Reserved (mapped to DMA registers)
@@ -343,7 +349,7 @@ begin
 
                         -- Other regions will always read as 0x00 and ignore writes
                         when others =>
-                            r_dat <= x"00";
+                            r_dat_o <= x"00";
                             r_ack <= '1';
                     end case?;
                 end if;
@@ -352,18 +358,18 @@ begin
                 if (r_busy and not(r_ack)) = '1' then
                     case r_bus_selector is
                         when s_boot_rom =>
-                            r_dat <= n_boot_rom_data;
+                            r_dat_o <= n_boot_rom_data;
                             r_ack <= '1';
 
                         when s_cart_ram =>
-                            r_dat <= n_cart_ram_data;
+                            r_dat_o <= n_cart_ram_data;
                             r_ack <= '1';
 
                         when s_xram =>
                             if i_xram_ack = '1' then
                                 r_xram_cyc <= '0';
                                 r_ack <= '1';
-                                r_dat <= i_xram_dat;
+                                r_dat_o <= i_xram_dat;
                             end if;
                     end case;
                 end if;
@@ -385,7 +391,7 @@ begin
                 end if;
             end if;
         end if;
-    end process;
+    end process proc_mbch_decoder;
 
     -- GPIO input synchroniser
     inst_gpio_synchroniser : synchroniser
