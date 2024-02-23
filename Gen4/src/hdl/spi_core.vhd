@@ -45,7 +45,7 @@ end entity spi_core;
 
 architecture rtl of spi_core is
     
-    subtype t_spi_scounter is integer range 0 to 8;
+    subtype t_spi_counter is integer range 0 to 8;
     subtype t_fdiv is integer range 0 to 255;
 
     signal r_cfg_en : std_logic;    -- core enabled, must be 1 for the registers to be writable
@@ -56,11 +56,9 @@ architecture rtl of spi_core is
 
     signal r_spi_clk : std_logic;
     signal r_spi_shifter : std_logic_vector(7 downto 0);
-    signal r_spi_scounter : t_spi_scounter;
-    signal r_spi_ccounter : t_spi_scounter;
+    signal r_spi_ccounter : t_spi_counter;
     signal r_skip_shift : std_logic;
     signal r_skip_clock : std_logic;
-    signal r_tristate_mosi : std_logic;
     signal r_slave_sample : std_logic;
     signal r_transmission_busy : std_logic;
     signal r_transmission_done : std_logic;
@@ -85,11 +83,9 @@ begin
             if i_rst = '1' then
                 r_spi_clk <= '0';
                 -- r_spi_shifter <= (others => '0');
-                r_spi_scounter <= 0;
                 r_spi_ccounter <= 0;
                 r_skip_shift <= '0';
                 r_skip_clock <= '0';
-                r_tristate_mosi <= '1';
                 -- r_slave_sample <= '0';
                 r_transmission_busy <= '0';
                 r_transmission_done <= '0';
@@ -111,11 +107,9 @@ begin
                         end loop;
                     end if;
 
-                    r_spi_scounter <= 8;
                     r_spi_ccounter <= 8;
                     r_skip_shift <= r_cfg_cpha;
                     r_skip_clock <= '1';
-                    r_tristate_mosi <= '0';
                     r_transmission_busy <= '1';
                     r_fdiv_counter <= r_fdiv_ceil;
                 end if;
@@ -151,7 +145,7 @@ begin
 
                     -- always skip first sample/shift cycle
                     -- and there are still samples to be made
-                    if r_skip_clock = '0' and r_spi_scounter /= 0 then
+                    if r_skip_clock = '0' then
                         -- r_spi_clk = r_cfg_cpha       (r_cfg_cpha = 0)
                         --      - sample cycle
                         -- r_spi_clk = not(r_cfg_cpha)  (r_cfg_cpha = 1)
@@ -166,13 +160,7 @@ begin
                         elsif r_spi_clk = r_cfg_cpha then
                             -- sample data
                             r_slave_sample <= io_spi_miso;
-                            r_spi_scounter <= r_spi_scounter - 1;
                         end if;
-                    end if;
-
-                    -- when sample counter reaches 0, tristate bus
-                    if r_spi_scounter = 0 then
-                        r_tristate_mosi <= '1';
                     end if;
 
                     -- end transmission when clock counter reaches 0
@@ -181,13 +169,6 @@ begin
                         r_transmission_done <= '1';
                         r_request_release <= r_cfg_csrl;
                     end if;
-                end if;
-                
-                -- flag done when transmission busy and no bits are present
-                if r_spi_scounter = 0 and r_transmission_busy = '1' then
-                    r_transmission_busy <= '0';
-                    r_transmission_done <= '1';
-                    r_request_release <= r_cfg_csrl;
                 end if;
             end if;
         end if;
@@ -288,8 +269,8 @@ begin
     -- drive spi clock based on CPOL, busy transmission and core enable
     io_spi_clk <= r_spi_clk when r_cfg_cpol = '0' else not(r_spi_clk);
 
-    -- drive spi mosi based on no bits in shifter and core enable
-    io_spi_mosi <= r_spi_shifter(r_spi_shifter'high) when r_tristate_mosi = '0' and r_cfg_en = '1' else 'Z';
+    -- drive spi mosi with first bit in shift register
+    io_spi_mosi <= r_spi_shifter(r_spi_shifter'high);
 
     -- keep miso tri-stated to act as input
     io_spi_miso <= 'Z';
