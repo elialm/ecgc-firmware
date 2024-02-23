@@ -57,10 +57,10 @@ architecture rtl of spi_core is
     signal r_spi_clk : std_logic;
     signal r_spi_shifter : std_logic_vector(7 downto 0);
     signal r_spi_scounter : t_spi_scounter;
-    signal r_clock_flop : std_logic;
-    signal r_shift_sample_select : std_logic;
+    signal r_spi_ccounter : t_spi_scounter;
     signal r_skip_shift : std_logic;
     signal r_skip_clock : std_logic;
+    signal r_tristate_mosi : std_logic;
     signal r_slave_sample : std_logic;
     signal r_transmission_busy : std_logic;
     signal r_transmission_done : std_logic;
@@ -86,10 +86,10 @@ begin
                 r_spi_clk <= '0';
                 -- r_spi_shifter <= (others => '0');
                 r_spi_scounter <= 0;
-                r_clock_flop <= '0';
-                r_shift_sample_select <= '0';
+                r_spi_ccounter <= 0;
                 r_skip_shift <= '0';
                 r_skip_clock <= '0';
+                r_tristate_mosi <= '1';
                 -- r_slave_sample <= '0';
                 r_transmission_busy <= '0';
                 r_transmission_done <= '0';
@@ -112,10 +112,12 @@ begin
                     end if;
 
                     r_spi_scounter <= 8;
-                    r_shift_sample_select <= r_cfg_cpha;
-                    r_skip_shift <= '1';
+                    r_spi_ccounter <= 8;
+                    r_skip_shift <= r_cfg_cpha;
                     r_skip_clock <= '1';
+                    r_tristate_mosi <= '0';
                     r_transmission_busy <= '1';
+                    r_fdiv_counter <= r_fdiv_ceil;
                 end if;
 
                 -- read transaction, clears transmission done bit
@@ -123,40 +125,62 @@ begin
                     r_transmission_done <= '0';
                 end if;
 
-                -- increment fdiv counter when there are bits in shifter
-                if r_spi_scounter /= 0 then
+                -- increment fdiv counter when transmission busy
+                if r_transmission_busy = '1' then
                     r_fdiv_counter <= r_fdiv_counter + 1;
                 end if;
 
-                -- perform when there are bits in shifter
+                -- perform when transmission is busy
                 -- and fdiv counter value matches the ceiling
-                if r_spi_scounter /= 0 and r_fdiv_counter = r_fdiv_ceil then
+                if r_transmission_busy = '1' and r_fdiv_counter = r_fdiv_ceil then
                     -- clear fdiv counter
                     r_fdiv_counter <= 0;
 
-                    -- clock r_spi_clk with half of provided clock
-                    -- skip the first to give mosi time
+                    -- skip the first clock to give mosi time
+                    -- only clock 8 times
                     if r_skip_clock = '1' then
                         r_skip_clock <= '0';
-                    else
+                    elsif r_spi_ccounter /= 0 then
                         r_spi_clk <= not(r_spi_clk);
                     end if;
 
-                    -- determine whether to shift or sample
-                    r_shift_sample_select <= not(r_shift_sample_select);
-                    if r_shift_sample_select = '0' and r_skip_shift = '1' then
-                        -- skip first bit shift
-                        r_skip_shift <= '0';
-                    elsif r_shift_sample_select = '0' and r_skip_shift = '0' then
-                        -- shift data
-                        r_spi_shifter <= r_spi_shifter(r_spi_shifter'high - 1 downto 0) & r_slave_sample;
-                        r_spi_scounter <= r_spi_scounter - 1;
-                    else
-                        -- sample data
-                        r_slave_sample <= io_spi_miso;
+                    -- decrement clock counter on each falling edge
+                    if r_spi_clk = '1' then
+                        r_spi_ccounter <= r_spi_ccounter - 1;
                     end if;
 
+                    -- always skip first sample/shift cycle
+                    -- and there are still samples to be made
+                    if r_skip_clock = '0' and r_spi_scounter /= 0 then
+                        -- r_spi_clk = r_cfg_cpha       (r_cfg_cpha = 0)
+                        --      - sample cycle
+                        -- r_spi_clk = not(r_cfg_cpha)  (r_cfg_cpha = 1)
+                        --      - shift cycle
 
+                        if r_spi_clk = not(r_cfg_cpha) and r_skip_shift = '1' then
+                            -- skip first bit shift
+                            r_skip_shift <= '0';
+                        elsif r_spi_clk = not(r_cfg_cpha) and r_skip_shift = '0' then
+                            -- shift data
+                            r_spi_shifter <= r_spi_shifter(r_spi_shifter'high - 1 downto 0) & r_slave_sample;
+                        elsif r_spi_clk = r_cfg_cpha then
+                            -- sample data
+                            r_slave_sample <= io_spi_miso;
+                            r_spi_scounter <= r_spi_scounter - 1;
+                        end if;
+                    end if;
+
+                    -- when sample counter reaches 0, tristate bus
+                    if r_spi_scounter = 0 then
+                        r_tristate_mosi <= '1';
+                    end if;
+
+                    -- end transmission when clock counter reaches 0
+                    if r_spi_ccounter = 0 then
+                        r_transmission_busy <= '0';
+                        r_transmission_done <= '1';
+                        r_request_release <= r_cfg_csrl;
+                    end if;
                 end if;
                 
                 -- flag done when transmission busy and no bits are present
@@ -265,7 +289,7 @@ begin
     io_spi_clk <= r_spi_clk when r_cfg_cpol = '0' else not(r_spi_clk);
 
     -- drive spi mosi based on no bits in shifter and core enable
-    io_spi_mosi <= r_spi_shifter(r_spi_shifter'high) when r_spi_scounter /= 0 and r_cfg_en = '1' else 'Z';
+    io_spi_mosi <= r_spi_shifter(r_spi_shifter'high) when r_tristate_mosi = '0' and r_cfg_en = '1' else 'Z';
 
     -- keep miso tri-stated to act as input
     io_spi_miso <= 'Z';
