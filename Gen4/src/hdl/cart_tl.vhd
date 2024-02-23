@@ -202,40 +202,46 @@ architecture rtl of cart_tl is
 
     component mbch
         port (
-            i_clk            : in std_logic;
-            i_rst            : in std_logic;
-            i_dbg_cyc        : in std_logic;
-            i_dbg_we         : in std_logic;
-            o_dbg_ack        : out std_logic;
-            i_dbg_adr        : in std_logic_vector(15 downto 0);
-            i_dbg_dat        : in std_logic_vector(7 downto 0);
-            o_dbg_dat        : out std_logic_vector(7 downto 0);
-            i_dma_cyc        : in std_logic;
-            i_dma_we         : in std_logic;
-            o_dma_ack        : out std_logic;
-            i_dma_adr        : in std_logic_vector(15 downto 0);
-            i_dma_dat        : in std_logic_vector(7 downto 0);
-            o_dma_dat        : out std_logic_vector(7 downto 0);
-            i_gbd_cyc        : in std_logic;
-            i_gbd_we         : in std_logic;
-            o_gbd_ack        : out std_logic;
-            i_gbd_adr        : in std_logic_vector(15 downto 0);
-            i_gbd_dat        : in std_logic_vector(7 downto 0);
-            o_gbd_dat        : out std_logic_vector(7 downto 0);
-            o_xram_cyc       : out std_logic;
-            o_xram_we        : out std_logic;
-            i_xram_ack       : in std_logic;
-            o_xram_adr       : out std_logic_vector(23 downto 0);
-            o_xram_tga       : out std_logic;
-            i_xram_dat       : in std_logic_vector(7 downto 0);
-            o_xram_dat       : out std_logic_vector(7 downto 0);
-            i_gpio           : in std_logic_vector(3 downto 0);
-            o_gpio           : out std_logic_vector(3 downto 0);
-            o_select_mbc     : out std_logic_vector(2 downto 0);
-            o_soft_reset_req : out std_logic;
-            i_soft_reset     : in std_logic;
-            i_dbg_active     : in std_logic;
-            i_dma_busy       : in std_logic
+            i_clk                : in std_logic;
+            i_rst                : in std_logic;
+            i_dbg_cyc            : in std_logic;
+            i_dbg_we             : in std_logic;
+            o_dbg_ack            : out std_logic;
+            i_dbg_adr            : in std_logic_vector(15 downto 0);
+            i_dbg_dat            : in std_logic_vector(7 downto 0);
+            o_dbg_dat            : out std_logic_vector(7 downto 0);
+            i_dma_cyc            : in std_logic;
+            i_dma_we             : in std_logic;
+            o_dma_ack            : out std_logic;
+            i_dma_adr            : in std_logic_vector(15 downto 0);
+            i_dma_dat            : in std_logic_vector(7 downto 0);
+            o_dma_dat            : out std_logic_vector(7 downto 0);
+            i_gbd_cyc            : in std_logic;
+            i_gbd_we             : in std_logic;
+            o_gbd_ack            : out std_logic;
+            i_gbd_adr            : in std_logic_vector(15 downto 0);
+            i_gbd_dat            : in std_logic_vector(7 downto 0);
+            o_gbd_dat            : out std_logic_vector(7 downto 0);
+            o_xram_cyc           : out std_logic;
+            o_xram_we            : out std_logic;
+            i_xram_ack           : in std_logic;
+            o_xram_adr           : out std_logic_vector(23 downto 0);
+            o_xram_tga           : out std_logic;
+            i_xram_dat           : in std_logic_vector(7 downto 0);
+            o_xram_dat           : out std_logic_vector(7 downto 0);
+            i_gpio               : in std_logic_vector(3 downto 0);
+            o_gpio               : out std_logic_vector(3 downto 0);
+            io_fpga_spi_clk      : inout std_logic;
+            io_fpga_spi_miso     : inout std_logic;
+            io_fpga_spi_mosi     : inout std_logic;
+            o_fpga_spi_flash_csn : out std_logic;
+            o_fpga_spi_rtc_csn   : out std_logic;
+            o_fpga_spi_sd_csn    : out std_logic;
+            o_select_mbc         : out std_logic_vector(2 downto 0);
+            o_soft_reset_req     : out std_logic;
+            i_soft_reset         : in std_logic;
+            i_dbg_active         : in std_logic;
+            i_dma_busy           : in std_logic
         );
     end component;
 
@@ -470,40 +476,46 @@ begin
 
     inst_mbch : mbch
     port map(
-        i_clk            => n_clk_div1,
-        i_rst            => n_hard_reset,
-        i_dbg_cyc        => n_dbg_cyc,
-        i_dbg_we         => n_dbg_we,
-        o_dbg_ack        => n_dbg_ack,
-        i_dbg_adr        => n_dbg_adr,
-        i_dbg_dat        => n_dbg_dat_o,
-        o_dbg_dat        => n_dbg_dat_i,
-        i_dma_cyc        => n_dma_cyc,
-        i_dma_we         => n_dma_we,
-        o_dma_ack        => n_dma_ack,
-        i_dma_adr        => n_dma_adr,
-        i_dma_dat        => n_dma_dat_o,
-        o_dma_dat        => n_dma_dat_i,
-        i_gbd_cyc        => n_gbd_mbch_cyc,
-        i_gbd_we         => n_gbd_mbch_we,
-        o_gbd_ack        => n_gbd_mbch_ack,
-        i_gbd_adr        => n_gbd_mbch_adr,
-        i_gbd_dat        => n_gbd_mbch_dat_o,
-        o_gbd_dat        => n_gbd_mbch_dat_i,
-        o_xram_cyc       => n_xram_cyc,
-        o_xram_we        => n_xram_we,
-        i_xram_ack       => n_xram_ack,
-        o_xram_adr       => n_xram_adr,
-        o_xram_tga       => n_xram_tga,
-        i_xram_dat       => n_xram_dat_o,
-        o_xram_dat       => n_xram_dat_i,
-        i_gpio           => (others => '0'),
-        o_gpio           => open,
-        o_select_mbc     => n_mbch_selected_mcb,
-        o_soft_reset_req => n_aux_reset,
-        i_soft_reset     => n_soft_reset,
-        i_dbg_active     => n_dbg_active,
-        i_dma_busy       => n_dma_busy
+        i_clk                => n_clk_div1,
+        i_rst                => n_hard_reset,
+        i_dbg_cyc            => n_dbg_cyc,
+        i_dbg_we             => n_dbg_we,
+        o_dbg_ack            => n_dbg_ack,
+        i_dbg_adr            => n_dbg_adr,
+        i_dbg_dat            => n_dbg_dat_o,
+        o_dbg_dat            => n_dbg_dat_i,
+        i_dma_cyc            => n_dma_cyc,
+        i_dma_we             => n_dma_we,
+        o_dma_ack            => n_dma_ack,
+        i_dma_adr            => n_dma_adr,
+        i_dma_dat            => n_dma_dat_o,
+        o_dma_dat            => n_dma_dat_i,
+        i_gbd_cyc            => n_gbd_mbch_cyc,
+        i_gbd_we             => n_gbd_mbch_we,
+        o_gbd_ack            => n_gbd_mbch_ack,
+        i_gbd_adr            => n_gbd_mbch_adr,
+        i_gbd_dat            => n_gbd_mbch_dat_o,
+        o_gbd_dat            => n_gbd_mbch_dat_i,
+        o_xram_cyc           => n_xram_cyc,
+        o_xram_we            => n_xram_we,
+        i_xram_ack           => n_xram_ack,
+        o_xram_adr           => n_xram_adr,
+        o_xram_tga           => n_xram_tga,
+        i_xram_dat           => n_xram_dat_o,
+        o_xram_dat           => n_xram_dat_i,
+        i_gpio               => (others => '0'),
+        o_gpio               => open,
+        io_fpga_spi_clk      => io_fpga_user(3),
+        io_fpga_spi_miso     => io_fpga_spi_miso,
+        io_fpga_spi_mosi     => io_fpga_user(2),
+        o_fpga_spi_flash_csn => open,
+        o_fpga_spi_rtc_csn   => open,
+        o_fpga_spi_sd_csn    => open,
+        o_select_mbc         => n_mbch_selected_mcb,
+        o_soft_reset_req     => n_aux_reset,
+        i_soft_reset         => n_soft_reset,
+        i_dbg_active         => n_dbg_active,
+        i_dma_busy           => n_dma_busy
     );
 
     inst_uart_debug : uart_debug
@@ -570,8 +582,8 @@ begin
 
     -- io_fpga_user(5) <= 'Z';
     -- io_fpga_user(4) <= 'Z';
-    io_fpga_user(3) <= 'Z';
-    io_fpga_user(2) <= 'Z';
+    -- io_fpga_user(3) <= 'Z';
+    -- io_fpga_user(2) <= 'Z';
     io_fpga_user(1) <= r_led_divider(r_led_divider'high);
     io_fpga_user(0) <= n_soft_reset;
     -- io_fpga_user(1) <= 'Z';

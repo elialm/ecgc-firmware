@@ -79,6 +79,14 @@ entity mbch is
         i_gpio : in std_logic_vector(3 downto 0);
         o_gpio : out std_logic_vector(3 downto 0);
 
+        -- SPI signals
+        io_fpga_spi_clk      : inout std_logic;
+        io_fpga_spi_miso     : inout std_logic;
+        io_fpga_spi_mosi     : inout std_logic;
+        o_fpga_spi_flash_csn : out std_logic;
+        o_fpga_spi_rtc_csn   : out std_logic;
+        o_fpga_spi_sd_csn    : out std_logic;
+
         -- Miscellaneous signals
         o_select_mbc     : out std_logic_vector(2 downto 0);
         o_soft_reset_req : out std_logic;
@@ -90,7 +98,7 @@ end mbch;
 
 architecture rtl of mbch is
 
-    type t_bus_selector is (s_boot_rom, s_cart_ram, s_xram);
+    type t_bus_selector is (s_boot_rom, s_cart_ram, s_xram, s_spi);
 
     component boot_ram is
         port (
@@ -125,6 +133,27 @@ architecture rtl of mbch is
             i_rst  : in std_logic;
             i_din  : in std_logic_vector(p_data_width - 1 downto 0);
             o_dout : out std_logic_vector(p_data_width - 1 downto 0)
+        );
+    end component;
+
+    component spi_core
+        generic (
+            p_cs_count : positive := 3;
+            p_cs_release_value : std_logic := '1'
+        );
+        port (
+            i_clk       : in std_logic;
+            i_rst       : in std_logic;
+            i_cyc       : in std_logic;
+            o_ack       : out std_logic;
+            i_we        : in std_logic;
+            i_adr       : in std_logic_vector(1 downto 0);
+            o_dat       : out std_logic_vector(7 downto 0);
+            i_dat       : in std_logic_vector(7 downto 0);
+            io_spi_clk  : inout std_logic;
+            io_spi_mosi : inout std_logic;
+            io_spi_miso : inout std_logic;
+            io_spi_csn  : inout std_logic_vector(p_cs_count - 1 downto 0)
         );
     end component;
 
@@ -163,6 +192,11 @@ architecture rtl of mbch is
     signal r_current_mbc : std_logic_vector(2 downto 0);
     signal r_next_mbc : std_logic_vector(2 downto 0);
     signal r_xram_bank : std_logic_vector(9 downto 0);
+
+    -- spi signals
+    signal r_spi_cyc : std_logic;
+    signal n_spi_ack : std_logic;
+    signal n_spi_dat : std_logic_vector(7 downto 0);
 
 begin
 
@@ -264,6 +298,7 @@ begin
                 r_current_mbc <= "000";
                 r_next_mbc <= "000";
                 r_xram_bank <= (others => '0');
+                r_spi_cyc <= '0';
             else
                 -- initiate wishbone transaction on r_cyc rising edge or after a successfull handshake
                 if (r_cyc and not(r_busy)) = '1' then
@@ -343,6 +378,11 @@ begin
                         when b"1010_0101" =>
                             r_ack <= '1';
 
+                        -- SPI core
+                        when b"1010_0110" =>
+                            r_bus_selector <= s_spi;
+                            r_spi_cyc <= '1';
+
                         -- Cart RAM
                         when b"1011_0---" =>
                             r_bus_selector <= s_cart_ram;
@@ -370,6 +410,13 @@ begin
                                 r_xram_cyc <= '0';
                                 r_ack <= '1';
                                 r_dat_o <= i_xram_dat;
+                            end if;
+
+                        when s_spi =>
+                            if n_spi_ack = '1' then
+                                r_spi_cyc <= '0';
+                                r_ack <= '1';
+                                r_dat_o <= n_spi_dat;
                             end if;
                     end case;
                 end if;
@@ -400,6 +447,25 @@ begin
         i_rst  => i_rst,
         i_din  => i_gpio,
         o_dout => n_gpio_in_sync
+    );
+
+    -- SPI core instance
+    inst_spi_core : spi_core
+    port map(
+        i_clk         => i_clk,
+        i_rst         => i_soft_reset,
+        i_cyc         => r_spi_cyc,
+        o_ack         => n_spi_ack,
+        i_we          => r_we,
+        i_adr         => r_adr(1 downto 0),
+        o_dat         => n_spi_dat,
+        i_dat         => r_dat_i,
+        io_spi_clk    => io_fpga_spi_clk,
+        io_spi_mosi   => io_fpga_spi_mosi,
+        io_spi_miso   => io_fpga_spi_miso,
+        io_spi_csn(0) => o_fpga_spi_flash_csn,
+        io_spi_csn(1) => o_fpga_spi_rtc_csn,
+        io_spi_csn(2) => o_fpga_spi_sd_csn
     );
 
     -- remaining out port assignments
