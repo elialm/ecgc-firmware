@@ -55,7 +55,6 @@ architecture rtl of spi_core is
     signal r_cfg_csrl : std_logic;  -- Chip select release after transmission, set to enable
 
     signal r_spi_clk : std_logic;
-    signal n_spi_clk : std_logic;
     signal r_spi_shifter : std_logic_vector(7 downto 0);
     signal r_spi_scounter : t_spi_scounter;
     signal r_clock_flop : std_logic;
@@ -66,9 +65,10 @@ architecture rtl of spi_core is
     signal r_transmission_busy : std_logic;
     signal r_transmission_done : std_logic;
     signal r_request_release : std_logic;
+    signal r_fdiv_counter : t_fdiv;
 
     signal r_spi_csn : std_logic_vector(p_cs_count - 1 downto 0);
-    signal r_fdiv : t_fdiv;
+    signal r_fdiv_ceil : t_fdiv;
     signal r_request_wr : std_logic;
     signal r_request_rd : std_logic;
     signal r_ack : std_logic;
@@ -94,6 +94,7 @@ begin
                 r_transmission_busy <= '0';
                 r_transmission_done <= '0';
                 r_request_release <= '0';
+                r_fdiv_counter <= 0;
             else
                 r_request_release <= '0';
 
@@ -114,7 +115,6 @@ begin
                     r_shift_sample_select <= r_cfg_cpha;
                     r_skip_shift <= '1';
                     r_skip_clock <= '1';
-                    r_spi_clk <= '0';
                     r_transmission_busy <= '1';
                 end if;
 
@@ -123,8 +123,17 @@ begin
                     r_transmission_done <= '0';
                 end if;
 
-                -- perform when there are bits in shifter
+                -- increment fdiv counter when there are bits in shifter
                 if r_spi_scounter /= 0 then
+                    r_fdiv_counter <= r_fdiv_counter + 1;
+                end if;
+
+                -- perform when there are bits in shifter
+                -- and fdiv counter value matches the ceiling
+                if r_spi_scounter /= 0 and r_fdiv_counter = r_fdiv_ceil then
+                    -- clear fdiv counter
+                    r_fdiv_counter <= 0;
+
                     -- clock r_spi_clk with half of provided clock
                     -- skip the first to give mosi time
                     if r_skip_clock = '1' then
@@ -146,7 +155,12 @@ begin
                         -- sample data
                         r_slave_sample <= io_spi_miso;
                     end if;
-                elsif r_transmission_busy = '1' then
+
+
+                end if;
+                
+                -- flag done when transmission busy and no bits are present
+                if r_spi_scounter = 0 and r_transmission_busy = '1' then
                     r_transmission_busy <= '0';
                     r_transmission_done <= '1';
                     r_request_release <= r_cfg_csrl;
@@ -165,7 +179,7 @@ begin
                 r_cfg_bord <= '0';
                 r_cfg_csrl <= '0';
                 r_spi_csn <= (others => '1');
-                r_fdiv <= 0;
+                r_fdiv_ceil <= 0;
                 r_request_wr <= '0';
                 r_request_rd <= '0';
                 r_ack <= '0';
@@ -175,16 +189,22 @@ begin
                 r_request_rd <= '0';
                 r_ack <= '0';
 
+                -- release all cs when requested by the shifter
+                if r_request_release = '1' then
+                    r_spi_csn <= (others => '1');
+                end if;
+
+                -- wishbone handler
                 if i_cyc = '1' and r_ack = '0' then
                     case i_adr is
                         -- CTRL
                         when "00" =>
                             if i_we = '1' then
-                                r_cfg_cpol <= i_dat(7) when r_cfg_en = '0' else r_cfg_cpol;
-                                r_cfg_cpha <= i_dat(6) when r_cfg_en = '0' else r_cfg_cpol;
-                                r_cfg_bord <= i_dat(5) when r_cfg_en = '0' else r_cfg_cpol;
-                                r_cfg_csrl <= i_dat(4) when r_cfg_en = '0' else r_cfg_cpol;
-                                r_cfg_en <= i_dat(0) when r_transmission_busy = '0' else r_cfg_en;
+                                r_cfg_cpol <= i_dat(7);
+                                r_cfg_cpha <= i_dat(6);
+                                r_cfg_bord <= i_dat(5);
+                                r_cfg_csrl <= i_dat(4);
+                                r_cfg_en <= i_dat(0);
                             else
                                 r_dat(7) <= r_cfg_cpol;
                                 r_dat(6) <= r_cfg_cpha;
@@ -199,9 +219,9 @@ begin
                         -- FDIV
                         when "01" =>
                             if i_we = '1' then
-                                r_fdiv <= to_integer(unsigned(i_dat));
+                                r_fdiv_ceil <= to_integer(unsigned(i_dat));
                             else
-                                r_dat <= std_logic_vector(to_unsigned(r_fdiv, 8));
+                                r_dat <= std_logic_vector(to_unsigned(r_fdiv_ceil, 8));
                             end if;
 
                         -- CS
@@ -210,7 +230,7 @@ begin
                                 r_spi_csn <= i_dat(p_cs_count - 1 downto 0);
                             else
                                 for i in 0 to 7 loop
-                                    r_dat(i) <= r_spi_csn(i) when i < p_cs_count else '0';
+                                    r_dat(i) <= r_spi_csn(i) when i < p_cs_count else '1';
                                 end loop;
                             end if;
 
@@ -241,12 +261,11 @@ begin
         io_spi_csn(i) <= '0' when r_spi_csn(i) = '0' and r_cfg_en = '1' else p_cs_release_value;
     end generate gen_drive_csn;
 
-    -- drive spi clock based on CPOL and shift counter
-    io_spi_clk <= 'Z' when r_spi_scounter = 0 or r_cfg_en = '0' else n_spi_clk;
-    n_spi_clk <= r_spi_clk when r_cfg_cpol = '0' else not(r_spi_clk);
+    -- drive spi clock based on CPOL, busy transmission and core enable
+    io_spi_clk <= r_spi_clk when r_cfg_cpol = '0' else not(r_spi_clk);
 
-    -- drive spi mosi based on shift counter
-    io_spi_mosi <= 'Z' when r_spi_scounter = 0 or r_cfg_en = '0' else r_spi_shifter(r_spi_shifter'high);
+    -- drive spi mosi based on no bits in shifter and core enable
+    io_spi_mosi <= r_spi_shifter(r_spi_shifter'high) when r_spi_scounter /= 0 and r_cfg_en = '1' else 'Z';
 
     -- keep miso tri-stated to act as input
     io_spi_miso <= 'Z';
