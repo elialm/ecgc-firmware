@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------------
 -- Engineer: Elijah Almeida Coimbra
 -- 
--- Create Date: 02/01/2024 20:09:43 PM
+-- Create Date: 01/02/2024 20:09:43 PM
 -- Design Name: Testbench for the uart_debug
 -- Module Name: uart_debug_tb - rtl
 -- 

@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------------
 -- Engineer: Elijah Almeida Coimbra
 -- 
--- Create Date: 06/22/2022 17:03:42 PM
+-- Create Date: 22/06/2022 17:03:42 PM
 -- Design Name: Reset controller
 -- Module Name: reset - rtl
 -- 

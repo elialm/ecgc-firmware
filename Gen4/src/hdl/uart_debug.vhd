@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------------
 -- Engineer: Elijah Almeida Coimbra
 -- 
--- Create Date: 01/03/2024 14:38:20 PM
+-- Create Date: 03/01/2024 14:38:20 PM
 -- Design Name: UART-based debugging core
 -- Module Name: uart_debug - rtl
 -- 

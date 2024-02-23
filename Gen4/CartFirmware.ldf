@@ -26,12 +26,6 @@
         <Source name="src/hdl/synchroniser.vhd" type="VHDL" type_short="VHDL">
             <Options/>
         </Source>
-        <Source name="src/hdl/wb_crossbar_central.vhd" type="VHDL" type_short="VHDL">
-            <Options/>
-        </Source>
-        <Source name="src/hdl/wb_crossbar_decoder.vhd" type="VHDL" type_short="VHDL">
-            <Options/>
-        </Source>
         <Source name="src/sim/gameboy_tb.vhd" type="VHDL" type_short="VHDL" syn_sim="SimOnly">
             <Options/>
         </Source>

@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------------
 -- Engineer: Elijah Almeida Coimbra
 -- 
--- Create Date: 01/09/2024 15:36:00 PM
+-- Create Date: 09/01/2024 15:36:00 PM
 -- Design Name: Testbench for the uart_core
 -- Module Name: uart_core_tb - rtl
 -- 
