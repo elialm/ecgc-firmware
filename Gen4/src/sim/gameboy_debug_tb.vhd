@@ -3,7 +3,7 @@
 -- 
 -- Create Date: 12/02/2024 12:02:32 PM
 -- Design Name: Gameboy with debug core testbench
--- Module Name: gameboy_debug_tb - rtl
+-- Module Name: gameboy_debug_tb - sim
 -- 
 ----------------------------------------------------------------------------------
 
@@ -14,7 +14,7 @@ use IEEE.numeric_std.all;
 entity gameboy_debug_tb is
 end gameboy_debug_tb;
 
-architecture rtl of gameboy_debug_tb is
+architecture sim of gameboy_debug_tb is
 
     constant c_baud_rate : natural := 115200;
 
@@ -353,4 +353,4 @@ begin
         v_serial_index := v_serial_index + 1;
     end process;
         
-end rtl;
+end sim;

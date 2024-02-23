@@ -4,7 +4,7 @@
 -- 
 -- Create Date: 31/03/2022 02:16:43 PM
 -- Design Name: 
--- Module Name: testbench - rtl
+-- Module Name: testbench - sim
 -- Project Name: 
 -- Target Devices: 
 -- Tool Versions: 
@@ -25,7 +25,7 @@ use IEEE.numeric_std.all;
 entity gameboy_tb is
 end gameboy_tb;
 
-architecture rtl of gameboy_tb is
+architecture sim of gameboy_tb is
 
     component cart_tl
         generic (
@@ -265,4 +265,4 @@ begin
         wait;
     end process;
         
-end rtl;
+end sim;

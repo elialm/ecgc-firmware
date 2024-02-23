@@ -3,7 +3,7 @@
 -- 
 -- Create Date: 01/02/2024 20:09:43 PM
 -- Design Name: Testbench for the uart_debug
--- Module Name: uart_debug_tb - rtl
+-- Module Name: uart_debug_tb - sim
 -- 
 ----------------------------------------------------------------------------------
 
@@ -14,7 +14,7 @@ use IEEE.numeric_std.all;
 entity uart_debug_tb is
 end entity uart_debug_tb;
 
-architecture rtl of uart_debug_tb is
+architecture sim of uart_debug_tb is
 
     constant c_baud_rate : natural := 115200;
 
@@ -291,4 +291,4 @@ begin
         o_dbg_active => n_dbg_active
     );
 
-end architecture rtl;
+end architecture sim;

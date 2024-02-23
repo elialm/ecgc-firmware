@@ -3,7 +3,7 @@
 -- 
 -- Create Date: 27/11/2023 17:10:40 PM
 -- Design Name: Testbench for the as1c8m16pl_controller
--- Module Name: as1c8m16pl_controller_tb - rtl
+-- Module Name: as1c8m16pl_controller_tb - sim
 -- 
 ----------------------------------------------------------------------------------
 
@@ -14,7 +14,7 @@ use IEEE.numeric_std.all;
 entity as1c8m16pl_controller_tb is
 end entity as1c8m16pl_controller_tb;
 
-architecture rtl of as1c8m16pl_controller_tb is
+architecture sim of as1c8m16pl_controller_tb is
 
     component as1c8m16pl_controller
         generic (
@@ -190,4 +190,4 @@ begin
         o_ram_wen  => n_ram_wen
     );
 
-end architecture rtl;
+end architecture sim;

@@ -3,7 +3,7 @@
 -- 
 -- Create Date: 09/01/2024 15:36:00 PM
 -- Design Name: Testbench for the uart_core
--- Module Name: uart_core_tb - rtl
+-- Module Name: uart_core_tb - sim
 -- 
 ----------------------------------------------------------------------------------
 
@@ -14,7 +14,7 @@ use IEEE.numeric_std.all;
 entity uart_core_tb is
 end entity uart_core_tb;
 
-architecture rtl of uart_core_tb is
+architecture sim of uart_core_tb is
 
     constant c_baud_rate : natural := 115200;
 
@@ -152,4 +152,4 @@ begin
         i_serial_rx => n_serial_rx
     );
 
-end architecture rtl;
+end architecture sim;
