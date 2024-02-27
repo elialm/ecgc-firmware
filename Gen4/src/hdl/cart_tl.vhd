@@ -66,7 +66,9 @@ entity cart_tl is
         -- Miscellaneous signals
         io_fpga_user     : inout std_logic_vector(5 downto 0);
         i_rtc_rstn       : in std_logic;
-        i_sd_card_detect : in std_logic
+        i_sd_card_detect : in std_logic;
+        o_flash_wpn      : out std_logic;
+        o_flash_holdn    : out std_logic
     );
 end entity cart_tl;
 
@@ -314,6 +316,7 @@ architecture rtl of cart_tl is
     signal n_hard_reset : std_logic;
     signal n_aux_reset : std_logic;
     signal n_dbg_active : std_logic;
+    signal n_gb_rstn : std_logic;
 
     -- Gameboy decoder related
     signal n_gb_dout : std_logic_vector(7 downto 0);
@@ -413,7 +416,7 @@ begin
         i_ext_softn  => i_fpga_rstn,
         i_aux_soft   => n_aux_reset,
         i_dbg_active => n_dbg_active,
-        o_gb_resetn  => o_gb_rstn,
+        o_gb_resetn  => n_gb_rstn,
         o_soft_reset => n_soft_reset,
         o_hard_reset => n_hard_reset
     );
@@ -505,12 +508,13 @@ begin
         o_xram_dat           => n_xram_dat_i,
         i_gpio               => (others => '0'),
         o_gpio               => open,
-        io_fpga_spi_clk      => io_fpga_user(3),
+        io_fpga_spi_clk      => io_fpga_spi_clk,
         io_fpga_spi_miso     => io_fpga_spi_miso,
-        io_fpga_spi_mosi     => io_fpga_user(2),
-        o_fpga_spi_flash_csn => open,
-        o_fpga_spi_rtc_csn   => open,
-        o_fpga_spi_sd_csn    => open,
+        io_fpga_spi_mosi     => io_fpga_spi_mosi,
+        -- o_fpga_spi_flash_csn => o_fpga_spi_flash_csn,
+        o_fpga_spi_flash_csn => io_fpga_user(2),
+        o_fpga_spi_rtc_csn   => o_fpga_spi_rtc_csn,
+        o_fpga_spi_sd_csn    => o_fpga_spi_sd_csn,
         o_select_mbc         => n_mbch_selected_mcb,
         o_soft_reset_req     => n_aux_reset,
         i_soft_reset         => n_soft_reset,
@@ -558,6 +562,8 @@ begin
         o_ram_wen  => o_ram_wen
     );
 
+    -- simple led blinking for visual confirmation that the firmware is running
+    -- only for development
     proc_led_blinker : process(n_clk_div8)
     begin
         if rising_edge(n_clk_div8) then
@@ -569,20 +575,29 @@ begin
         end if;
     end process proc_led_blinker;
 
+    -- always enable fpga clock
     o_clk_en <= '1';
-    io_gb_data <= n_gb_dout when (i_gb_clk nor i_gb_rdn) = '1' else (others => 'Z');
-    o_gb_bus_en <= not(n_soft_reset);
 
-    io_fpga_spi_clk <= 'Z';
+    -- disable Gameboy bus when Gameboy is in reset
+    o_gb_bus_en <= n_gb_rstn;
+
+    -- output gameboy reset
+    o_gb_rstn <= n_gb_rstn;
+
+    -- output data when reading and gb clock is low
+    -- in all other cases, the cart must tristate the bus as to not interfere with other components
+    io_gb_data <= n_gb_dout when (i_gb_clk nor i_gb_rdn) = '1' else (others => 'Z');
+
+    -- tristate MISO to act as input
     io_fpga_spi_miso <= 'Z';
-    io_fpga_spi_miso <= 'Z';
-    o_fpga_spi_flash_csn <= '1';
-    o_fpga_spi_rtc_csn <= '1';
-    o_fpga_spi_sd_csn <= '1';
+
+    -- drive to be able to use the flash
+    o_flash_wpn <= '1';
+    o_flash_holdn <= '1';
 
     -- io_fpga_user(5) <= 'Z';
     -- io_fpga_user(4) <= 'Z';
-    -- io_fpga_user(3) <= 'Z';
+    io_fpga_user(3) <= 'Z';
     -- io_fpga_user(2) <= 'Z';
     io_fpga_user(1) <= r_led_divider(r_led_divider'high);
     io_fpga_user(0) <= n_soft_reset;
