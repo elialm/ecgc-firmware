@@ -70,16 +70,23 @@ entity mbch is
         GPIO_IN     : in std_logic_vector(3 downto 0);
         GPIO_OUT    : out std_logic_vector(3 downto 0);
 
+        -- DEBUG SPI
+        io_spi_clk  : inout std_logic;
+        io_spi_mosi : inout std_logic;
+        io_spi_miso : inout std_logic;
+        io_spi_csn  : inout std_logic_vector(0 downto 0);
+
         SELECT_MBC      : out std_logic_vector(2 downto 0);
         SOFT_RESET_OUT  : out std_logic;
         SOFT_RESET_IN   : in std_logic;
         DRAM_READY      : in std_logic;
-        DBG_ACTIVE      : in std_logic);
+        DBG_ACTIVE      : in std_logic
+    );
 end mbch;
 
 architecture behaviour of mbch is
 
-    type bus_selection_t is (BS_REGISTER, BS_BOOT_ROM, BS_CART_RAM, BS_EFB, BS_DRAM, BS_AUDIO);
+    type bus_selection_t is (BS_REGISTER, BS_BOOT_ROM, BS_CART_RAM, BS_EFB, BS_DRAM, BS_AUDIO, BS_SPI);
 
     component boot_ram is
     port (
@@ -115,6 +122,27 @@ architecture behaviour of mbch is
         DAT_OUT : out std_logic_vector(DATA_WIDTH-1 downto 0));
     end component;
 
+    component spi_core
+        generic (
+            p_cs_count : positive := 1;
+            p_cs_release_value : std_logic := '1'
+        );
+        port (
+            i_clk       : in std_logic;
+            i_rst       : in std_logic;
+            i_cyc       : in std_logic;
+            o_ack       : out std_logic;
+            i_we        : in std_logic;
+            i_adr       : in std_logic_vector(1 downto 0);
+            o_dat       : out std_logic_vector(7 downto 0);
+            i_dat       : in std_logic_vector(7 downto 0);
+            io_spi_clk  : inout std_logic;
+            io_spi_mosi : inout std_logic;
+            io_spi_miso : inout std_logic;
+            io_spi_csn  : inout std_logic_vector(p_cs_count - 1 downto 0)
+        );
+    end component;
+
     signal wb_cart_access   : std_logic;
     signal wb_ack           : std_logic;
 
@@ -140,7 +168,31 @@ architecture behaviour of mbch is
     signal bus_selector         : bus_selection_t;
     signal soft_reset_rising    : std_logic;
 
+    -- spi signals
+    signal n_spi_cyc : std_logic;
+    signal n_spi_ack : std_logic;
+    signal n_spi_dat : std_logic_vector(7 downto 0);
+
 begin
+
+    -- SPI core instance
+    inst_spi_core : spi_core
+    port map(
+        i_clk         => CLK_I,
+        i_rst         => SOFT_RESET_IN,
+        i_cyc         => n_spi_cyc,
+        o_ack         => n_spi_ack,
+        i_we          => WE_I,
+        i_adr         => ADR_I(1 downto 0),
+        o_dat         => n_spi_dat,
+        i_dat         => DAT_I,
+        io_spi_clk    => io_spi_clk,
+        io_spi_mosi   => io_spi_mosi,
+        io_spi_miso   => io_spi_miso,
+        io_spi_csn(0) => io_spi_csn(0)
+    );
+
+    n_spi_cyc <= CYC_I when bus_selector = BS_SPI else '0';
 
     -- ROM instance containing boot code
     CARTRIDGE_BOOTROM : component boot_ram
@@ -272,6 +324,10 @@ begin
                         when b"1010_0110_----_----" =>
                             bus_selector <= BS_AUDIO;
 
+                        -- SPI controller (for testing)
+                        when b"1010_0111_----_----" =>
+                            bus_selector <= BS_SPI;
+
                         -- Cart RAM
                         when b"1011_00--_----_----" =>
                             bus_selector <= BS_CART_RAM;
@@ -320,6 +376,7 @@ begin
         EFB_DAT_I       when BS_EFB,
         DRAM_DAT_I      when BS_DRAM,
         AUDIO_DAT_I     when BS_AUDIO,
+        n_spi_dat       when BS_SPI,
         register_data   when others;
 
     -- Bus selection ack
@@ -328,6 +385,7 @@ begin
         EFB_ACK_I       when BS_EFB,
         DRAM_ACK_I      when BS_DRAM,
         AUDIO_ACK_I     when BS_AUDIO,
+        n_spi_ack       when BS_SPI,
         register_ack    when others;
 
     -- Bus selection strobe

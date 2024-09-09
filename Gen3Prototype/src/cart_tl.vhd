@@ -40,12 +40,12 @@ entity cart_tl is
         SPI_HARD_CSN    : out std_logic;
         SPI_SDC_CSN     : out std_logic;
 
-        -- Debugger signals
-        DBG_CLK     : in std_logic;
-        DBG_CSN     : in std_logic;
-        DBG_MOSI    : in std_logic;
-        DBG_MISO    : out std_logic;
-        DBG_ENABLE  : in std_logic;
+        -- -- Debugger signals
+        -- DBG_CLK     : in std_logic;
+        -- DBG_CSN     : in std_logic;
+        -- DBG_MOSI    : in std_logic;
+        -- DBG_MISO    : out std_logic;
+        -- DBG_ENABLE  : in std_logic;
 
         -- Bus tranceivers
         BTA_OEN     : out std_logic;
@@ -63,6 +63,12 @@ entity cart_tl is
         DRAM_WEN    : out std_logic;
         DRAM_DQM    : out std_logic;
         DRAM_DQ     : inout std_logic_vector(7 downto 0);
+
+        -- DEBUG SPI
+        io_spi_clk  : inout std_logic;
+        io_spi_mosi : inout std_logic;
+        io_spi_miso : inout std_logic;
+        io_spi_csn  : inout std_logic_vector(0 downto 0);
 
         -- Audio related
         AOUT        : out std_logic_vector(3 downto 0);
@@ -327,23 +333,23 @@ begin
 
         STATUS_BUSY => dma_busy);
 
-    -- Debug core instance
-    SPI_DBG_CORE : entity work.spi_debug
-    port map (
-        CLK_I => pll_clk_op,
-        RST_I => hard_reset,
-        CYC_O => dbg_cyc,
-        ACK_I => dbg_ack,
-        WE_O => dbg_we,
-        ADR_O => dbg_adr,
-        DAT_O => dbg_dat_o,
-        DAT_I => dbg_dat_i,
-        SPI_DBG_CLK => DBG_CLK,
-        SPI_DBG_CSN => DBG_CSN,
-        SPI_DBG_MOSI => DBG_MOSI,
-        SPI_DBG_MISO => DBG_MISO,
-        DBG_ENABLE => DBG_ENABLE,
-        DBG_ACTIVE => dbg_active);
+    -- -- Debug core instance
+    -- SPI_DBG_CORE : entity work.spi_debug
+    -- port map (
+    --     CLK_I => pll_clk_op,
+    --     RST_I => hard_reset,
+    --     CYC_O => dbg_cyc,
+    --     ACK_I => dbg_ack,
+    --     WE_O => dbg_we,
+    --     ADR_O => dbg_adr,
+    --     DAT_O => dbg_dat_o,
+    --     DAT_I => dbg_dat_i,
+    --     SPI_DBG_CLK => DBG_CLK,
+    --     SPI_DBG_CSN => DBG_CSN,
+    --     SPI_DBG_MOSI => DBG_MOSI,
+    --     SPI_DBG_MISO => DBG_MISO,
+    --     DBG_ENABLE => DBG_ENABLE,
+    --     DBG_ACTIVE => dbg_active);
 
     -- Central crossbar instance
     CROSSBAR_CENTRAL : entity work.wb_crossbar_central
@@ -351,14 +357,22 @@ begin
         CLK_I => pll_clk_op,
         RST_I => hard_reset,
         DMA_BUSY => dma_busy,
-        DBG_ACTIVE => dbg_active,
+        -- DBG_ACTIVE => dbg_active,
+        DBG_ACTIVE => '0',
 
-        DBG_CYC_I => dbg_cyc,
-        DBG_ACK_O => dbg_ack,
-        DBG_WE_I => dbg_we,
-        DBG_ADR_I => dbg_adr,
-        DBG_DAT_O => dbg_dat_i,
-        DBG_DAT_I => dbg_dat_o,
+        -- DBG_CYC_I => dbg_cyc,
+        -- DBG_ACK_O => dbg_ack,
+        -- DBG_WE_I => dbg_we,
+        -- DBG_ADR_I => dbg_adr,
+        -- DBG_DAT_O => dbg_dat_i,
+        -- DBG_DAT_I => dbg_dat_o,
+
+        DBG_CYC_I => '0',
+        DBG_ACK_O => open,
+        DBG_WE_I => '0',
+        DBG_ADR_I => (others => '0'),
+        DBG_DAT_O => open,
+        DBG_DAT_I => (others => '0'),
 
         GBD_CYC_I => ccb_cyc,
         GBD_STB_I => ccb_stb,
@@ -428,6 +442,11 @@ begin
         GPIO_IN(2) => '0',
         GPIO_IN(3) => '0',
         GPIO_OUT => open,
+
+        io_spi_clk  => io_spi_clk,
+        io_spi_mosi => io_spi_mosi,
+        io_spi_miso => io_spi_miso,
+        io_spi_csn  => io_spi_csn,
 
         SELECT_MBC => bus_selector,
         SOFT_RESET_OUT => aux_reset,
