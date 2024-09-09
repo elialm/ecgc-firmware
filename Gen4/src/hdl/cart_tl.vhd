@@ -508,13 +508,17 @@ begin
         o_xram_dat           => n_xram_dat_i,
         i_gpio               => (others => '0'),
         o_gpio               => open,
-        io_fpga_spi_clk      => io_fpga_spi_clk,
-        io_fpga_spi_miso     => io_fpga_spi_miso,
-        io_fpga_spi_mosi     => io_fpga_spi_mosi,
+        -- io_fpga_spi_clk      => io_fpga_spi_clk,
+        -- io_fpga_spi_miso     => io_fpga_spi_miso,
+        -- io_fpga_spi_mosi     => io_fpga_spi_mosi,
+        io_fpga_spi_clk      => io_fpga_user(5),
+        io_fpga_spi_miso     => io_fpga_user(4),
+        io_fpga_spi_mosi     => io_fpga_user(3),
         -- o_fpga_spi_flash_csn => o_fpga_spi_flash_csn,
         o_fpga_spi_flash_csn => io_fpga_user(2),
         o_fpga_spi_rtc_csn   => o_fpga_spi_rtc_csn,
-        o_fpga_spi_sd_csn    => o_fpga_spi_sd_csn,
+        -- o_fpga_spi_sd_csn    => o_fpga_spi_sd_csn,
+        o_fpga_spi_sd_csn    => io_fpga_user(0),
         o_select_mbc         => n_mbch_selected_mcb,
         o_soft_reset_req     => n_aux_reset,
         i_soft_reset         => n_soft_reset,
@@ -532,8 +536,10 @@ begin
         o_adr        => n_dbg_adr,
         o_dat        => n_dbg_dat_o,
         i_dat        => n_dbg_dat_i,
-        o_serial_tx  => io_fpga_user(5),
-        i_serial_rx  => io_fpga_user(4),
+        -- o_serial_tx  => io_fpga_user(5),
+        -- i_serial_rx  => io_fpga_user(4),
+        o_serial_tx  => open,
+        i_serial_rx  => '1',
         o_dbg_active => n_dbg_active
     );
 
@@ -597,10 +603,10 @@ begin
 
     -- io_fpga_user(5) <= 'Z';
     -- io_fpga_user(4) <= 'Z';
-    io_fpga_user(3) <= 'Z';
+    -- io_fpga_user(3) <= 'Z';
     -- io_fpga_user(2) <= 'Z';
     io_fpga_user(1) <= r_led_divider(r_led_divider'high);
-    io_fpga_user(0) <= n_soft_reset;
+    -- io_fpga_user(0) <= n_soft_reset;
     -- io_fpga_user(1) <= 'Z';
     -- io_fpga_user(0) <= 'Z';
 
