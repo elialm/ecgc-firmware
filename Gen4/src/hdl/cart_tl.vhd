@@ -110,6 +110,27 @@ architecture rtl of cart_tl is
     --     );
     -- end component;
 
+    component spi_core
+        generic (
+            p_cs_count : positive := 3;
+            p_cs_release_value : std_logic := '1'
+        );
+        port (
+            i_clk       : in std_logic;
+            i_rst       : in std_logic;
+            i_cyc       : in std_logic;
+            o_ack       : out std_logic;
+            i_we        : in std_logic;
+            i_adr       : in std_logic_vector(1 downto 0);
+            o_dat       : out std_logic_vector(7 downto 0);
+            i_dat       : in std_logic_vector(7 downto 0);
+            io_spi_clk  : inout std_logic;
+            io_spi_mosi : inout std_logic;
+            io_spi_miso : inout std_logic;
+            io_spi_csn  : inout std_logic_vector(p_cs_count - 1 downto 0)
+        );
+    end component;
+
     component reset
         generic (
             p_aux_ff_count : positive := 9
@@ -244,6 +265,17 @@ architecture rtl of cart_tl is
 
     signal r_led_divider : std_logic_vector(24 downto 0);
 
+    signal r_spi_test_counter : integer range 0 to 63;
+    signal r_previous_edge : std_logic;
+    signal n_spi_cyc   : std_logic;
+    signal n_spi_ack   : std_logic;
+    signal n_spi_we    : std_logic;
+    signal n_spi_adr   : std_logic_vector(1 downto 0);
+    signal n_spi_dat_o : std_logic_vector(7 downto 0);
+    signal n_spi_dat_i : std_logic_vector(7 downto 0);
+
+
+
 begin
 
     -- PLL instantiation for frequency synthesis from i_fpga_clk33m
@@ -365,16 +397,22 @@ begin
         o_xram_dat           => open,
         i_gpio               => (others => '0'),
         o_gpio               => open,
-        io_fpga_spi_clk      => io_fpga_spi_clk,
-        io_fpga_spi_miso     => io_fpga_spi_miso,
-        io_fpga_spi_mosi     => io_fpga_spi_mosi,
+        io_fpga_spi_clk      => open,
+        io_fpga_spi_miso     => open,
+        io_fpga_spi_mosi     => open,
+        -- io_fpga_spi_clk      => io_fpga_spi_clk,
+        -- io_fpga_spi_miso     => io_fpga_spi_miso,
+        -- io_fpga_spi_mosi     => io_fpga_spi_mosi,
         -- io_fpga_spi_clk      => io_fpga_user(5),
         -- io_fpga_spi_miso     => io_fpga_user(4),
         -- io_fpga_spi_mosi     => io_fpga_user(3),
         -- o_fpga_spi_flash_csn => o_fpga_spi_flash_csn,
-        o_fpga_spi_flash_csn => io_fpga_user(2),
-        o_fpga_spi_rtc_csn   => o_fpga_spi_rtc_csn,
-        o_fpga_spi_sd_csn    => o_fpga_spi_sd_csn,
+        o_fpga_spi_flash_csn => open,
+        o_fpga_spi_rtc_csn   => open,
+        o_fpga_spi_sd_csn    => open,
+        -- o_fpga_spi_flash_csn => io_fpga_user(2),
+        -- o_fpga_spi_rtc_csn   => o_fpga_spi_rtc_csn,
+        -- o_fpga_spi_sd_csn    => o_fpga_spi_sd_csn,
         -- o_fpga_spi_sd_csn    => io_fpga_user(0),
         o_select_mbc         => n_mbch_selected_mcb,
         o_soft_reset_req     => n_aux_reset,
@@ -445,5 +483,432 @@ begin
     -- TEMP: not being used due to hardware modification
     --       (cut trace due to not being able to use said pin)
     o_fpga_spi_flash_csn <= '1';
+
+    process(n_clk_div1)
+    begin
+        if rising_edge(n_clk_div1) then
+            if n_soft_reset = '1' then
+                r_spi_test_counter <= 0;
+                r_previous_edge <= '0';
+                n_spi_cyc <= '0';
+                n_spi_we <= '0';
+                n_spi_adr <= (others => '0');
+                n_spi_dat_i <= (others => '0');
+            else
+                r_previous_edge <= r_led_divider(r_led_divider'high - 12);
+
+                -- Increment counter on rising edge of led blinker counter
+                if r_previous_edge = '0' and r_led_divider(r_led_divider'high - 12) = '1' then
+                    r_spi_test_counter <= r_spi_test_counter + 1;                    
+                end if;
+
+                case r_spi_test_counter is
+                    when 8 =>
+                        -- Enable core
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "00";
+                        n_spi_dat_i <= x"01";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 10 =>
+                        -- Set prescaler
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "01";
+                        n_spi_dat_i <= x"FF";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 12 =>
+                        -- Send 0xFF to card for init
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"FF";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 14 =>
+                        -- Send 0xFF to card for init
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"FF";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 16 =>
+                        -- Send 0xFF to card for init
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"FF";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 18 =>
+                        -- Send 0xFF to card for init
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"FF";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 20 =>
+                        -- Send 0xFF to card for init
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"FF";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 22 =>
+                        -- Send 0xFF to card for init
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"FF";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 24 =>
+                        -- Send 0xFF to card for init
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"FF";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 26 =>
+                        -- Send 0xFF to card for init
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"FF";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 28 =>
+                        -- Select card
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "10";
+                        n_spi_dat_i <= x"FB";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 30 =>
+                        -- Send CMD0 to card (byte 0)
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"40";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 32 =>
+                        -- Send CMD0 to card (byte 1)
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"00";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 34 =>
+                        -- Send CMD0 to card (byte 2)
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"00";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 36 =>
+                        -- Send CMD0 to card (byte 3)
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"00";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 38 =>
+                        -- Send CMD0 to card (byte 4)
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"00";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 40 =>
+                        -- Send CMD0 to card (byte 5)
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"95";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 42 =>
+                        -- Send 0xFF to card for init
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"FF";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 44 =>
+                        -- Send 0xFF to card for init
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"FF";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 46 =>
+                        -- Send 0xFF to card for init
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"FF";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 48 =>
+                        -- Send 0xFF to card for init
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"FF";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 50 =>
+                        -- Send 0xFF to card for init
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"FF";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 52 =>
+                        -- Send 0xFF to card for init
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"FF";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 54 =>
+                        -- Send 0xFF to card for init
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"FF";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 56 =>
+                        -- Send 0xFF to card for init
+                        n_spi_cyc <= '1';
+                        n_spi_we <= '1';
+                        n_spi_adr <= "11";
+                        n_spi_dat_i <= x"FF";
+
+                        if (n_spi_cyc and n_spi_ack) = '1' then
+                            r_spi_test_counter <= r_spi_test_counter + 1;   
+                            n_spi_cyc <= '0';
+                            n_spi_we <= '0';
+                            n_spi_adr <= "00";
+                            n_spi_dat_i <= x"00";
+                        end if;
+
+                    when 63 =>
+                        r_spi_test_counter <= r_spi_test_counter;
+                    
+                    when others =>
+                        null;
+                end case;
+            end if;
+        end if;
+    end process;
+
+    -- SPI core instance
+    inst_spi_core : spi_core
+    port map(
+        i_clk         => n_clk_div1,
+        i_rst         => n_soft_reset,
+        i_cyc         => n_spi_cyc,
+        o_ack         => n_spi_ack,
+        i_we          => n_spi_we,
+        i_adr         => n_spi_adr,
+        o_dat         => n_spi_dat_o,
+        i_dat         => n_spi_dat_i,
+        -- io_spi_clk    => io_fpga_spi_clk,
+        -- io_spi_mosi   => io_fpga_spi_mosi,
+        -- io_spi_miso   => io_fpga_spi_miso,
+        io_spi_clk    => io_fpga_user(5),
+        io_spi_mosi   => io_fpga_user(3),
+        io_spi_miso   => io_fpga_user(4),
+        io_spi_csn(0) => open,
+        io_spi_csn(1) => open,
+        -- io_spi_csn(2) => o_fpga_spi_sd_csn
+        io_spi_csn(2) => io_fpga_user(0)
+    );
 
 end architecture rtl;

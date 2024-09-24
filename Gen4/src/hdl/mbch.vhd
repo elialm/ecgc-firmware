@@ -380,8 +380,9 @@ begin
 
                         -- SPI core
                         when b"1010_0110" =>
-                            r_bus_selector <= s_spi;
-                            r_spi_cyc <= '1';
+                            -- r_bus_selector <= s_spi;
+                            -- r_spi_cyc <= '1';
+                            r_ack <= '1';
 
                         -- Cart RAM
                         when b"1011_0---" =>
@@ -414,9 +415,9 @@ begin
 
                         when s_spi =>
                             if n_spi_ack = '1' then
-                                r_spi_cyc <= '0';
+                                -- r_spi_cyc <= '0';
                                 r_ack <= '1';
-                                r_dat_o <= n_spi_dat;
+                                -- r_dat_o <= n_spi_dat;
                             end if;
                     end case;
                 end if;
@@ -449,24 +450,24 @@ begin
         o_dout => n_gpio_in_sync
     );
 
-    -- SPI core instance
-    inst_spi_core : spi_core
-    port map(
-        i_clk         => i_clk,
-        i_rst         => i_soft_reset,
-        i_cyc         => r_spi_cyc,
-        o_ack         => n_spi_ack,
-        i_we          => r_we,
-        i_adr         => r_adr(1 downto 0),
-        o_dat         => n_spi_dat,
-        i_dat         => r_dat_i,
-        io_spi_clk    => io_fpga_spi_clk,
-        io_spi_mosi   => io_fpga_spi_mosi,
-        io_spi_miso   => io_fpga_spi_miso,
-        io_spi_csn(0) => o_fpga_spi_flash_csn,
-        io_spi_csn(1) => o_fpga_spi_rtc_csn,
-        io_spi_csn(2) => o_fpga_spi_sd_csn
-    );
+    -- -- SPI core instance
+    -- inst_spi_core : spi_core
+    -- port map(
+    --     i_clk         => i_clk,
+    --     i_rst         => i_soft_reset,
+    --     i_cyc         => r_spi_cyc,
+    --     o_ack         => n_spi_ack,
+    --     i_we          => r_we,
+    --     i_adr         => r_adr(1 downto 0),
+    --     o_dat         => n_spi_dat,
+    --     i_dat         => r_dat_i,
+    --     io_spi_clk    => io_fpga_spi_clk,
+    --     io_spi_mosi   => io_fpga_spi_mosi,
+    --     io_spi_miso   => io_fpga_spi_miso,
+    --     io_spi_csn(0) => o_fpga_spi_flash_csn,
+    --     io_spi_csn(1) => o_fpga_spi_rtc_csn,
+    --     io_spi_csn(2) => o_fpga_spi_sd_csn
+    -- );
 
     -- remaining out port assignments
     o_gpio <= r_gpio_out;
