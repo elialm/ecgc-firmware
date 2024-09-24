@@ -160,48 +160,6 @@ architecture rtl of cart_tl is
         );
     end component;
 
-    component dma_controller
-        port (
-            i_clk         : in std_logic;
-            i_rst         : in std_logic;
-            o_dma_cyc     : out std_logic;
-            i_dma_ack     : in std_logic;
-            o_dma_we      : out std_logic;
-            o_dma_adr     : out std_logic_vector(15 downto 0);
-            o_dma_dat     : out std_logic_vector(7 downto 0);
-            i_dma_dat     : in std_logic_vector(7 downto 0);
-            i_cfg_cyc     : in std_logic;
-            o_cfg_ack     : out std_logic;
-            i_cfg_we      : in std_logic;
-            i_cfg_adr     : in std_logic_vector(3 downto 0);
-            o_cfg_dat     : out std_logic_vector(7 downto 0);
-            i_cfg_dat     : in std_logic_vector(7 downto 0);
-            o_status_busy : out std_logic
-        );
-    end component;
-
-    component uart_debug
-        generic (
-            p_clk_freq : real := c_clkdivb_cdiv1_freq;
-            p_baud_rate : natural := 115200;
-            p_parity : string := "NONE";
-            p_stop_bits : natural := 1
-        );
-        port (
-            i_clk        : in std_logic;
-            i_rst        : in std_logic;
-            o_cyc        : out std_logic;
-            i_ack        : in std_logic;
-            o_we         : out std_logic;
-            o_adr        : out std_logic_vector(15 downto 0);
-            o_dat        : out std_logic_vector(7 downto 0);
-            i_dat        : in std_logic_vector(7 downto 0);
-            o_serial_tx  : out std_logic;
-            i_serial_rx  : in std_logic;
-            o_dbg_active : out std_logic
-        );
-    end component;
-
     component mbch
         port (
             i_clk                : in std_logic;
@@ -247,57 +205,6 @@ architecture rtl of cart_tl is
         );
     end component;
 
-    component uart_core
-        generic (
-            p_clk_freq : real := 100.0;
-            p_baud_rate : natural := 115200;
-            p_parity : string := "NONE";
-            p_data_bits : natural := 8;
-            p_stop_bits : natural := 1
-        );
-        port (
-            i_clk       : in std_logic;
-            i_rst       : in std_logic;
-            i_tx_wr     : in std_logic;
-            i_tx_dat    : in std_logic_vector(p_data_bits - 1 downto 0);
-            o_tx_rdy    : out std_logic;
-            i_rx_rd     : in std_logic;
-            o_rx_dat    : out std_logic_vector(p_data_bits - 1 downto 0);
-            o_rx_rdy    : out std_logic;
-            o_serial_tx : out std_logic;
-            i_serial_rx : in std_logic
-        );
-    end component;
-
-    component as1c8m16pl_controller
-        generic (
-            p_clk_freq : real := 100.0
-        );
-        port (
-            i_clk      : in std_logic;
-            i_rst      : in std_logic;
-            i_cyc      : in std_logic;
-            i_we       : in std_logic;
-            o_ack      : out std_logic;
-            i_adr      : in std_logic_vector(23 downto 0);
-            i_tga      : in std_logic_vector(0 downto 0);
-            i_dat      : in std_logic_vector(7 downto 0);
-            o_dat      : out std_logic_vector(7 downto 0);
-            io_ram_adq : inout std_logic_vector(15 downto 0);
-            o_ram_a    : out std_logic_vector(5 downto 0);
-            o_ram_advn : out std_logic;
-            o_ram_ce0n : out std_logic;
-            o_ram_ce1n : out std_logic;
-            o_ram_clk  : out std_logic;
-            o_ram_cre  : out std_logic;
-            o_ram_lbn  : out std_logic;
-            o_ram_ubn  : out std_logic;
-            o_ram_oen  : out std_logic;
-            i_ram_wait : in std_logic;
-            o_ram_wen  : out std_logic
-        );
-    end component;
-
     -- attribute GSR : string;
     -- attribute GSR of inst_clkdiv : label is "DISABLED";
 
@@ -324,14 +231,6 @@ architecture rtl of cart_tl is
     signal n_gb_timeout_rd : std_logic;
     signal n_gb_timeout_wr : std_logic;
 
-    -- Wishbone bus from Gameboy decoder to DMA config port
-    signal n_gbd_dma_cyc : std_logic;
-    signal n_gbd_dma_we : std_logic;
-    signal n_gbd_dma_adr : std_logic_vector(3 downto 0);
-    signal n_gbd_dma_dat_o : std_logic_vector(7 downto 0);
-    signal n_gbd_dma_dat_i : std_logic_vector(7 downto 0);
-    signal n_gbd_dma_ack : std_logic;
-
     -- Wishbone bus from Gameboy decoder to MBCH
     signal n_gbd_mbch_cyc : std_logic;
     signal n_gbd_mbch_we : std_logic;
@@ -339,32 +238,6 @@ architecture rtl of cart_tl is
     signal n_gbd_mbch_dat_o : std_logic_vector(7 downto 0);
     signal n_gbd_mbch_dat_i : std_logic_vector(7 downto 0);
     signal n_gbd_mbch_ack : std_logic;
-
-    -- Wisbone bus from DMA master and DMA related
-    signal n_dma_cyc : std_logic;
-    signal n_dma_ack : std_logic;
-    signal n_dma_we : std_logic;
-    signal n_dma_adr : std_logic_vector(15 downto 0);
-    signal n_dma_dat_i : std_logic_vector(7 downto 0);
-    signal n_dma_dat_o : std_logic_vector(7 downto 0);
-    signal n_dma_busy : std_logic;
-
-    -- Wishbone bus from debug core to MBCH
-    signal n_dbg_cyc : std_logic;
-    signal n_dbg_we : std_logic;
-    signal n_dbg_adr : std_logic_vector(15 downto 0);
-    signal n_dbg_dat_i : std_logic_vector(7 downto 0);
-    signal n_dbg_dat_o : std_logic_vector(7 downto 0);
-    signal n_dbg_ack : std_logic;
-
-    -- Wishbone bus from MBCH to XRAM
-    signal n_xram_cyc : std_logic;
-    signal n_xram_we : std_logic;
-    signal n_xram_ack : std_logic;
-    signal n_xram_adr : std_logic_vector(23 downto 0);
-    signal n_xram_tga : std_logic;
-    signal n_xram_dat_i : std_logic_vector(7 downto 0);
-    signal n_xram_dat_o : std_logic_vector(7 downto 0);
 
     -- MBCH related signals
     signal n_mbch_selected_mcb : std_logic_vector(2 downto 0);
@@ -434,12 +307,18 @@ begin
         i_clk => n_clk_div1,
         i_rst => n_soft_reset,
 
-        o_dma_cyc  => n_gbd_dma_cyc,
-        o_dma_we   => n_gbd_dma_we,
-        o_dma_adr  => n_gbd_dma_adr,
-        o_dma_dat  => n_gbd_dma_dat_o,
-        i_dma_dat  => n_gbd_dma_dat_i,
-        i_dma_ack  => n_gbd_dma_ack,
+        -- o_dma_cyc  => n_gbd_dma_cyc,
+        -- o_dma_we   => n_gbd_dma_we,
+        -- o_dma_adr  => n_gbd_dma_adr,
+        -- o_dma_dat  => n_gbd_dma_dat_o,
+        -- i_dma_dat  => n_gbd_dma_dat_i,
+        -- i_dma_ack  => n_gbd_dma_ack,
+        o_dma_cyc  => open,
+        o_dma_we   => open,
+        o_dma_adr  => open,
+        o_dma_dat  => open,
+        i_dma_dat  => (others => '0'),
+        i_dma_ack  => '0',
 
         o_mbch_cyc => n_gbd_mbch_cyc,
         o_mbch_we  => n_gbd_mbch_we,
@@ -448,124 +327,60 @@ begin
         i_mbch_dat => n_gbd_mbch_dat_i,
         i_mbch_ack => n_gbd_mbch_ack,
 
-        i_dma_busy     => n_dma_busy,
+        -- i_dma_busy     => n_dma_busy,
+        i_dma_busy     => '0',
         i_selected_mbc => n_mbch_selected_mcb,
         o_wr_timeout   => n_gb_timeout_rd,
         o_rd_timeout   => n_gb_timeout_wr
-    );
-
-    -- DMA controller instance
-    inst_dma_controller : dma_controller
-    port map(
-        i_clk => n_clk_div1,
-        i_rst => n_soft_reset,
-
-        o_dma_cyc => n_dma_cyc,
-        i_dma_ack => n_dma_ack,
-        o_dma_we  => n_dma_we,
-        o_dma_adr => n_dma_adr,
-        o_dma_dat => n_dma_dat_o,
-        i_dma_dat => n_dma_dat_i,
-
-        i_cfg_cyc => n_gbd_dma_cyc,
-        o_cfg_ack => n_gbd_dma_ack,
-        i_cfg_we  => n_gbd_dma_we,
-        i_cfg_adr => n_gbd_dma_adr,
-        o_cfg_dat => n_gbd_dma_dat_i,
-        i_cfg_dat => n_gbd_dma_dat_o,
-
-        o_status_busy => n_dma_busy
     );
 
     inst_mbch : mbch
     port map(
         i_clk                => n_clk_div1,
         i_rst                => n_hard_reset,
-        i_dbg_cyc            => n_dbg_cyc,
-        i_dbg_we             => n_dbg_we,
-        o_dbg_ack            => n_dbg_ack,
-        i_dbg_adr            => n_dbg_adr,
-        i_dbg_dat            => n_dbg_dat_o,
-        o_dbg_dat            => n_dbg_dat_i,
-        i_dma_cyc            => n_dma_cyc,
-        i_dma_we             => n_dma_we,
-        o_dma_ack            => n_dma_ack,
-        i_dma_adr            => n_dma_adr,
-        i_dma_dat            => n_dma_dat_o,
-        o_dma_dat            => n_dma_dat_i,
+        i_dbg_cyc            => '0',
+        i_dbg_we             => '0',
+        o_dbg_ack            => open,
+        i_dbg_adr            => (others => '0'),
+        i_dbg_dat            => (others => '0'),
+        o_dbg_dat            => open,
+        i_dma_cyc            => '0',
+        i_dma_we             => '0',
+        o_dma_ack            => open,
+        i_dma_adr            => (others => '0'),
+        i_dma_dat            => (others => '0'),
+        o_dma_dat            => open,
         i_gbd_cyc            => n_gbd_mbch_cyc,
         i_gbd_we             => n_gbd_mbch_we,
         o_gbd_ack            => n_gbd_mbch_ack,
         i_gbd_adr            => n_gbd_mbch_adr,
         i_gbd_dat            => n_gbd_mbch_dat_o,
         o_gbd_dat            => n_gbd_mbch_dat_i,
-        o_xram_cyc           => n_xram_cyc,
-        o_xram_we            => n_xram_we,
-        i_xram_ack           => n_xram_ack,
-        o_xram_adr           => n_xram_adr,
-        o_xram_tga           => n_xram_tga,
-        i_xram_dat           => n_xram_dat_o,
-        o_xram_dat           => n_xram_dat_i,
+        o_xram_cyc           => open,
+        o_xram_we            => open,
+        i_xram_ack           => '0',
+        o_xram_adr           => open,
+        o_xram_tga           => open,
+        i_xram_dat           => (others => '0'),
+        o_xram_dat           => open,
         i_gpio               => (others => '0'),
         o_gpio               => open,
-        -- io_fpga_spi_clk      => io_fpga_spi_clk,
-        -- io_fpga_spi_miso     => io_fpga_spi_miso,
-        -- io_fpga_spi_mosi     => io_fpga_spi_mosi,
-        io_fpga_spi_clk      => io_fpga_user(5),
-        io_fpga_spi_miso     => io_fpga_user(4),
-        io_fpga_spi_mosi     => io_fpga_user(3),
+        io_fpga_spi_clk      => io_fpga_spi_clk,
+        io_fpga_spi_miso     => io_fpga_spi_miso,
+        io_fpga_spi_mosi     => io_fpga_spi_mosi,
+        -- io_fpga_spi_clk      => io_fpga_user(5),
+        -- io_fpga_spi_miso     => io_fpga_user(4),
+        -- io_fpga_spi_mosi     => io_fpga_user(3),
         -- o_fpga_spi_flash_csn => o_fpga_spi_flash_csn,
         o_fpga_spi_flash_csn => io_fpga_user(2),
         o_fpga_spi_rtc_csn   => o_fpga_spi_rtc_csn,
-        -- o_fpga_spi_sd_csn    => o_fpga_spi_sd_csn,
-        o_fpga_spi_sd_csn    => io_fpga_user(0),
+        o_fpga_spi_sd_csn    => o_fpga_spi_sd_csn,
+        -- o_fpga_spi_sd_csn    => io_fpga_user(0),
         o_select_mbc         => n_mbch_selected_mcb,
         o_soft_reset_req     => n_aux_reset,
         i_soft_reset         => n_soft_reset,
-        i_dbg_active         => n_dbg_active,
-        i_dma_busy           => n_dma_busy
-    );
-
-    inst_uart_debug : uart_debug
-    port map(
-        i_clk        => n_clk_div1,
-        i_rst        => n_hard_reset,
-        o_cyc        => n_dbg_cyc,
-        i_ack        => n_dbg_ack,
-        o_we         => n_dbg_we,
-        o_adr        => n_dbg_adr,
-        o_dat        => n_dbg_dat_o,
-        i_dat        => n_dbg_dat_i,
-        -- o_serial_tx  => io_fpga_user(5),
-        -- i_serial_rx  => io_fpga_user(4),
-        o_serial_tx  => open,
-        i_serial_rx  => '1',
-        o_dbg_active => n_dbg_active
-    );
-
-    inst_ram_controller : as1c8m16pl_controller
-    port map(
-        i_clk      => n_clk_div1,
-        i_rst      => n_soft_reset,
-        i_cyc      => n_xram_cyc,
-        i_we       => n_xram_we,
-        o_ack      => n_xram_ack,
-        i_adr      => n_xram_adr,
-        i_tga(0)   => n_xram_tga,
-        i_dat      => n_xram_dat_i,
-        o_dat      => n_xram_dat_o,
-        io_ram_adq => io_ram_adq,
-        o_ram_a    => o_ram_a,
-        o_ram_advn => o_ram_advn,
-        o_ram_ce0n => o_ram_ce0n,
-        o_ram_ce1n => o_ram_ce1n,
-        o_ram_clk  => o_ram_clk,
-        o_ram_cre  => o_ram_cre,
-        o_ram_lbn  => o_ram_lbn,
-        o_ram_ubn  => o_ram_ubn,
-        o_ram_oen  => o_ram_oen,
-        i_ram_wait => i_ram_wait,
-        o_ram_wen  => o_ram_wen
+        i_dbg_active         => '0',
+        i_dma_busy           => '0'
     );
 
     -- simple led blinking for visual confirmation that the firmware is running
@@ -597,6 +412,10 @@ begin
     -- tristate MISO to act as input
     io_fpga_spi_miso <= 'Z';
 
+    -- TEMP: Drive other SPI signals since we are not using them (testing)
+    -- io_fpga_spi_clk  <= '0';
+    -- io_fpga_spi_mosi <= '0';
+
     -- drive to be able to use the flash
     o_flash_wpn <= '1';
     o_flash_holdn <= '1';
@@ -609,5 +428,22 @@ begin
     -- io_fpga_user(0) <= n_soft_reset;
     -- io_fpga_user(1) <= 'Z';
     -- io_fpga_user(0) <= 'Z';
+
+    -- TEMP: RAM related ports
+    io_ram_adq <= (others => '0');
+    o_ram_a    <= (others => '0');
+    o_ram_advn <= '1';
+    o_ram_ce0n <= '1';
+    o_ram_ce1n <= '1';
+    o_ram_clk  <= '0';
+    o_ram_cre  <= '0';
+    o_ram_lbn  <= '1';
+    o_ram_ubn  <= '1';
+    o_ram_oen  <= '1';
+    o_ram_wen  <= '1';
+
+    -- TEMP: not being used due to hardware modification
+    --       (cut trace due to not being able to use said pin)
+    o_fpga_spi_flash_csn <= '1';
 
 end architecture rtl;
