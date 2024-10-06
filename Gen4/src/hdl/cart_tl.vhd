@@ -265,6 +265,8 @@ architecture rtl of cart_tl is
 
     signal r_led_divider : std_logic_vector(24 downto 0);
 
+    signal r_spi_test_delay_counter : integer range 0 to 31;
+    signal r_spi_test_blocked : std_logic;
     signal r_spi_test_counter : integer range 0 to 63;
     signal r_previous_edge : std_logic;
     signal n_spi_cyc   : std_logic;
@@ -484,6 +486,22 @@ begin
     --       (cut trace due to not being able to use said pin)
     o_fpga_spi_flash_csn <= '1';
 
+    process(r_led_divider(r_led_divider'high))
+    begin
+        if rising_edge(r_led_divider(r_led_divider'high)) then
+            if n_soft_reset = '1' then
+                r_spi_test_delay_counter <= 31;
+                r_spi_test_blocked <= '1';
+            else
+                if r_spi_test_delay_counter /= 0 then
+                    r_spi_test_delay_counter <= r_spi_test_delay_counter - 1;
+                else
+                    r_spi_test_blocked <= '0';
+                end if;
+            end if;
+        end if;
+    end process;
+
     process(n_clk_div1)
     begin
         if rising_edge(n_clk_div1) then
@@ -494,7 +512,7 @@ begin
                 n_spi_we <= '0';
                 n_spi_adr <= (others => '0');
                 n_spi_dat_i <= (others => '0');
-            else
+            elsif r_spi_test_blocked = '0' then
                 r_previous_edge <= r_led_divider(r_led_divider'high - 12);
 
                 -- Increment counter on rising edge of led blinker counter
