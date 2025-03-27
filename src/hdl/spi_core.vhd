@@ -18,23 +18,21 @@ use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
 entity spi_core is
-    generic (
-        p_cs_count : positive := 1;
+    generic(
+        p_cs_count         : positive  := 1;
         p_cs_release_value : std_logic := '1'
     );
-    port (
+    port(
         -- Clocking and reset
-        i_clk : in std_logic;
-        i_rst : in std_logic;
-
+        i_clk       : in    std_logic;
+        i_rst       : in    std_logic;
         -- Slave Wishbone port
-        i_cyc : in std_logic;
-        o_ack : out std_logic;
-        i_we  : in std_logic;
-        i_adr : in std_logic_vector(1 downto 0);
-        o_dat : out std_logic_vector(7 downto 0);
-        i_dat : in std_logic_vector(7 downto 0);
-
+        i_cyc       : in    std_logic;
+        o_ack       : out   std_logic;
+        i_we        : in    std_logic;
+        i_adr       : in    std_logic_vector(1 downto 0);
+        o_dat       : out   std_logic_vector(7 downto 0);
+        i_dat       : in    std_logic_vector(7 downto 0);
         -- SPI signals
         io_spi_clk  : inout std_logic;
         io_spi_mosi : inout std_logic;
@@ -44,53 +42,53 @@ entity spi_core is
 end entity spi_core;
 
 architecture rtl of spi_core is
-    
+
     subtype t_spi_counter is integer range 0 to 8;
     subtype t_fdiv is integer range 0 to 255;
 
-    signal r_cfg_en : std_logic;    -- core enabled, must be 1 for the registers to be writable
-    signal r_cfg_cpol : std_logic;  -- clock polarity, see SPI docs
-    signal r_cfg_cpha : std_logic;  -- clock phase, see SPI docs
-    signal r_cfg_bord : std_logic;  -- bit shifting order, 0 = MSB first, 1 = LSB first
-    signal r_cfg_csrl : std_logic;  -- Chip select release after transmission, set to enable
+    signal r_cfg_en   : std_logic;      -- core enabled, must be 1 for the registers to be writable
+    signal r_cfg_cpol : std_logic;      -- clock polarity, see SPI docs
+    signal r_cfg_cpha : std_logic;      -- clock phase, see SPI docs
+    signal r_cfg_bord : std_logic;      -- bit shifting order, 0 = MSB first, 1 = LSB first
+    signal r_cfg_csrl : std_logic;      -- Chip select release after transmission, set to enable
 
-    signal r_spi_clk : std_logic;
-    signal r_spi_shifter : std_logic_vector(7 downto 0);
-    signal r_spi_ccounter : t_spi_counter;
-    signal r_skip_shift : std_logic;
-    signal r_skip_clock : std_logic;
-    signal r_slave_sample : std_logic;
+    signal r_spi_clk           : std_logic;
+    signal r_spi_shifter       : std_logic_vector(7 downto 0);
+    signal r_spi_ccounter      : t_spi_counter;
+    signal r_skip_shift        : std_logic;
+    signal r_skip_clock        : std_logic;
+    signal r_slave_sample      : std_logic;
     signal r_transmission_busy : std_logic;
     signal r_transmission_done : std_logic;
-    signal r_request_release : std_logic;
-    signal r_fdiv_counter : t_fdiv;
+    signal r_request_release   : std_logic;
+    signal r_fdiv_counter      : t_fdiv;
 
-    signal r_spi_csn : std_logic_vector(p_cs_count - 1 downto 0);
-    signal r_fdiv_ceil : t_fdiv;
+    signal r_spi_csn    : std_logic_vector(p_cs_count - 1 downto 0);
+    signal r_fdiv_ceil  : t_fdiv;
     signal r_request_wr : std_logic;
     signal r_request_rd : std_logic;
-    signal r_ack : std_logic;
-    signal r_dat : std_logic_vector(7 downto 0);
+    signal r_ack        : std_logic;
+    signal r_dat        : std_logic_vector(7 downto 0);
 
 begin
 
     -- there must not be more then 8 chip selects, since that doesn't fit inside a register
     assert p_cs_count <= 8 report "Current implementation does not support more than 8 CS pins" severity FAILURE;
-    
+
     proc_data_shifting : process(i_clk)
     begin
         if rising_edge(i_clk) then
             if i_rst = '1' then
-                r_spi_clk <= '0';
+                r_spi_clk           <= '0';
                 -- r_spi_shifter <= (others => '0');
-                r_spi_ccounter <= 0;
-                r_skip_shift <= '0';
-                r_skip_clock <= '0';
+                r_spi_ccounter      <= 0;
+                r_skip_shift        <= '0';
+                r_skip_clock        <= '0';
                 -- r_slave_sample <= '0';
                 r_transmission_busy <= '0';
                 r_transmission_done <= '0';
-                r_request_release <= '0';
-                r_fdiv_counter <= 0;
+                r_request_release   <= '0';
+                r_fdiv_counter      <= 0;
             else
                 r_request_release <= '0';
 
@@ -107,11 +105,11 @@ begin
                         end loop;
                     end if;
 
-                    r_spi_ccounter <= 8;
-                    r_skip_shift <= r_cfg_cpha;
-                    r_skip_clock <= '1';
+                    r_spi_ccounter      <= 8;
+                    r_skip_shift        <= r_cfg_cpha;
+                    r_skip_clock        <= '1';
                     r_transmission_busy <= '1';
-                    r_fdiv_counter <= r_fdiv_ceil;
+                    r_fdiv_counter      <= r_fdiv_ceil;
                 end if;
 
                 -- read transaction, clears transmission done bit
@@ -135,7 +133,7 @@ begin
                     if r_skip_clock = '1' then
                         r_skip_clock <= '0';
                     elsif r_spi_ccounter /= 0 then
-                        r_spi_clk <= not(r_spi_clk);
+                        r_spi_clk <= not (r_spi_clk);
                     end if;
 
                     -- decrement clock counter on each falling edge
@@ -151,10 +149,10 @@ begin
                         -- r_spi_clk = not(r_cfg_cpha)  (r_cfg_cpha = 1)
                         --      - shift cycle
 
-                        if r_spi_clk = not(r_cfg_cpha) and r_skip_shift = '1' then
+                        if r_spi_clk = not (r_cfg_cpha) and r_skip_shift = '1' then
                             -- skip first bit shift
                             r_skip_shift <= '0';
-                        elsif r_spi_clk = not(r_cfg_cpha) and r_skip_shift = '0' then
+                        elsif r_spi_clk = not (r_cfg_cpha) and r_skip_shift = '0' then
                             -- shift data
                             r_spi_shifter <= r_spi_shifter(r_spi_shifter'high - 1 downto 0) & r_slave_sample;
                         elsif r_spi_clk = r_cfg_cpha then
@@ -167,7 +165,7 @@ begin
                     if r_spi_ccounter = 0 then
                         r_transmission_busy <= '0';
                         r_transmission_done <= '1';
-                        r_request_release <= r_cfg_csrl;
+                        r_request_release   <= r_cfg_csrl;
                     end if;
                 end if;
             end if;
@@ -178,21 +176,21 @@ begin
     begin
         if rising_edge(i_clk) then
             if i_rst = '1' then
-                r_cfg_en <= '0';
-                r_cfg_cpol <= '0';
-                r_cfg_cpha <= '0';
-                r_cfg_bord <= '0';
-                r_cfg_csrl <= '0';
-                r_spi_csn <= (others => '1');
-                r_fdiv_ceil <= 0;
+                r_cfg_en     <= '0';
+                r_cfg_cpol   <= '0';
+                r_cfg_cpha   <= '0';
+                r_cfg_bord   <= '0';
+                r_cfg_csrl   <= '0';
+                r_spi_csn    <= (others => '1');
+                r_fdiv_ceil  <= 0;
                 r_request_wr <= '0';
                 r_request_rd <= '0';
-                r_ack <= '0';
-                -- r_dat <= (others => '0');
+                r_ack        <= '0';
+            -- r_dat <= (others => '0');
             else
                 r_request_wr <= '0';
                 r_request_rd <= '0';
-                r_ack <= '0';
+                r_ack        <= '0';
 
                 -- release all cs when requested by the shifter
                 if r_request_release = '1' then
@@ -209,7 +207,7 @@ begin
                                 r_cfg_cpha <= i_dat(6);
                                 r_cfg_bord <= i_dat(5);
                                 r_cfg_csrl <= i_dat(4);
-                                r_cfg_en <= i_dat(0);
+                                r_cfg_en   <= i_dat(0);
                             else
                                 r_dat(7) <= r_cfg_cpol;
                                 r_dat(6) <= r_cfg_cpha;
@@ -245,7 +243,7 @@ begin
                                 r_request_wr <= '1';
                             else
                                 r_request_rd <= '1';
-                                r_dat <= r_spi_shifter;
+                                r_dat        <= r_spi_shifter;
                             end if;
 
                         when others =>
@@ -267,12 +265,12 @@ begin
     end generate gen_drive_csn;
 
     -- drive spi clock based on CPOL, busy transmission and core enable
-    io_spi_clk <= r_spi_clk when r_cfg_cpol = '0' else not(r_spi_clk);
+    io_spi_clk <= r_spi_clk when r_cfg_cpol = '0' else not (r_spi_clk);
 
     -- drive spi mosi with first bit in shift register
     io_spi_mosi <= r_spi_shifter(r_spi_shifter'high);
 
     -- keep miso tri-stated to act as input
     io_spi_miso <= 'Z';
-    
+
 end architecture rtl;

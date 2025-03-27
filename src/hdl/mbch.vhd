@@ -39,62 +39,55 @@ use IEEE.std_logic_misc.all;
 use work.cart_pkg.all;
 
 entity mbch is
-    port (
+    port(
         -- Global signals
-        i_clk : in std_logic;
-        i_rst : in std_logic;
-
+        i_clk                : in    std_logic;
+        i_rst                : in    std_logic;
         -- Debug slave interface
-        i_dbg_cyc : in std_logic;
-        i_dbg_we  : in std_logic;
-        o_dbg_ack : out std_logic;
-        i_dbg_adr : in std_logic_vector(15 downto 0);
-        i_dbg_dat : in std_logic_vector(7 downto 0);
-        o_dbg_dat : out std_logic_vector(7 downto 0);
-
+        i_dbg_cyc            : in    std_logic;
+        i_dbg_we             : in    std_logic;
+        o_dbg_ack            : out   std_logic;
+        i_dbg_adr            : in    std_logic_vector(15 downto 0);
+        i_dbg_dat            : in    std_logic_vector(7 downto 0);
+        o_dbg_dat            : out   std_logic_vector(7 downto 0);
         -- DMA slave interface
-        i_dma_cyc : in std_logic;
-        i_dma_we  : in std_logic;
-        o_dma_ack : out std_logic;
-        i_dma_adr : in std_logic_vector(15 downto 0);
-        i_dma_dat : in std_logic_vector(7 downto 0);
-        o_dma_dat : out std_logic_vector(7 downto 0);
-
+        i_dma_cyc            : in    std_logic;
+        i_dma_we             : in    std_logic;
+        o_dma_ack            : out   std_logic;
+        i_dma_adr            : in    std_logic_vector(15 downto 0);
+        i_dma_dat            : in    std_logic_vector(7 downto 0);
+        o_dma_dat            : out   std_logic_vector(7 downto 0);
         -- Gameboy decoder slave interface
-        i_gbd_cyc : in std_logic;
-        i_gbd_we  : in std_logic;
-        o_gbd_ack : out std_logic;
-        i_gbd_adr : in std_logic_vector(15 downto 0);
-        i_gbd_dat : in std_logic_vector(7 downto 0);
-        o_gbd_dat : out std_logic_vector(7 downto 0);
-
+        i_gbd_cyc            : in    std_logic;
+        i_gbd_we             : in    std_logic;
+        o_gbd_ack            : out   std_logic;
+        i_gbd_adr            : in    std_logic_vector(15 downto 0);
+        i_gbd_dat            : in    std_logic_vector(7 downto 0);
+        o_gbd_dat            : out   std_logic_vector(7 downto 0);
         -- Master interface to external RAM controller
-        o_xram_cyc : out std_logic;
-        o_xram_we  : out std_logic;
-        i_xram_ack : in std_logic;
-        o_xram_adr : out std_logic_vector(23 downto 0);
-        o_xram_tga : out std_logic;
-        i_xram_dat : in std_logic_vector(7 downto 0);
-        o_xram_dat : out std_logic_vector(7 downto 0);
-
+        o_xram_cyc           : out   std_logic;
+        o_xram_we            : out   std_logic;
+        i_xram_ack           : in    std_logic;
+        o_xram_adr           : out   std_logic_vector(23 downto 0);
+        o_xram_tga           : out   std_logic;
+        i_xram_dat           : in    std_logic_vector(7 downto 0);
+        o_xram_dat           : out   std_logic_vector(7 downto 0);
         -- General I/O
-        i_gpio : in std_logic_vector(3 downto 0);
-        o_gpio : out std_logic_vector(3 downto 0);
-
+        i_gpio               : in    std_logic_vector(3 downto 0);
+        o_gpio               : out   std_logic_vector(3 downto 0);
         -- SPI signals
         io_fpga_spi_clk      : inout std_logic;
         io_fpga_spi_miso     : inout std_logic;
         io_fpga_spi_mosi     : inout std_logic;
-        o_fpga_spi_flash_csn : out std_logic;
-        o_fpga_spi_rtc_csn   : out std_logic;
-        o_fpga_spi_sd_csn    : out std_logic;
-
+        o_fpga_spi_flash_csn : out   std_logic;
+        o_fpga_spi_rtc_csn   : out   std_logic;
+        o_fpga_spi_sd_csn    : out   std_logic;
         -- Miscellaneous signals
-        o_select_mbc     : out std_logic_vector(2 downto 0);
-        o_soft_reset_req : out std_logic;
-        i_soft_reset     : in std_logic;
-        i_dbg_active     : in std_logic;
-        i_dma_busy       : in std_logic
+        o_select_mbc         : out   std_logic_vector(2 downto 0);
+        o_soft_reset_req     : out   std_logic;
+        i_soft_reset         : in    std_logic;
+        i_dbg_active         : in    std_logic;
+        i_dma_busy           : in    std_logic
     );
 end mbch;
 
@@ -104,20 +97,20 @@ architecture rtl of mbch is
 
     -- boot ram and cart ram signals
     signal n_boot_rom_enabled : std_logic;
-    signal n_boot_rom_data : std_logic_vector(7 downto 0);
-    signal n_boot_rom_we : std_logic;
-    signal n_cart_ram_data : std_logic_vector(7 downto 0);
+    signal n_boot_rom_data    : std_logic_vector(7 downto 0);
+    signal n_boot_rom_we      : std_logic;
+    signal n_cart_ram_data    : std_logic_vector(7 downto 0);
 
     -- decoder signals
     signal r_bus_selector : t_bus_selector;
-    signal r_busy : std_logic;
-    signal r_ack : std_logic;
-    signal r_dat_o : std_logic_vector(7 downto 0);
+    signal r_busy         : std_logic;
+    signal r_ack          : std_logic;
+    signal r_dat_o        : std_logic_vector(7 downto 0);
 
     -- wishbone selection
-    signal r_cyc : std_logic;
-    signal r_we : std_logic;
-    signal r_adr : std_logic_vector(15 downto 0);
+    signal r_cyc   : std_logic;
+    signal r_we    : std_logic;
+    signal r_adr   : std_logic_vector(15 downto 0);
     signal r_dat_i : std_logic_vector(7 downto 0);
 
     -- xram signals
@@ -127,16 +120,16 @@ architecture rtl of mbch is
     signal r_xram_tga : std_logic;
 
     -- gpio signals
-    signal r_gpio_out : std_logic_vector(3 downto 0);
+    signal r_gpio_out     : std_logic_vector(3 downto 0);
     signal n_gpio_in_sync : std_logic_vector(3 downto 0);
 
     -- cart registers and soft reset handling
     signal r_boot_rom_accessible : std_logic;
-    signal r_soft_reset_req : std_logic;
-    signal r_soft_reset_rising : std_logic;
-    signal r_current_mbc : std_logic_vector(2 downto 0);
-    signal r_next_mbc : std_logic_vector(2 downto 0);
-    signal r_xram_bank : std_logic_vector(9 downto 0);
+    signal r_soft_reset_req      : std_logic;
+    signal r_soft_reset_rising   : std_logic;
+    signal r_current_mbc         : std_logic_vector(2 downto 0);
+    signal r_next_mbc            : std_logic_vector(2 downto 0);
+    signal r_xram_bank           : std_logic_vector(9 downto 0);
 
     -- spi signals
     signal r_spi_cyc : std_logic;
@@ -147,30 +140,30 @@ begin
 
     -- ROM instance containing boot code
     inst_boot_rom : boot_ram
-    port map(
-        Clock   => i_clk,
-        ClockEn => n_boot_rom_enabled,
-        Reset   => i_rst,
-        WE      => n_boot_rom_we,
-        Address => r_adr(11 downto 0),
-        Data    => r_dat_i,
-        Q       => n_boot_rom_data
-    );
+        port map(
+            Clock   => i_clk,
+            ClockEn => n_boot_rom_enabled,
+            Reset   => i_rst,
+            WE      => n_boot_rom_we,
+            Address => r_adr(11 downto 0),
+            Data    => r_dat_i,
+            Q       => n_boot_rom_data
+        );
 
     n_boot_rom_enabled <= r_boot_rom_accessible and r_cyc;
-    n_boot_rom_we <= r_we and i_dbg_active;
+    n_boot_rom_we      <= r_we and i_dbg_active;
 
     -- Cart RAM instance, for DMA buffering and reset management
     inst_cart_ram : cart_ram
-    port map (
-        Clock   => i_clk,
-        ClockEn => r_cyc,
-        Reset   => i_rst,
-        WE      => r_we,
-        Address => r_adr(10 downto 0),
-        Data    => r_dat_i,
-        Q       => n_cart_ram_data
-    );
+        port map(
+            Clock   => i_clk,
+            ClockEn => r_cyc,
+            Reset   => i_rst,
+            WE      => r_we,
+            Address => r_adr(10 downto 0),
+            Data    => r_dat_i,
+            Q       => n_cart_ram_data
+        );
 
     -- slave wishbone bus
     -- since only one slave is active at any one time, r_ack can just be routed to all
@@ -186,27 +179,27 @@ begin
         if rising_edge(i_clk) then
             if i_rst = '1' then
                 r_cyc <= '0';
-                -- r_we <= '0';
-                -- r_adr <= (others => '0');
-                -- r_dat_i <= (others => '0');
+            -- r_we <= '0';
+            -- r_adr <= (others => '0');
+            -- r_dat_i <= (others => '0');
             else
                 if i_dbg_active = '1' then
                     -- select dbg as master
-                    r_cyc <= i_dbg_cyc when r_ack = '0' else '0';
-                    r_we <= i_dbg_we;
-                    r_adr <= i_dbg_adr;
+                    r_cyc   <= i_dbg_cyc when r_ack = '0' else '0';
+                    r_we    <= i_dbg_we;
+                    r_adr   <= i_dbg_adr;
                     r_dat_i <= i_dbg_dat;
                 elsif i_dma_busy = '1' then
                     -- select dma as master
-                    r_cyc <= i_dma_cyc when r_ack = '0' else '0';
-                    r_we <= i_dma_we;
-                    r_adr <= i_dma_adr;
+                    r_cyc   <= i_dma_cyc when r_ack = '0' else '0';
+                    r_we    <= i_dma_we;
+                    r_adr   <= i_dma_adr;
                     r_dat_i <= i_dma_dat;
                 else
                     -- select gbd as master
-                    r_cyc <= i_gbd_cyc when r_ack = '0' else '0';
-                    r_we <= i_gbd_we;
-                    r_adr <= i_gbd_adr;
+                    r_cyc   <= i_gbd_cyc when r_ack = '0' else '0';
+                    r_we    <= i_gbd_we;
+                    r_adr   <= i_gbd_adr;
                     r_dat_i <= i_gbd_dat;
                 end if;
             end if;
@@ -222,31 +215,31 @@ begin
 
     -- address decoder and wishbone handler
     -- also handle soft reset routine
-    proc_mbch_decoder : process (i_clk)
+    proc_mbch_decoder : process(i_clk)
     begin
         if rising_edge(i_clk) then
             r_soft_reset_req <= '0';
 
             if i_rst = '1' then
                 -- r_bus_selector <= s_boot_rom;
-                r_busy <= '0';
-                r_ack <= '0';
+                r_busy                   <= '0';
+                r_ack                    <= '0';
                 -- r_dat_o <= (others => '0');
-                r_xram_cyc <= '0';
+                r_xram_cyc               <= '0';
                 -- r_xram_we <= '0';
                 r_xram_adr(23 downto 16) <= (others => '0');
                 -- r_xram_adr(15 downto 0) <= (others => '0');
-                r_xram_tga <= '0';
-                r_gpio_out <= (others => '0');
-                r_boot_rom_accessible <= '1';
-                r_soft_reset_rising <= '1';
-                r_current_mbc <= "000";
-                r_next_mbc <= "000";
-                r_xram_bank <= (others => '0');
-                r_spi_cyc <= '0';
+                r_xram_tga               <= '0';
+                r_gpio_out               <= (others => '0');
+                r_boot_rom_accessible    <= '1';
+                r_soft_reset_rising      <= '1';
+                r_current_mbc            <= "000";
+                r_next_mbc               <= "000";
+                r_xram_bank              <= (others => '0');
+                r_spi_cyc                <= '0';
             else
                 -- initiate wishbone transaction on r_cyc rising edge or after a successfull handshake
-                if (r_cyc and not(r_busy)) = '1' then
+                if (r_cyc and not (r_busy)) = '1' then
                     -- mark busy to indicate that decoding has been done
                     r_busy <= '1';
 
@@ -257,28 +250,28 @@ begin
                             if r_boot_rom_accessible = '1' then
                                 r_bus_selector <= s_boot_rom;
                             else
-                                r_bus_selector <= s_xram;
-                                r_xram_cyc <= '1';
-                                r_xram_we <= r_we;
+                                r_bus_selector           <= s_xram;
+                                r_xram_cyc               <= '1';
+                                r_xram_we                <= r_we;
                                 r_xram_adr(23 downto 14) <= "00" & x"00";
-                                r_xram_adr(13 downto 0) <= r_adr(13 downto 0);
+                                r_xram_adr(13 downto 0)  <= r_adr(13 downto 0);
                             end if;
 
                         -- Upper 12kB of back 0
                         when b"0001_----" | b"0010_----" | b"0011_----" =>
-                            r_bus_selector <= s_xram;
-                            r_xram_cyc <= '1';
-                            r_xram_we <= r_we;
+                            r_bus_selector           <= s_xram;
+                            r_xram_cyc               <= '1';
+                            r_xram_we                <= r_we;
                             r_xram_adr(23 downto 14) <= "00" & x"00";
-                            r_xram_adr(13 downto 0) <= r_adr(13 downto 0);
+                            r_xram_adr(13 downto 0)  <= r_adr(13 downto 0);
 
                         -- Banked XRAM
                         when b"01--_----" =>
-                            r_bus_selector <= s_xram;
-                            r_xram_cyc <= '1';
-                            r_xram_we <= r_we;
+                            r_bus_selector           <= s_xram;
+                            r_xram_cyc               <= '1';
+                            r_xram_we                <= r_we;
                             r_xram_adr(23 downto 14) <= r_xram_bank;
-                            r_xram_adr(13 downto 0) <= r_adr(13 downto 0);
+                            r_xram_adr(13 downto 0)  <= r_adr(13 downto 0);
 
                         -- Reserved (previously EFB)
                         when b"1010_0000" =>
@@ -287,21 +280,21 @@ begin
                         -- MBCH control 0 reg
                         when b"1010_0001" =>
                             if r_we = '1' then
-                                r_soft_reset_req <= r_dat_i(7);
+                                r_soft_reset_req      <= r_dat_i(7);
                                 r_boot_rom_accessible <= r_dat_i(6);
-                                r_next_mbc <= r_dat_i(2 downto 0);
+                                r_next_mbc            <= r_dat_i(2 downto 0);
                             end if;
                             r_dat_o <= '0' & r_boot_rom_accessible & "000" & r_next_mbc;
-                            r_ack <= '1';
+                            r_ack   <= '1';
 
                         -- XRAM control 0 reg
                         when b"1010_0010" =>
                             if r_we = '1' then
                                 r_xram_bank(9 downto 8) <= r_dat_i(1 downto 0);
-                                r_xram_tga <= r_dat_i(7);
+                                r_xram_tga              <= r_dat_i(7);
                             end if;
                             r_dat_o <= r_xram_tga & "00000" & r_xram_bank(9 downto 8);
-                            r_ack <= '1';
+                            r_ack   <= '1';
 
                         -- XRAM control 1 reg
                         when b"1010_0011" =>
@@ -309,7 +302,7 @@ begin
                                 r_xram_bank(7 downto 0) <= r_dat_i;
                             end if;
                             r_dat_o <= r_xram_bank(7 downto 0);
-                            r_ack <= '1';
+                            r_ack   <= '1';
 
                         -- MBCH GPIO reg
                         when b"1010_0100" =>
@@ -317,7 +310,7 @@ begin
                                 r_gpio_out <= r_dat_i(7 downto 4);
                             end if;
                             r_dat_o <= r_gpio_out & n_gpio_in_sync;
-                            r_ack <= '1';
+                            r_ack   <= '1';
 
                         -- Reserved (mapped to DMA registers)
                         when b"1010_0101" =>
@@ -326,7 +319,7 @@ begin
                         -- SPI core
                         when b"1010_0110" =>
                             r_bus_selector <= s_spi;
-                            r_spi_cyc <= '1';
+                            r_spi_cyc      <= '1';
 
                         -- Cart RAM
                         when b"1011_0---" =>
@@ -335,33 +328,33 @@ begin
                         -- Other regions will always read as 0x00 and ignore writes
                         when others =>
                             r_dat_o <= x"00";
-                            r_ack <= '1';
+                            r_ack   <= '1';
                     end case?;
                 end if;
 
                 -- if busy (done with decoding), perform operations for the selected bus
-                if (r_busy and not(r_ack)) = '1' then
+                if (r_busy and not (r_ack)) = '1' then
                     case r_bus_selector is
                         when s_boot_rom =>
                             r_dat_o <= n_boot_rom_data;
-                            r_ack <= '1';
+                            r_ack   <= '1';
 
                         when s_cart_ram =>
                             r_dat_o <= n_cart_ram_data;
-                            r_ack <= '1';
+                            r_ack   <= '1';
 
                         when s_xram =>
                             if i_xram_ack = '1' then
                                 r_xram_cyc <= '0';
-                                r_ack <= '1';
-                                r_dat_o <= i_xram_dat;
+                                r_ack      <= '1';
+                                r_dat_o    <= i_xram_dat;
                             end if;
 
                         when s_spi =>
                             if n_spi_ack = '1' then
                                 r_spi_cyc <= '0';
-                                r_ack <= '1';
-                                r_dat_o <= n_spi_dat;
+                                r_ack     <= '1';
+                                r_dat_o   <= n_spi_dat;
                             end if;
                     end case;
                 end if;
@@ -369,14 +362,14 @@ begin
                 -- on ack, clear busy and free decoder for next transaction
                 if r_ack = '1' then
                     r_busy <= '0';
-                    r_ack <= '0';
+                    r_ack  <= '0';
                 end if;
 
                 -- soft reset
                 if (i_soft_reset and r_soft_reset_rising) = '1' then
-                    r_current_mbc <= r_next_mbc;
-                    r_next_mbc <= "000";
-                    r_soft_reset_rising <= '0';
+                    r_current_mbc         <= r_next_mbc;
+                    r_next_mbc            <= "000";
+                    r_soft_reset_rising   <= '0';
                     r_boot_rom_accessible <= '1';
                 elsif i_soft_reset = '0' then
                     r_soft_reset_rising <= '1';
@@ -387,38 +380,38 @@ begin
 
     -- GPIO input synchroniser
     inst_gpio_synchroniser : synchroniser
-    generic map(
-        p_data_width => 4
-    )
-    port map(
-        i_clk  => i_clk,
-        i_rst  => i_rst,
-        i_din  => i_gpio,
-        o_dout => n_gpio_in_sync
-    );
+        generic map(
+            p_data_width => 4
+        )
+        port map(
+            i_clk  => i_clk,
+            i_rst  => i_rst,
+            i_din  => i_gpio,
+            o_dout => n_gpio_in_sync
+        );
 
     -- SPI core instance
     inst_spi_core : spi_core
-    port map(
-        i_clk         => i_clk,
-        i_rst         => i_soft_reset,
-        i_cyc         => r_spi_cyc,
-        o_ack         => n_spi_ack,
-        i_we          => r_we,
-        i_adr         => r_adr(1 downto 0),
-        o_dat         => n_spi_dat,
-        i_dat         => r_dat_i,
-        io_spi_clk    => io_fpga_spi_clk,
-        io_spi_mosi   => io_fpga_spi_mosi,
-        io_spi_miso   => io_fpga_spi_miso,
-        io_spi_csn(0) => o_fpga_spi_flash_csn,
-        io_spi_csn(1) => o_fpga_spi_rtc_csn,
-        io_spi_csn(2) => o_fpga_spi_sd_csn
-    );
+        port map(
+            i_clk         => i_clk,
+            i_rst         => i_soft_reset,
+            i_cyc         => r_spi_cyc,
+            o_ack         => n_spi_ack,
+            i_we          => r_we,
+            i_adr         => r_adr(1 downto 0),
+            o_dat         => n_spi_dat,
+            i_dat         => r_dat_i,
+            io_spi_clk    => io_fpga_spi_clk,
+            io_spi_mosi   => io_fpga_spi_mosi,
+            io_spi_miso   => io_fpga_spi_miso,
+            io_spi_csn(0) => o_fpga_spi_flash_csn,
+            io_spi_csn(1) => o_fpga_spi_rtc_csn,
+            io_spi_csn(2) => o_fpga_spi_sd_csn
+        );
 
     -- remaining out port assignments
-    o_gpio <= r_gpio_out;
-    o_select_mbc <= r_current_mbc;
+    o_gpio           <= r_gpio_out;
+    o_select_mbc     <= r_current_mbc;
     o_soft_reset_req <= r_soft_reset_req;
 
 end rtl;

@@ -43,38 +43,38 @@ use ieee.std_logic_misc.all;
 use work.cart_pkg.all;
 
 entity reset is
-    generic (
+    generic(
         p_aux_ff_count : positive := 9
     );
-    port (
-        i_clk        : in std_logic;
-        i_pll_lock   : in std_logic;
-        i_ext_softn  : in std_logic; -- Connected to reset button
-        i_aux_soft   : in std_logic; -- Connected to hypervisor reset
-        i_dbg_active : in std_logic; -- Indicates debug core active
+    port(
+        i_clk        : in  std_logic;
+        i_pll_lock   : in  std_logic;
+        i_ext_softn  : in  std_logic;   -- Connected to reset button
+        i_aux_soft   : in  std_logic;   -- Connected to hypervisor reset
+        i_dbg_active : in  std_logic;   -- Indicates debug core active
 
-        o_gb_resetn  : out std_logic; -- Connected to GB_RST pin
-        o_soft_reset : out std_logic; -- Connected to hypervisor reset
-        o_hard_reset : out std_logic  -- Connected to all RST(_I)?
+        o_gb_resetn  : out std_logic;   -- Connected to GB_RST pin
+        o_soft_reset : out std_logic;   -- Connected to hypervisor reset
+        o_hard_reset : out std_logic    -- Connected to all RST(_I)?
     );
 end reset;
 
 architecture rtl of reset is
 
-    signal n_soft_reset : std_logic;
-    signal n_hard_reset : std_logic := '1';
-    signal n_ext_softn_sync : std_logic;
-    signal r_hard_extender : std_logic_vector(3 downto 0) := (others => '1');
-    signal r_soft_extender : std_logic_vector(p_aux_ff_count - 1 downto 0);
+    signal n_soft_reset      : std_logic;
+    signal n_hard_reset      : std_logic                    := '1';
+    signal n_ext_softn_sync  : std_logic;
+    signal r_hard_extender   : std_logic_vector(3 downto 0) := (others => '1');
+    signal r_soft_extender   : std_logic_vector(p_aux_ff_count - 1 downto 0);
     signal r_gb_rst_extender : std_logic_vector(10 downto 0);
 
-    signal r_dbg_active : std_logic;
+    signal r_dbg_active   : std_logic;
     signal r_aux_internal : std_logic;
 
 begin
 
     -- Provide hard reset when PLL is not locked
-    process (i_clk)
+    process(i_clk)
     begin
         if rising_edge(i_clk) then
             if i_pll_lock = '0' then
@@ -87,18 +87,18 @@ begin
 
     -- Sychronise i_ext_softn
     inst_ext_soft_synchroniser : synchroniser
-    port map(
-        i_clk     => i_clk,
-        i_rst     => n_hard_reset,
-        i_din(0)  => i_ext_softn,
-        o_dout(0) => n_ext_softn_sync
-    );
+        port map(
+            i_clk     => i_clk,
+            i_rst     => n_hard_reset,
+            i_din(0)  => i_ext_softn,
+            o_dout(0) => n_ext_softn_sync
+        );
 
     -- Extend soft reset to be some clock cycles long
-    process (i_clk)
+    process(i_clk)
     begin
         if rising_edge(i_clk) then
-            if (n_hard_reset or i_aux_soft or r_aux_internal or not(n_ext_softn_sync) or not(i_pll_lock)) = '1' then
+            if (n_hard_reset or i_aux_soft or r_aux_internal or not (n_ext_softn_sync) or not (i_pll_lock)) = '1' then
                 r_soft_extender <= (others => '1');
             else
                 r_soft_extender <= r_soft_extender(r_soft_extender'high - 1 downto 0) & '0';
@@ -107,7 +107,7 @@ begin
     end process;
 
     -- Extend the Gameboy reset to be slow enough for the gameboy
-    process (i_clk)
+    process(i_clk)
     begin
         if rising_edge(i_clk) then
             if (n_hard_reset or n_soft_reset) = '1' then
@@ -121,14 +121,14 @@ begin
     end process;
 
     -- Handle debug active
-    process (i_clk)
+    process(i_clk)
     begin
         if rising_edge(i_clk) then
             if n_hard_reset then
-                r_dbg_active <= '0';
+                r_dbg_active   <= '0';
                 r_aux_internal <= '0';
             else
-                r_dbg_active <= i_dbg_active;
+                r_dbg_active   <= i_dbg_active;
                 r_aux_internal <= i_dbg_active xor r_dbg_active;
             end if;
         end if;
@@ -137,7 +137,7 @@ begin
     n_soft_reset <= r_soft_extender(r_soft_extender'high);
     n_hard_reset <= r_hard_extender(r_hard_extender'high);
 
-    o_gb_resetn <= not(r_gb_rst_extender(r_gb_rst_extender'high)) and not(i_dbg_active);
+    o_gb_resetn  <= not (r_gb_rst_extender(r_gb_rst_extender'high)) and not (i_dbg_active);
     o_soft_reset <= n_soft_reset;
     o_hard_reset <= n_hard_reset;
 

@@ -24,53 +24,49 @@ use XP2.all;
 use work.cart_pkg.all;
 
 entity cart_tl is
-    generic (
+    generic(
         p_simulation : boolean := FALSE
     );
-    port (
+    port(
         -- Clocking and reset
-        i_fpga_clk33m : in std_logic;
-        o_clk_en      : out std_logic;
-        i_fpga_rstn   : in std_logic;
-
+        i_fpga_clk33m        : in    std_logic;
+        o_clk_en             : out   std_logic;
+        i_fpga_rstn          : in    std_logic;
         -- GB related ports
-        i_gb_addr   : in std_logic_vector(15 downto 0);
-        io_gb_data  : inout std_logic_vector(7 downto 0);
-        o_gb_bus_en : out std_logic;
-        i_gb_clk    : in std_logic;
-        i_gb_csn    : in std_logic;
-        i_gb_rdn    : in std_logic;
-        i_gb_wrn    : in std_logic;
-        o_gb_rstn   : out std_logic;
-
+        i_gb_addr            : in    std_logic_vector(15 downto 0);
+        io_gb_data           : inout std_logic_vector(7 downto 0);
+        o_gb_bus_en          : out   std_logic;
+        i_gb_clk             : in    std_logic;
+        i_gb_csn             : in    std_logic;
+        i_gb_rdn             : in    std_logic;
+        i_gb_wrn             : in    std_logic;
+        o_gb_rstn            : out   std_logic;
         -- RAM related ports
-        io_ram_adq : inout std_logic_vector(15 downto 0);
-        o_ram_a    : out std_logic_vector(5 downto 0);
-        o_ram_advn : out std_logic;
-        o_ram_ce0n : out std_logic;
-        o_ram_ce1n : out std_logic;
-        o_ram_clk  : out std_logic;
-        o_ram_cre  : out std_logic;
-        o_ram_lbn  : out std_logic;
-        o_ram_ubn  : out std_logic;
-        o_ram_oen  : out std_logic;
-        i_ram_wait : in std_logic;
-        o_ram_wen  : out std_logic;
-
+        io_ram_adq           : inout std_logic_vector(15 downto 0);
+        o_ram_a              : out   std_logic_vector(5 downto 0);
+        o_ram_advn           : out   std_logic;
+        o_ram_ce0n           : out   std_logic;
+        o_ram_ce1n           : out   std_logic;
+        o_ram_clk            : out   std_logic;
+        o_ram_cre            : out   std_logic;
+        o_ram_lbn            : out   std_logic;
+        o_ram_ubn            : out   std_logic;
+        o_ram_oen            : out   std_logic;
+        i_ram_wait           : in    std_logic;
+        o_ram_wen            : out   std_logic;
         -- SPI related signals
         io_fpga_spi_clk      : inout std_logic;
         io_fpga_spi_miso     : inout std_logic;
         io_fpga_spi_mosi     : inout std_logic;
-        o_fpga_spi_flash_csn : out std_logic;
-        o_fpga_spi_rtc_csn   : out std_logic;
-        o_fpga_spi_sd_csn    : out std_logic;
-
+        o_fpga_spi_flash_csn : out   std_logic;
+        o_fpga_spi_rtc_csn   : out   std_logic;
+        o_fpga_spi_sd_csn    : out   std_logic;
         -- Miscellaneous signals
-        io_fpga_user     : inout std_logic_vector(5 downto 0);
-        i_rtc_rstn       : in std_logic;
-        i_sd_card_detect : in std_logic;
-        o_flash_wpn      : out std_logic;
-        o_flash_holdn    : out std_logic
+        io_fpga_user         : inout std_logic_vector(5 downto 0);
+        i_rtc_rstn           : in    std_logic;
+        i_sd_card_detect     : in    std_logic;
+        o_flash_wpn          : out   std_logic;
+        o_flash_holdn        : out   std_logic
     );
 end entity cart_tl;
 
@@ -107,65 +103,65 @@ architecture rtl of cart_tl is
     -- Clocks
     signal n_pll_clk_op : std_logic;
     signal n_pll_clk_ok : std_logic;
-    signal n_pll_lock : std_logic;
-    signal n_pll_lockn : std_logic;
-    signal n_clk_div1 : std_logic;
-    signal n_clk_div2 : std_logic;
-    signal n_clk_div4 : std_logic;
-    signal n_clk_div8 : std_logic;
+    signal n_pll_lock   : std_logic;
+    signal n_pll_lockn  : std_logic;
+    signal n_clk_div1   : std_logic;
+    signal n_clk_div2   : std_logic;
+    signal n_clk_div4   : std_logic;
+    signal n_clk_div8   : std_logic;
 
     -- Resets
     signal n_soft_reset : std_logic;
     signal n_hard_reset : std_logic;
-    signal n_aux_reset : std_logic;
+    signal n_aux_reset  : std_logic;
     signal n_dbg_active : std_logic;
-    signal n_gb_rstn : std_logic;
+    signal n_gb_rstn    : std_logic;
 
     -- Gameboy decoder related
-    signal n_gb_dout : std_logic_vector(7 downto 0);
+    signal n_gb_dout       : std_logic_vector(7 downto 0);
     signal n_gb_access_ram : std_logic;
     signal n_gb_timeout_rd : std_logic;
     signal n_gb_timeout_wr : std_logic;
 
     -- Wishbone bus from Gameboy decoder to DMA config port
-    signal n_gbd_dma_cyc : std_logic;
-    signal n_gbd_dma_we : std_logic;
-    signal n_gbd_dma_adr : std_logic_vector(3 downto 0);
+    signal n_gbd_dma_cyc   : std_logic;
+    signal n_gbd_dma_we    : std_logic;
+    signal n_gbd_dma_adr   : std_logic_vector(3 downto 0);
     signal n_gbd_dma_dat_o : std_logic_vector(7 downto 0);
     signal n_gbd_dma_dat_i : std_logic_vector(7 downto 0);
-    signal n_gbd_dma_ack : std_logic;
+    signal n_gbd_dma_ack   : std_logic;
 
     -- Wishbone bus from Gameboy decoder to MBCH
-    signal n_gbd_mbch_cyc : std_logic;
-    signal n_gbd_mbch_we : std_logic;
-    signal n_gbd_mbch_adr : std_logic_vector(15 downto 0);
+    signal n_gbd_mbch_cyc   : std_logic;
+    signal n_gbd_mbch_we    : std_logic;
+    signal n_gbd_mbch_adr   : std_logic_vector(15 downto 0);
     signal n_gbd_mbch_dat_o : std_logic_vector(7 downto 0);
     signal n_gbd_mbch_dat_i : std_logic_vector(7 downto 0);
-    signal n_gbd_mbch_ack : std_logic;
+    signal n_gbd_mbch_ack   : std_logic;
 
     -- Wisbone bus from DMA master and DMA related
-    signal n_dma_cyc : std_logic;
-    signal n_dma_ack : std_logic;
-    signal n_dma_we : std_logic;
-    signal n_dma_adr : std_logic_vector(15 downto 0);
+    signal n_dma_cyc   : std_logic;
+    signal n_dma_ack   : std_logic;
+    signal n_dma_we    : std_logic;
+    signal n_dma_adr   : std_logic_vector(15 downto 0);
     signal n_dma_dat_i : std_logic_vector(7 downto 0);
     signal n_dma_dat_o : std_logic_vector(7 downto 0);
-    signal n_dma_busy : std_logic;
+    signal n_dma_busy  : std_logic;
 
     -- Wishbone bus from debug core to MBCH
-    signal n_dbg_cyc : std_logic;
-    signal n_dbg_we : std_logic;
-    signal n_dbg_adr : std_logic_vector(15 downto 0);
+    signal n_dbg_cyc   : std_logic;
+    signal n_dbg_we    : std_logic;
+    signal n_dbg_adr   : std_logic_vector(15 downto 0);
     signal n_dbg_dat_i : std_logic_vector(7 downto 0);
     signal n_dbg_dat_o : std_logic_vector(7 downto 0);
-    signal n_dbg_ack : std_logic;
+    signal n_dbg_ack   : std_logic;
 
     -- Wishbone bus from MBCH to XRAM
-    signal n_xram_cyc : std_logic;
-    signal n_xram_we : std_logic;
-    signal n_xram_ack : std_logic;
-    signal n_xram_adr : std_logic_vector(23 downto 0);
-    signal n_xram_tga : std_logic;
+    signal n_xram_cyc   : std_logic;
+    signal n_xram_we    : std_logic;
+    signal n_xram_ack   : std_logic;
+    signal n_xram_adr   : std_logic_vector(23 downto 0);
+    signal n_xram_tga   : std_logic;
     signal n_xram_dat_i : std_logic_vector(7 downto 0);
     signal n_xram_dat_o : std_logic_vector(7 downto 0);
 
@@ -178,14 +174,14 @@ begin
 
     -- PLL instantiation for frequency synthesis from i_fpga_clk33m
     inst_pll : pll
-    port map(
-        CLK   => i_fpga_clk33m,
-        CLKOP => n_pll_clk_op,
-        CLKOK => n_pll_clk_ok,
-        LOCK  => n_pll_lock
-    );
+        port map(
+            CLK   => i_fpga_clk33m,
+            CLKOP => n_pll_clk_op,
+            CLKOK => n_pll_clk_ok,
+            LOCK  => n_pll_lock
+        );
 
-    n_pll_lockn <= not(n_pll_lock);
+    n_pll_lockn <= not (n_pll_lock);
 
     -- -- CLKDIVB instantiation for lower clocks
     -- inst_clkdiv : CLKDIVB
@@ -213,157 +209,150 @@ begin
 
     -- Instantiate reset controller (hard and soft resets)
     inst_reset_controller : reset
-    port map(
-        i_clk        => n_clk_div1,
-        i_pll_lock   => n_pll_lock,
-        i_ext_softn  => i_fpga_rstn,
-        i_aux_soft   => n_aux_reset,
-        i_dbg_active => n_dbg_active,
-        o_gb_resetn  => n_gb_rstn,
-        o_soft_reset => n_soft_reset,
-        o_hard_reset => n_hard_reset
-    );
+        port map(
+            i_clk        => n_clk_div1,
+            i_pll_lock   => n_pll_lock,
+            i_ext_softn  => i_fpga_rstn,
+            i_aux_soft   => n_aux_reset,
+            i_dbg_active => n_dbg_active,
+            o_gb_resetn  => n_gb_rstn,
+            o_soft_reset => n_soft_reset,
+            o_hard_reset => n_hard_reset
+        );
 
     -- Gameboy decoder instance
     inst_gameboy_decoder : gb_decoder
-    port map(
-        i_gb_clk  => i_gb_clk,
-        i_gb_addr => i_gb_addr,
-        i_gb_din  => io_gb_data,
-        o_gb_dout => n_gb_dout,
-        i_gb_rdn  => i_gb_rdn,
-        i_gb_csn  => i_gb_csn,
-
-        i_clk => n_clk_div1,
-        i_rst => n_soft_reset,
-
-        o_dma_cyc  => n_gbd_dma_cyc,
-        o_dma_we   => n_gbd_dma_we,
-        o_dma_adr  => n_gbd_dma_adr,
-        o_dma_dat  => n_gbd_dma_dat_o,
-        i_dma_dat  => n_gbd_dma_dat_i,
-        i_dma_ack  => n_gbd_dma_ack,
-
-        o_mbch_cyc => n_gbd_mbch_cyc,
-        o_mbch_we  => n_gbd_mbch_we,
-        o_mbch_adr => n_gbd_mbch_adr,
-        o_mbch_dat => n_gbd_mbch_dat_o,
-        i_mbch_dat => n_gbd_mbch_dat_i,
-        i_mbch_ack => n_gbd_mbch_ack,
-
-        i_dma_busy     => n_dma_busy,
-        i_selected_mbc => n_mbch_selected_mcb,
-        o_wr_timeout   => n_gb_timeout_rd,
-        o_rd_timeout   => n_gb_timeout_wr
-    );
+        port map(
+            i_gb_clk       => i_gb_clk,
+            i_gb_addr      => i_gb_addr,
+            i_gb_din       => io_gb_data,
+            o_gb_dout      => n_gb_dout,
+            i_gb_rdn       => i_gb_rdn,
+            i_gb_csn       => i_gb_csn,
+            i_clk          => n_clk_div1,
+            i_rst          => n_soft_reset,
+            o_dma_cyc      => n_gbd_dma_cyc,
+            o_dma_we       => n_gbd_dma_we,
+            o_dma_adr      => n_gbd_dma_adr,
+            o_dma_dat      => n_gbd_dma_dat_o,
+            i_dma_dat      => n_gbd_dma_dat_i,
+            i_dma_ack      => n_gbd_dma_ack,
+            o_mbch_cyc     => n_gbd_mbch_cyc,
+            o_mbch_we      => n_gbd_mbch_we,
+            o_mbch_adr     => n_gbd_mbch_adr,
+            o_mbch_dat     => n_gbd_mbch_dat_o,
+            i_mbch_dat     => n_gbd_mbch_dat_i,
+            i_mbch_ack     => n_gbd_mbch_ack,
+            i_dma_busy     => n_dma_busy,
+            i_selected_mbc => n_mbch_selected_mcb,
+            o_wr_timeout   => n_gb_timeout_rd,
+            o_rd_timeout   => n_gb_timeout_wr
+        );
 
     -- DMA controller instance
     inst_dma_controller : dma_controller
-    port map(
-        i_clk => n_clk_div1,
-        i_rst => n_soft_reset,
-
-        o_dma_cyc => n_dma_cyc,
-        i_dma_ack => n_dma_ack,
-        o_dma_we  => n_dma_we,
-        o_dma_adr => n_dma_adr,
-        o_dma_dat => n_dma_dat_o,
-        i_dma_dat => n_dma_dat_i,
-
-        i_cfg_cyc => n_gbd_dma_cyc,
-        o_cfg_ack => n_gbd_dma_ack,
-        i_cfg_we  => n_gbd_dma_we,
-        i_cfg_adr => n_gbd_dma_adr,
-        o_cfg_dat => n_gbd_dma_dat_i,
-        i_cfg_dat => n_gbd_dma_dat_o,
-
-        o_status_busy => n_dma_busy
-    );
+        port map(
+            i_clk         => n_clk_div1,
+            i_rst         => n_soft_reset,
+            o_dma_cyc     => n_dma_cyc,
+            i_dma_ack     => n_dma_ack,
+            o_dma_we      => n_dma_we,
+            o_dma_adr     => n_dma_adr,
+            o_dma_dat     => n_dma_dat_o,
+            i_dma_dat     => n_dma_dat_i,
+            i_cfg_cyc     => n_gbd_dma_cyc,
+            o_cfg_ack     => n_gbd_dma_ack,
+            i_cfg_we      => n_gbd_dma_we,
+            i_cfg_adr     => n_gbd_dma_adr,
+            o_cfg_dat     => n_gbd_dma_dat_i,
+            i_cfg_dat     => n_gbd_dma_dat_o,
+            o_status_busy => n_dma_busy
+        );
 
     inst_mbch : mbch
-    port map(
-        i_clk                => n_clk_div1,
-        i_rst                => n_hard_reset,
-        i_dbg_cyc            => n_dbg_cyc,
-        i_dbg_we             => n_dbg_we,
-        o_dbg_ack            => n_dbg_ack,
-        i_dbg_adr            => n_dbg_adr,
-        i_dbg_dat            => n_dbg_dat_o,
-        o_dbg_dat            => n_dbg_dat_i,
-        i_dma_cyc            => n_dma_cyc,
-        i_dma_we             => n_dma_we,
-        o_dma_ack            => n_dma_ack,
-        i_dma_adr            => n_dma_adr,
-        i_dma_dat            => n_dma_dat_o,
-        o_dma_dat            => n_dma_dat_i,
-        i_gbd_cyc            => n_gbd_mbch_cyc,
-        i_gbd_we             => n_gbd_mbch_we,
-        o_gbd_ack            => n_gbd_mbch_ack,
-        i_gbd_adr            => n_gbd_mbch_adr,
-        i_gbd_dat            => n_gbd_mbch_dat_o,
-        o_gbd_dat            => n_gbd_mbch_dat_i,
-        o_xram_cyc           => n_xram_cyc,
-        o_xram_we            => n_xram_we,
-        i_xram_ack           => n_xram_ack,
-        o_xram_adr           => n_xram_adr,
-        o_xram_tga           => n_xram_tga,
-        i_xram_dat           => n_xram_dat_o,
-        o_xram_dat           => n_xram_dat_i,
-        i_gpio               => (others => '0'),
-        o_gpio               => open,
-        io_fpga_spi_clk      => io_fpga_spi_clk,
-        io_fpga_spi_miso     => io_fpga_spi_miso,
-        io_fpga_spi_mosi     => io_fpga_spi_mosi,
-        -- o_fpga_spi_flash_csn => o_fpga_spi_flash_csn,
-        o_fpga_spi_flash_csn => io_fpga_user(2),
-        o_fpga_spi_rtc_csn   => o_fpga_spi_rtc_csn,
-        o_fpga_spi_sd_csn    => o_fpga_spi_sd_csn,
-        o_select_mbc         => n_mbch_selected_mcb,
-        o_soft_reset_req     => n_aux_reset,
-        i_soft_reset         => n_soft_reset,
-        i_dbg_active         => n_dbg_active,
-        i_dma_busy           => n_dma_busy
-    );
+        port map(
+            i_clk                => n_clk_div1,
+            i_rst                => n_hard_reset,
+            i_dbg_cyc            => n_dbg_cyc,
+            i_dbg_we             => n_dbg_we,
+            o_dbg_ack            => n_dbg_ack,
+            i_dbg_adr            => n_dbg_adr,
+            i_dbg_dat            => n_dbg_dat_o,
+            o_dbg_dat            => n_dbg_dat_i,
+            i_dma_cyc            => n_dma_cyc,
+            i_dma_we             => n_dma_we,
+            o_dma_ack            => n_dma_ack,
+            i_dma_adr            => n_dma_adr,
+            i_dma_dat            => n_dma_dat_o,
+            o_dma_dat            => n_dma_dat_i,
+            i_gbd_cyc            => n_gbd_mbch_cyc,
+            i_gbd_we             => n_gbd_mbch_we,
+            o_gbd_ack            => n_gbd_mbch_ack,
+            i_gbd_adr            => n_gbd_mbch_adr,
+            i_gbd_dat            => n_gbd_mbch_dat_o,
+            o_gbd_dat            => n_gbd_mbch_dat_i,
+            o_xram_cyc           => n_xram_cyc,
+            o_xram_we            => n_xram_we,
+            i_xram_ack           => n_xram_ack,
+            o_xram_adr           => n_xram_adr,
+            o_xram_tga           => n_xram_tga,
+            i_xram_dat           => n_xram_dat_o,
+            o_xram_dat           => n_xram_dat_i,
+            i_gpio               => (others => '0'),
+            o_gpio               => open,
+            io_fpga_spi_clk      => io_fpga_spi_clk,
+            io_fpga_spi_miso     => io_fpga_spi_miso,
+            io_fpga_spi_mosi     => io_fpga_spi_mosi,
+            -- o_fpga_spi_flash_csn => o_fpga_spi_flash_csn,
+            o_fpga_spi_flash_csn => io_fpga_user(2),
+            o_fpga_spi_rtc_csn   => o_fpga_spi_rtc_csn,
+            o_fpga_spi_sd_csn    => o_fpga_spi_sd_csn,
+            o_select_mbc         => n_mbch_selected_mcb,
+            o_soft_reset_req     => n_aux_reset,
+            i_soft_reset         => n_soft_reset,
+            i_dbg_active         => n_dbg_active,
+            i_dma_busy           => n_dma_busy
+        );
 
     inst_uart_debug : uart_debug
-    port map(
-        i_clk        => n_clk_div1,
-        i_rst        => n_hard_reset,
-        o_cyc        => n_dbg_cyc,
-        i_ack        => n_dbg_ack,
-        o_we         => n_dbg_we,
-        o_adr        => n_dbg_adr,
-        o_dat        => n_dbg_dat_o,
-        i_dat        => n_dbg_dat_i,
-        o_serial_tx  => io_fpga_user(5),
-        i_serial_rx  => io_fpga_user(4),
-        o_dbg_active => n_dbg_active
-    );
+        port map(
+            i_clk        => n_clk_div1,
+            i_rst        => n_hard_reset,
+            o_cyc        => n_dbg_cyc,
+            i_ack        => n_dbg_ack,
+            o_we         => n_dbg_we,
+            o_adr        => n_dbg_adr,
+            o_dat        => n_dbg_dat_o,
+            i_dat        => n_dbg_dat_i,
+            o_serial_tx  => io_fpga_user(5),
+            i_serial_rx  => io_fpga_user(4),
+            o_dbg_active => n_dbg_active
+        );
 
     inst_ram_controller : as1c8m16pl_controller
-    port map(
-        i_clk      => n_clk_div1,
-        i_rst      => n_soft_reset,
-        i_cyc      => n_xram_cyc,
-        i_we       => n_xram_we,
-        o_ack      => n_xram_ack,
-        i_adr      => n_xram_adr,
-        i_tga(0)   => n_xram_tga,
-        i_dat      => n_xram_dat_i,
-        o_dat      => n_xram_dat_o,
-        io_ram_adq => io_ram_adq,
-        o_ram_a    => o_ram_a,
-        o_ram_advn => o_ram_advn,
-        o_ram_ce0n => o_ram_ce0n,
-        o_ram_ce1n => o_ram_ce1n,
-        o_ram_clk  => o_ram_clk,
-        o_ram_cre  => o_ram_cre,
-        o_ram_lbn  => o_ram_lbn,
-        o_ram_ubn  => o_ram_ubn,
-        o_ram_oen  => o_ram_oen,
-        i_ram_wait => i_ram_wait,
-        o_ram_wen  => o_ram_wen
-    );
+        port map(
+            i_clk      => n_clk_div1,
+            i_rst      => n_soft_reset,
+            i_cyc      => n_xram_cyc,
+            i_we       => n_xram_we,
+            o_ack      => n_xram_ack,
+            i_adr      => n_xram_adr,
+            i_tga(0)   => n_xram_tga,
+            i_dat      => n_xram_dat_i,
+            o_dat      => n_xram_dat_o,
+            io_ram_adq => io_ram_adq,
+            o_ram_a    => o_ram_a,
+            o_ram_advn => o_ram_advn,
+            o_ram_ce0n => o_ram_ce0n,
+            o_ram_ce1n => o_ram_ce1n,
+            o_ram_clk  => o_ram_clk,
+            o_ram_cre  => o_ram_cre,
+            o_ram_lbn  => o_ram_lbn,
+            o_ram_ubn  => o_ram_ubn,
+            o_ram_oen  => o_ram_oen,
+            i_ram_wait => i_ram_wait,
+            o_ram_wen  => o_ram_wen
+        );
 
     -- simple led blinking for visual confirmation that the firmware is running
     -- only for development
@@ -395,7 +384,7 @@ begin
     io_fpga_spi_miso <= 'Z';
 
     -- drive to be able to use the flash
-    o_flash_wpn <= '1';
+    o_flash_wpn   <= '1';
     o_flash_holdn <= '1';
 
     -- io_fpga_user(5) <= 'Z';
