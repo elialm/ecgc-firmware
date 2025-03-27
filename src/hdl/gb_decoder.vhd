@@ -13,6 +13,8 @@ use IEEE.numeric_std.all;
 use IEEE.std_logic_misc.all;
 use IEEE.math_real.all;
 
+use work.cart_pkg.all;
+
 entity gb_decoder is
     generic (
         p_enable_timeout_detection : boolean := false;
@@ -62,18 +64,6 @@ architecture rtl of gb_decoder is
     -- TODO: update with new clock frequency
     constant c_cyc_counter_read : std_logic_vector(3 downto 0) := "1000"; -- 9 cycles
     constant c_cyc_counter_write : std_logic_vector(3 downto 0) := "1000"; -- 9 cycles (I think)
-
-    component synchroniser is
-        generic (
-            p_ff_count : natural := 2;
-            p_data_width : natural := 1;
-            p_reset_value : std_logic := '0');
-        port (
-            i_clk  : in std_logic;
-            i_rst  : in std_logic;
-            i_din  : in std_logic_vector(p_data_width - 1 downto 0);
-            o_dout : out std_logic_vector(p_data_width - 1 downto 0));
-    end component;
 
     -- Synchronised signals from GameBoy
     signal n_gb_clk_sync : std_logic;

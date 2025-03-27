@@ -40,6 +40,8 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_misc.all;
 
+use work.cart_pkg.all;
+
 entity reset is
     generic (
         p_aux_ff_count : positive := 9
@@ -58,20 +60,6 @@ entity reset is
 end reset;
 
 architecture rtl of reset is
-
-    component synchroniser is
-        generic (
-            p_ff_count : natural := 2;
-            p_data_width : natural := 1;
-            p_reset_value : std_logic := '0'
-        );
-        port (
-            i_clk  : in std_logic;
-            i_rst  : in std_logic;
-            i_din  : in std_logic_vector(p_data_width - 1 downto 0);
-            o_dout : out std_logic_vector(p_data_width - 1 downto 0)
-        );
-    end component;
 
     signal n_soft_reset : std_logic;
     signal n_hard_reset : std_logic := '1';

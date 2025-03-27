@@ -36,6 +36,8 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.std_logic_misc.all;
 
+use work.cart_pkg.all;
+
 entity mbch is
     port (
         -- Global signals
@@ -99,63 +101,6 @@ end mbch;
 architecture rtl of mbch is
 
     type t_bus_selector is (s_boot_rom, s_cart_ram, s_xram, s_spi);
-
-    component boot_ram is
-        port (
-            Clock   : in std_logic;
-            ClockEn : in std_logic;
-            Reset   : in std_logic;
-            WE      : in std_logic;
-            Address : in std_logic_vector(11 downto 0);
-            Data    : in std_logic_vector(7 downto 0);
-            Q       : out std_logic_vector(7 downto 0));
-    end component;
-
-    component cart_ram
-    port (
-        Clock       : in std_logic;
-        ClockEn     : in std_logic; 
-        Reset       : in std_logic;
-        WE          : in std_logic; 
-        Address     : in std_logic_vector(10 downto 0); 
-        Data        : in std_logic_vector(7 downto 0); 
-        Q           : out std_logic_vector(7 downto 0));
-    end component;
-
-    component synchroniser is
-        generic (
-            p_ff_count : natural := 2;
-            p_data_width : natural := 4;
-            p_reset_value : std_logic := '0'
-        );
-        port (
-            i_clk  : in std_logic;
-            i_rst  : in std_logic;
-            i_din  : in std_logic_vector(p_data_width - 1 downto 0);
-            o_dout : out std_logic_vector(p_data_width - 1 downto 0)
-        );
-    end component;
-
-    component spi_core
-        generic (
-            p_cs_count : positive := 3;
-            p_cs_release_value : std_logic := '1'
-        );
-        port (
-            i_clk       : in std_logic;
-            i_rst       : in std_logic;
-            i_cyc       : in std_logic;
-            o_ack       : out std_logic;
-            i_we        : in std_logic;
-            i_adr       : in std_logic_vector(1 downto 0);
-            o_dat       : out std_logic_vector(7 downto 0);
-            i_dat       : in std_logic_vector(7 downto 0);
-            io_spi_clk  : inout std_logic;
-            io_spi_mosi : inout std_logic;
-            io_spi_miso : inout std_logic;
-            io_spi_csn  : inout std_logic_vector(p_cs_count - 1 downto 0)
-        );
-    end component;
 
     -- boot ram and cart ram signals
     signal n_boot_rom_enabled : std_logic;
@@ -442,6 +387,9 @@ begin
 
     -- GPIO input synchroniser
     inst_gpio_synchroniser : synchroniser
+    generic map(
+        p_data_width => 4
+    )
     port map(
         i_clk  => i_clk,
         i_rst  => i_rst,

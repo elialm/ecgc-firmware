@@ -18,6 +18,8 @@ use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 use IEEE.math_real.all;
 
+use work.cart_pkg.all;
+
 entity uart_core is
     generic (
         p_clk_freq : real := 100.0;
@@ -53,20 +55,6 @@ architecture rtl of uart_core is
     constant c_rounded_baud_divider : natural := natural(round(c_exact_baud_divider));
     constant c_rounded_baud_divider_div4 : natural := natural(round((real(c_rounded_baud_divider) / 4.0)));
     constant c_baud_difference_percentage : real := ((real(c_rounded_baud_divider) - c_exact_baud_divider) / c_exact_baud_divider) * 100.0;
-
-    component synchroniser is
-        generic (
-            p_ff_count : natural := 2;
-            p_data_width : natural := 1;
-            p_reset_value : std_logic := '1'
-        );
-        port (
-            i_clk  : in std_logic;
-            i_rst  : in std_logic;
-            i_din  : in std_logic_vector(p_data_width - 1 downto 0);
-            o_dout : out std_logic_vector(p_data_width - 1 downto 0)
-        );
-    end component;
 
     function reverse(a: std_logic_vector)
     return std_logic_vector is

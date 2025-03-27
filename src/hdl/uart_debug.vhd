@@ -18,6 +18,8 @@ use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 use IEEE.std_logic_misc.all;
 
+use work.cart_pkg.all;
+
 entity uart_debug is
     generic (
         p_clk_freq : real := 100.0;
@@ -48,28 +50,6 @@ entity uart_debug is
 end entity uart_debug;
 
 architecture rtl of uart_debug is
-    
-    component uart_core
-        generic (
-            p_clk_freq : real := p_clk_freq;
-            p_baud_rate : natural := p_baud_rate;
-            p_parity : string := p_parity;
-            p_data_bits : natural := 8;
-            p_stop_bits : natural := p_stop_bits
-        );
-        port (
-            i_clk       : in std_logic;
-            i_rst       : in std_logic;
-            i_tx_wr     : in std_logic;
-            i_tx_dat    : in std_logic_vector(p_data_bits - 1 downto 0);
-            o_tx_rdy    : out std_logic;
-            i_rx_rd     : in std_logic;
-            o_rx_dat    : out std_logic_vector(p_data_bits - 1 downto 0);
-            o_rx_rdy    : out std_logic;
-            o_serial_tx : out std_logic;
-            i_serial_rx : in std_logic
-        );
-    end component;
 
     type t_debug_state is (s_await_command, s_await_ctrl_value, s_send_ctrl_value, s_await_adr_value, s_await_byte_count, s_await_wb_read, s_send_read_data, s_await_write_data, s_await_wb_write, s_await_resend_request);
 
@@ -98,6 +78,13 @@ architecture rtl of uart_debug is
 begin
     
     inst_uart_core : uart_core
+    generic map(
+        p_clk_freq => c_pll_clkop_freq,
+        p_baud_rate => p_baud_rate,
+        p_parity => p_parity,
+        p_data_bits => 8,
+        p_stop_bits => p_stop_bits
+    )
     port map(
         i_clk       => i_clk,
         i_rst       => i_rst,
