@@ -11,15 +11,6 @@ limited to:
 - SPI debugging
 - Cartridge DMA
 
-# Directory structure
-
-The [Gen3Prototype](/Gen3Prototype) directory contains the firmware for the
-3<sup>rd</sup> generation prototype.
-It currently has no planned changes,
-but I left it here as an archive.
-
-The [Gen4](/Gen4) directory has the firmware for the current cart iteration.
-
 # Development tools
 
 Lattice (manufacturer of used FPGA) has their own [Lattice Diamond Software](https://www.latticesemi.com/latticediamond)
