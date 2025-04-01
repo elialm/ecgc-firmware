@@ -23,3 +23,7 @@ transcript
 
 # Reveal files
 /reveal.*
+
+# Sigasi overrides
+!.library_mapping.xml
+!.project
