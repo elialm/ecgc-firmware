@@ -16,7 +16,6 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
-use IEEE.std_logic_misc.all;
 
 use work.cart_pkg.all;
 
@@ -48,7 +47,18 @@ end entity uart_debug;
 
 architecture rtl of uart_debug is
 
-    type t_debug_state is (s_await_command, s_await_ctrl_value, s_send_ctrl_value, s_await_adr_value, s_await_byte_count, s_await_wb_read, s_send_read_data, s_await_write_data, s_await_wb_write, s_await_resend_request);
+    type t_debug_state is (
+        s_await_command,
+        s_await_ctrl_value,
+        s_send_ctrl_value,
+        s_await_adr_value,
+        s_await_byte_count,
+        s_await_wb_read,
+        s_send_read_data,
+        s_await_write_data,
+        s_await_wb_write,
+        s_await_resend_request
+    );
 
     signal r_debug_state    : t_debug_state;
     signal r_cmd_ack        : std_logic;
@@ -103,17 +113,17 @@ begin
                 r_cmd_ack        <= '0';
                 r_resend_request <= '0';
                 r_adr_byte_sel   <= '0';
-                -- r_cmd_rnw <= '0';
+                r_cmd_rnw        <= '-';
                 r_auto_inc       <= '0';
                 r_dbg_active     <= '0';
-                -- r_byte_count <= (others => '0');
+                r_byte_count     <= (others => '-');
                 r_tx_wr          <= '0';
                 r_rx_rd          <= '0';
-                -- r_tx_dat <= (others => '0');
+                r_tx_dat         <= (others => '-');
                 r_cyc            <= '0';
                 r_we             <= '0';
-            -- r_adr <= (others => '0');
-            -- r_dat <= (others => '0');
+                r_adr            <= (others => '-');
+                r_dat            <= (others => '-');
             else
                 r_tx_wr   <= '0';
                 r_rx_rd   <= '0';

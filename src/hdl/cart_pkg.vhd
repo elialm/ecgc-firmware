@@ -267,8 +267,47 @@ package cart_pkg is
         );
     end component;
 
+    function nor_reduce(slv : std_logic_vector) return std_logic;
+    function or_reduce(slv : std_logic_vector) return std_logic;
+    function nand_reduce(slv : std_logic_vector) return std_logic;
+    function and_reduce(slv : std_logic_vector) return std_logic;
+
 end package cart_pkg;
 
 package body cart_pkg is
+
+    function nor_reduce(slv : std_logic_vector)
+    return std_logic is
+    begin
+        return not or_reduce(slv);
+    end function nor_reduce;
+
+    function or_reduce(slv : std_logic_vector)
+    return std_logic is
+        variable x : std_logic := '0';
+    begin
+        for i in slv'range loop
+            x := x or slv(i);
+        end loop;
+
+        return x;
+    end function or_reduce;
+
+    function nand_reduce(slv : std_logic_vector)
+    return std_logic is
+    begin
+        return not and_reduce(slv);
+    end function nand_reduce;
+
+    function and_reduce(slv : std_logic_vector)
+    return std_logic is
+        variable x : std_logic := '1';
+    begin
+        for i in slv'range loop
+            x := x and slv(i);
+        end loop;
+
+        return x;
+    end function and_reduce;
 
 end package body cart_pkg;

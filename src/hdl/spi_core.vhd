@@ -80,11 +80,11 @@ begin
         if rising_edge(i_clk) then
             if i_rst = '1' then
                 r_spi_clk           <= '0';
-                -- r_spi_shifter <= (others => '0');
+                r_spi_shifter       <= (others => '-');
                 r_spi_ccounter      <= 0;
                 r_skip_shift        <= '0';
                 r_skip_clock        <= '0';
-                -- r_slave_sample <= '0';
+                r_slave_sample      <= '-';
                 r_transmission_busy <= '0';
                 r_transmission_done <= '0';
                 r_request_release   <= '0';
@@ -186,7 +186,7 @@ begin
                 r_request_wr <= '0';
                 r_request_rd <= '0';
                 r_ack        <= '0';
-            -- r_dat <= (others => '0');
+                r_dat        <= (others => '-');
             else
                 r_request_wr <= '0';
                 r_request_rd <= '0';

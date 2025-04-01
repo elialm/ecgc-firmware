@@ -53,18 +53,6 @@ architecture rtl of uart_core is
     constant c_rounded_baud_divider_div4  : natural := natural(round((real(c_rounded_baud_divider) / 4.0)));
     constant c_baud_difference_percentage : real    := ((real(c_rounded_baud_divider) - c_exact_baud_divider) / c_exact_baud_divider) * 100.0;
 
-    function reverse(a : std_logic_vector)
-    return std_logic_vector is
-        variable result : std_logic_vector(a'range);
-        alias aa        : std_logic_vector(a'reverse_range) is a;
-    begin
-        for i in aa'range loop
-            result(i) := aa(i);
-        end loop;
-
-        return result;
-    end function;
-
     function create_slv_with_value(len : natural; val : std_logic)
     return std_logic_vector is
         variable result : std_logic_vector(len - 1 downto 0);

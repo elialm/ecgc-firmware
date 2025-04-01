@@ -18,9 +18,6 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
-library XP2;
-use XP2.all;
-
 use work.cart_pkg.all;
 
 entity cart_tl is
@@ -77,28 +74,6 @@ architecture rtl of cart_tl is
     constant c_clkdivb_cdiv2_freq : real := c_clkdivb_cdiv1_freq / 2.0;
     constant c_clkdivb_cdiv4_freq : real := c_clkdivb_cdiv1_freq / 4.0;
     constant c_clkdivb_cdiv8_freq : real := c_clkdivb_cdiv1_freq / 8.0;
-
-    -- component CLKDIVB
-    --     -- synthesis translate_off
-    --     generic (
-    --         gsr : in string
-    --     );
-    --     -- synthesis translate_on
-    --     port (
-    --         clki : in std_logic;
-    --         rst  : in std_logic;
-    --         -- synthesis translate_off
-    --         release : in std_logic;
-    --         -- synthesis translate_on
-    --         cdiv1 : out std_logic;
-    --         cdiv2 : out std_logic;
-    --         cdiv4 : out std_logic;
-    --         cdiv8 : out std_logic
-    --     );
-    -- end component;
-
-    -- attribute GSR : string;
-    -- attribute GSR of inst_clkdiv : label is "DISABLED";
 
     -- Clocks
     signal n_pll_clk_op : std_logic;
@@ -169,6 +144,10 @@ architecture rtl of cart_tl is
     signal n_mbch_selected_mcb : std_logic_vector(2 downto 0);
 
     signal r_led_divider : std_logic_vector(24 downto 0);
+
+    attribute syn_keep : boolean;
+    attribute syn_keep of n_gb_timeout_rd : signal is true;
+    attribute syn_keep of n_gb_timeout_wr : signal is true;
 
 begin
 

@@ -34,7 +34,6 @@
 
 library IEEE;
 use IEEE.std_logic_1164.all;
-use IEEE.std_logic_misc.all;
 
 use work.cart_pkg.all;
 
@@ -178,10 +177,10 @@ begin
     begin
         if rising_edge(i_clk) then
             if i_rst = '1' then
-                r_cyc <= '0';
-            -- r_we <= '0';
-            -- r_adr <= (others => '0');
-            -- r_dat_i <= (others => '0');
+                r_cyc   <= '0';
+                r_we    <= '-';
+                r_adr   <= (others => '-');
+                r_dat_i <= (others => '-');
             else
                 if i_dbg_active = '1' then
                     -- select dbg as master

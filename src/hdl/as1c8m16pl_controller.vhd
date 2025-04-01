@@ -26,8 +26,9 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
-use IEEE.std_logic_misc.all;
 use IEEE.math_real.all;
+
+use work.cart_pkg.all;
 
 entity as1c8m16pl_controller is
     generic(
@@ -84,14 +85,6 @@ architecture rtl of as1c8m16pl_controller is
 
         return std_logic_vector(to_unsigned(natural(ceil(compensated_tns * p_clk_freq / 1000.00)), bc));
     end to_tcomp_ns;
-
-    function to_ns_tcomp(tcomp : std_logic_vector)
-    return real is
-        variable clock_cycles : natural;
-    begin
-        clock_cycles := to_integer(unsigned(tcomp)) + 1;
-        return real(clock_cycles) * c_t_clk;
-    end to_ns_tcomp;
 
     -- CE# LOW to ADV# HIGH
     -- Is only 1 clock cycle, since the ADV# work independantly and will ensure proper timing
@@ -162,9 +155,9 @@ begin
                 r_ram_state_next       <= s_idle;
                 r_ram_force_adq        <= '0';
                 r_ram_release          <= '0';
-                -- r_ram_adq_out <= (others => '0');
-                -- r_ram_adq_in <= (others => '0');
-                -- r_ram_wr_data <= (others => '0');
+                r_ram_adq_out          <= (others => '-');
+                r_ram_adq_in           <= (others => '-');
+                r_ram_wr_data          <= (others => '-');
                 r_ram_reg_buff_sel     <= '1';
                 r_ram_cen_oe           <= '0';
                 r_ram_cen_sel          <= '0';
