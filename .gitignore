@@ -27,3 +27,6 @@ transcript
 # Sigasi overrides
 !.library_mapping.xml
 !.project
+
+# ecgc-util virtual environment
+.venv

@@ -1,3 +1,6 @@
 [submodule "external/ecgc-boot"]
 	path = external/ecgc-boot
 	url = git@github.com:elialm/ecgc-boot.git
+[submodule "external/ecgc-util"]
+	path = external/ecgc-util
+	url = git@github.com:elialm/ecgc-util.git
