@@ -36,7 +36,6 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 
 use work.cart_pkg.all;
-use work.pmi_components.all;
 
 entity mbch is
     port(
@@ -139,28 +138,14 @@ architecture rtl of mbch is
 begin
 
     -- ROM instance containing boot code
-    inst_boot_rom : component pmi_ram_dq
-        generic map(
-            pmi_addr_depth       => 4096,
-            pmi_addr_width       => 12,
-            pmi_data_width       => 8,
-            pmi_regmode          => "noreg",
-            pmi_gsr              => "disable",
-            pmi_resetmode        => "sync",
-            pmi_optimization     => "speed",
-            pmi_init_file        => "/home/elialm/repos/ecgc-firmware/external/ecgc-boot/build/boot.mem",
-            pmi_init_file_format => "hex",
-            pmi_write_mode       => "normal",
-            pmi_family           => "XP2",
-            module_type          => "pmi_ram_dq"
-        )
+    inst_boot_rom : boot_ram
         port map(
-            Data    => r_dat_i,
-            Address => r_adr(11 downto 0),
             Clock   => i_clk,
             ClockEn => n_boot_rom_enabled,
-            WE      => n_boot_rom_we,
             Reset   => i_rst,
+            WE      => n_boot_rom_we,
+            Address => r_adr(11 downto 0),
+            Data    => r_dat_i,
             Q       => n_boot_rom_data
         );
 

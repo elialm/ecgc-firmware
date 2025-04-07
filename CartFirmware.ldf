@@ -29,6 +29,9 @@
         <Source name="src/sim/gameboy_tb.vhd" type="VHDL" type_short="VHDL" syn_sim="SimOnly">
             <Options/>
         </Source>
+        <Source name="src/ip/boot_ram/boot_ram.vhd" type="VHDL" type_short="VHDL" syn_sim="SynOnly">
+            <Options/>
+        </Source>
         <Source name="src/sim/as1c8m16pl_controller_tb.vhd" type="VHDL" type_short="VHDL" syn_sim="SimOnly">
             <Options/>
         </Source>
@@ -60,15 +63,6 @@
             <Options/>
         </Source>
         <Source name="src/hdl/cart_pkg.vhd" type="VHDL" type_short="VHDL">
-            <Options/>
-        </Source>
-        <Source name="external/lattice/cae_library/simulation/verilog/pmi/pmi_ram_dq.v" type="Verilog" type_short="Verilog" syn_sim="SimOnly">
-            <Options/>
-        </Source>
-        <Source name="external/lattice/cae_library/synthesis/vhdl/pmi_def.vhd" type="VHDL" type_short="VHDL">
-            <Options/>
-        </Source>
-        <Source name="external/lattice/cae_library/synthesis/verilog/pmi_def.v" type="Verilog" type_short="Verilog">
             <Options/>
         </Source>
         <Source name="CartFirmware.lpf" type="Logic Preference" type_short="LPF">
