@@ -45,22 +45,35 @@ interface wishbone_io #(
     logic [ADDR_WIDTH-1:0] addr;
 
     modport master (
-        output cyc,
-        output we,
-        input ack,
-        output mdata,
-        input sdata,
-        output addr
+        output cyc, we, mdata, addr,
+        input ack, sdata,
+        import master_reset
     );
 
     modport slave (
-        input cyc,
-        input we,
-        output ack,
-        input mdata,
-        output sdata,
-        input addr
+        input cyc, we, mdata, addr,
+        output ack, sdata,
+        import slave_reset
     );
+
+    task slave_reset;
+        slave.ack <= 0;
+    endtask
+
+    task master_reset;
+        master.cyc <= 0;
+        master.we <= 0;
+    endtask
+
+    task master_initiate_write;
+        master.cyc <= 1;
+        master.we <= 1;
+    endtask
+
+    task master_initiate_read;
+        master.cyc <= 1;
+        master.we <= 0;
+    endtask
 
 endinterface : wishbone_io
 
@@ -98,7 +111,7 @@ module gb_decoder #(
     input clk,
     input rst,
     gb_bus_io.cart gb_bus_if,
-    wishbone_io.master wishbone_if,
+    wishbone_io wishbone_if,
     input dma_busy,
     input selected_mbc,
     output wr_timeout,
@@ -148,41 +161,60 @@ module gb_decoder #(
 
     logic gb_access_rom;
     logic gb_access_ram;
-    logic gb_access_dma;
+    // logic gb_access_dma;
+    logic gb_access_cart;
+    logic [7:0] gb_outgoing_data;
 
-    assign gb_access_rom = gb_addr_sync[15];
-    assign gb_access_ram = gb_csn_sync == 0 && gb_addr_sync == 3'b101;
-    assign gb_access_dma = gb_access_ram && gb_bus_if.addr[12:8] == 5'b00101;
+    assign gb_access_rom = !gb_addr_sync[15];
+    assign gb_access_ram = !gb_csn_sync && gb_addr_sync == 3'b101;
+    // assign gb_access_dma = gb_access_ram && gb_bus_if.addr[12:8] == 5'b00101;
+    assign gb_access_cart = gb_access_rom || gb_access_ram;
+    assign gb_bus_if.data = gb_access_cart && !gb_bus_if.rdn ? gb_outgoing_data : 'z;
 
     always_ff @(posedge clk) begin
         if (rst == 1) begin
             state <= STATE_AWAIT_ACCESS_FINISHED;
+            wishbone_if.master_reset();
         end
         else begin
             case (state)
                 STATE_AWAIT_ACCESS_FINISHED:
-                if (!gb_access_rom && !gb_access_ram)
+                if (!gb_access_cart)
                     state <= STATE_IDLE;
 
                 STATE_IDLE:
-                if (gb_access_rom || gb_access_ram) begin
-                    if (dma_busy && gb_access_dma) begin
-
+                if (gb_access_cart) begin
+                    if (!gb_bus_if.rdn) begin
+                        state <= STATE_READ_AWAIT_ACK;
+                        wishbone_if.master_initiate_read();
+                    end else begin
+                        state <= STATE_WRITE_AWAIT_FALLING_EDGE;
                     end
+
+                    wishbone_if.addr <= gb_bus_if.addr;
                 end
 
                 STATE_READ_AWAIT_ACK:
+                if (wishbone_if.ack) begin
+                    state <= STATE_AWAIT_ACCESS_FINISHED;
+                    wishbone_if.master_reset();
+                    gb_outgoing_data <= wishbone_if.sdata;
+                end
 
                 STATE_WRITE_AWAIT_FALLING_EDGE:
+                if (!gb_clk_sync) begin
+                    state <= STATE_WRITE_AWAIT_ACK;
+                    wishbone_if.mdata <= gb_bus_if.data;
+                    wishbone_if.master_initiate_write();
+                end
 
                 STATE_WRITE_AWAIT_ACK:
-
+                if (wishbone_if.ack) begin
+                    state <= STATE_AWAIT_ACCESS_FINISHED;
+                    wishbone_if.master_reset();
+                end
             endcase
-
         end
     end
-
-
-
 
 endmodule
