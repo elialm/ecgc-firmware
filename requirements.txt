@@ -1,4 +1,7 @@
 cocotb==2.0.1
+cocotb-bus==0.3.0
+cocotbext-spi==0.5.0
+cocotbext-wishbone==0.2.2
 find_libpython==0.5.0
 iniconfig==2.3.0
 packaging==25.0
@@ -6,3 +9,4 @@ pluggy==1.6.0
 Pygments==2.19.2
 pyserial==3.5
 pytest==9.0.1
+scapy==2.6.1

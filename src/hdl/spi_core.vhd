@@ -24,27 +24,28 @@ entity spi_core is
     );
     port(
         -- Clocking and reset
-        i_clk       : in    std_logic;
-        i_rst       : in    std_logic;
+        i_clk        : in    std_logic;
+        i_rst        : in    std_logic;
         -- Slave Wishbone port
-        i_cyc       : in    std_logic;
-        o_ack       : out   std_logic;
-        i_we        : in    std_logic;
-        i_adr       : in    std_logic_vector(1 downto 0);
-        o_dat       : out   std_logic_vector(7 downto 0);
-        i_dat       : in    std_logic_vector(7 downto 0);
+        m_config_cyc : in    std_logic;
+        m_config_stb : in    std_logic;
+        m_config_ack : out   std_logic;
+        m_config_we  : in    std_logic;
+        m_config_adr : in    std_logic_vector(1 downto 0);
+        m_config_do  : out   std_logic_vector(7 downto 0);
+        m_config_di  : in    std_logic_vector(7 downto 0);
         -- SPI signals
-        io_spi_clk  : inout std_logic;
-        io_spi_mosi : inout std_logic;
-        io_spi_miso : inout std_logic;
-        io_spi_csn  : inout std_logic_vector(p_cs_count - 1 downto 0)
+        io_spi_clk   : inout std_logic;
+        io_spi_mosi  : inout std_logic;
+        io_spi_miso  : inout std_logic;
+        io_spi_csn   : inout std_logic_vector(p_cs_count - 1 downto 0)
     );
 end entity spi_core;
 
 architecture rtl of spi_core is
 
     subtype t_spi_counter is integer range 0 to 8;
-    subtype t_fdiv is integer range 0 to 255;
+    subtype t_fdiv        is integer range 0 to 255;
 
     signal r_cfg_en   : std_logic;      -- core enabled, must be 1 for the registers to be writable
     signal r_cfg_cpol : std_logic;      -- clock polarity, see SPI docs
@@ -97,11 +98,11 @@ begin
                     -- load shifter based on set bit order
                     if r_cfg_bord = '0' then
                         -- MSB first
-                        r_spi_shifter <= i_dat;
+                        r_spi_shifter <= m_config_di;
                     else
                         -- LSB first
                         for i in 0 to 7 loop
-                            r_spi_shifter(i) <= i_dat(7 - i);
+                            r_spi_shifter(i) <= m_config_di(7 - i);
                         end loop;
                     end if;
 
@@ -198,16 +199,16 @@ begin
                 end if;
 
                 -- wishbone handler
-                if i_cyc = '1' and r_ack = '0' then
-                    case i_adr is
+                if m_config_cyc = '1' and m_config_stb = '1' and r_ack = '0' then
+                    case m_config_adr is
                         -- CTRL
                         when "00" =>
-                            if i_we = '1' then
-                                r_cfg_cpol <= i_dat(7);
-                                r_cfg_cpha <= i_dat(6);
-                                r_cfg_bord <= i_dat(5);
-                                r_cfg_csrl <= i_dat(4);
-                                r_cfg_en   <= i_dat(0);
+                            if m_config_we = '1' then
+                                r_cfg_cpol <= m_config_di(7);
+                                r_cfg_cpha <= m_config_di(6);
+                                r_cfg_bord <= m_config_di(5);
+                                r_cfg_csrl <= m_config_di(4);
+                                r_cfg_en   <= m_config_di(0);
                             else
                                 r_dat(7) <= r_cfg_cpol;
                                 r_dat(6) <= r_cfg_cpha;
@@ -221,16 +222,16 @@ begin
 
                         -- FDIV
                         when "01" =>
-                            if i_we = '1' then
-                                r_fdiv_ceil <= to_integer(unsigned(i_dat));
+                            if m_config_we = '1' then
+                                r_fdiv_ceil <= to_integer(unsigned(m_config_di));
                             else
                                 r_dat <= std_logic_vector(to_unsigned(r_fdiv_ceil, 8));
                             end if;
 
                         -- CS
                         when "10" =>
-                            if i_we = '1' then
-                                r_spi_csn <= i_dat(p_cs_count - 1 downto 0);
+                            if m_config_we = '1' then
+                                r_spi_csn <= m_config_di(p_cs_count - 1 downto 0);
                             else
                                 for i in 0 to 7 loop
                                     r_dat(i) <= r_spi_csn(i) when i < p_cs_count else '1';
@@ -239,7 +240,7 @@ begin
 
                         -- DATA
                         when "11" =>
-                            if i_we = '1' then
+                            if m_config_we = '1' then
                                 r_request_wr <= '1';
                             else
                                 r_request_rd <= '1';
@@ -256,8 +257,8 @@ begin
         end if;
     end process proc_wishbone_slave;
 
-    o_ack <= r_ack;
-    o_dat <= r_dat;
+    m_config_ack <= r_ack;
+    m_config_do  <= r_dat;
 
     -- drive CSNs with their appropriate values
     gen_drive_csn : for i in 0 to p_cs_count - 1 generate
