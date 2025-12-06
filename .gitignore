@@ -20,6 +20,7 @@ transcript
 
 # Simulation files
 /sim
+/sim_build
 
 # Reveal files
 /reveal.*
@@ -28,5 +29,6 @@ transcript
 !.library_mapping.xml
 !.project
 
-# ecgc-util virtual environment
+# Python related
 .venv
+__pycache__

@@ -11,6 +11,37 @@ limited to:
 - SPI debugging
 - Cartridge DMA
 
+# Developer guide
+
+## Running tests
+
+> [!IMPORTANT]
+> It is assumed that the instructions at [cocotb](#cocotb) were followed and the virtual environment is activated.
+
+Tests are ran using cocotb.
+Available tests can be ran with the cocotb test runner:
+
+```bash
+(.venv) $ python tests/test_runner.py
+```
+
+## Adding tests
+
+The tests are structured per entity in the sources.
+The test runner will look for Python scripts inside [tests/testbenches](tests/testbenches)
+(with the exception of special files like `__ini__.py`)
+and assume each to contain tests for a toplevel of the same name.
+For example, a file `tests/testbenches/example.py` will look for a toplevel entity named `example` in the RTL sources.
+
+When tests for an entity exist,
+one can locate the existing test file for that entity and add tests there as how
+it is described in the [cocotb docs](https://docs.cocotb.org/en/stable/writing_testbenches.html#).
+
+When adding an entity,
+one has to create a file with the same name of that new entity
+and put it in the [tests/testbenches](tests/testbenches) directory.
+Tests can then be added to that file and will be automatically be picked up by the test runner.
+
 # Development tools
 
 ## Lattice Diamond
@@ -45,7 +76,38 @@ $ python3 -m venv .venv
 $ source ./.venv/bin/activate
 
 # Install ecgc-util in virtual environment
-(.venv) $ python -m pip install external/ecgc-util
+(.venv) $ pip install external/ecgc-util
 ```
 
 Then, the tools are available in the virtual environment.
+
+## cocotb
+
+[cocotb](https://www.cocotb.org/) is used to write and run testbenches
+cocotb is a Python framework that can start a simulator and exposes the DUT
+as a Python object which can then be used to provide triggers and assertions to designs.
+
+For running tests, an appropriate simulator is necessary.
+In theory all supported simulators should work, but I've used [GHDL](http://ghdl.free.fr/).
+There might be some configurations that assume this, so it's best to use GHDL.
+This needs to be installed first on the system.
+If on Ubuntu/Debian, GHDL can be installed via `apt`:
+
+```bash
+sudo apt install ghdl
+```
+
+cocotb and its dependencies need to be installed in the virtual environment as well.
+If the environment has not been created before, create it.
+Then the dependencies can be installed:
+
+```bash
+# Run once to create the virtual environment (if not done yet)
+$ python3 -m venv .venv
+
+# Activate the virtual environment when opening a new terminal
+$ source ./.venv/bin/activate
+
+# Install cocotb and dependencies
+(.venv) $ pip install -r requirements.txt
+```
